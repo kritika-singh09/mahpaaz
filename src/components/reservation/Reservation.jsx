@@ -98,23 +98,33 @@ const ReservationPage = () => {
     setError(null);
     try {
       const token = localStorage.getItem("token");
+      if (!token) {
+        setError("No authentication token found. Please log in to view reservations.");
+        setIsLoading(false);
+        return;
+      }
       const response = await fetch(API_BASE_URL, {
         headers: {
           "Authorization": `Bearer ${token}`,
         },
       });
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        let errorMsg = `HTTP error! status: ${response.status}`;
+        try {
+          const errData = await response.json();
+          if (errData && errData.error) errorMsg += `: ${errData.error}`;
+        } catch {}
+        throw new Error(errorMsg);
       }
       const data = await response.json();
       setReservations(Array.isArray(data.reservations) ? data.reservations : []);
     } catch (err) {
-      setError("Failed to load reservations. Please try again.");
+      setError(err.message || "Failed to load reservations. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
-
+// useeffect
   useEffect(() => {
     fetchReservations();
   }, []);
@@ -275,7 +285,7 @@ const ReservationPage = () => {
 
       {/* Overlay for edit */}
       {editId && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-start pt-10">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs bg-opacity-50 z-50 flex justify-center items-start pt-10">
           <div className="bg-white rounded shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6">
             <ReservationEdit
               reservation={reservations.find((r) => r._id === editId)}
