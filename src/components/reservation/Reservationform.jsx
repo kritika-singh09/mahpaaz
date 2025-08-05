@@ -1,898 +1,1085 @@
 
-import React, { useState, useEffect } from "react";
-import { FaCalendarAlt, FaUser, FaDoorOpen, FaBed, FaCreditCard, FaInfoCircle, FaHotel, FaCar, FaAddressCard, FaBuilding, FaPhone, FaEnvelope, FaCity, FaGlobe, FaIdCard, FaRegMoneyBillAlt, FaRegStickyNote, FaRegClock, FaRegListAlt, FaRegCheckCircle, FaRegTimesCircle, FaRegUserCircle, FaRegCreditCard, FaRegStar, FaRegFlag, FaRegEdit, FaRegClone, FaRegCommentDots, FaRegFileAlt, FaRegCalendarPlus, FaRegCalendarCheck, FaRegCalendarTimes, FaRegCalendar, FaRegUser, FaRegAddressBook, FaRegBell, FaRegMap, FaRegBuilding, FaTimes } from "react-icons/fa"; // Added FaTimes for the close button
-import { useNavigate } from "react-router-dom";
-// Define InputWithIcon component directly within this file
-const InputWithIcon = ({ icon, type, name, placeholder, value, onChange, className, required, min, max, step, readOnly }) => {
-  return (
-    <div className="relative flex items-center">
-      {icon && <div className="absolute left-3 text-gray-400 pointer-events-none">{icon}</div>}
-      <input
-        type={type}
-        name={name}
-        placeholder={placeholder}
-        value={value}
-        onChange={onChange}
-        className={`pl-10 pr-4 py-2 w-full ${className}`} // Merges passed className with base styles
-        required={required}
-        min={min}
-        max={max}
-        step={step}
-        readOnly={readOnly} // Added readOnly prop
-      />
-    </div>
-  );
-};
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { FaUser, FaPhone, FaCity, FaMapMarkedAlt, FaBuilding, FaGlobe, FaRegAddressCard, FaMobileAlt, FaEnvelope, FaMoneyCheckAlt, FaCalendarAlt, FaClock, FaDoorOpen, FaUsers, FaConciergeBell, FaInfoCircle, FaSuitcase, FaComments, FaFileInvoiceDollar, FaCheckCircle, FaSignInAlt, FaPassport, FaIdCard, FaCreditCard, FaCashRegister, FaAddressBook, FaRegListAlt, FaRegUser, FaRegCalendarPlus, FaRegCheckCircle, FaRegTimesCircle, FaRegUserCircle, FaRegCreditCard, FaRegStar, FaRegFlag, FaRegEdit, FaRegClone, FaRegCommentDots, FaRegFileAlt, FaRegCalendarCheck, FaRegCalendarTimes, FaRegMap, FaHotel, FaTimes } from "react-icons/fa";
 
-// --- ReservationEdit Component (Now included in the same file) ---
-const ReservationEdit = ({ room, onClose, onSaveSuccess }) => {
-  const [editFormData, setEditFormData] = useState({
-    title: '',
-    room_number: '',
-    price: 0,
-    status: '',
-    // Removed: description: '',
-    category: '', // Assuming category is also editable
-    capacity: 0,
-    // Removed: amenities: [],
-    // Removed: images: [],
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
-  const [categories, setCategories] = useState([]); 
-  const [formData, setFormData] = useState([]);// For category dropdown in edit form
-
-
-  useEffect(() => {
-    if (room) {
-      // Initialize form with current room data
-      setEditFormData({
-        title: room.title || '',
-        room_number: room.room_number || '',
-        price: room.price || 0,
-        status: room.status || '',
-        // Removed: description: '',
-        category: room.category?._id || '', // Use _id if category is an object
-        capacity: room.capacity || 0,
-        // Removed: amenities: [],
-        // Removed: images: [],
-      });
-    }
-
-    // Fetch categories for the dropdown in the edit form
-    const token = localStorage.getItem("token");
-    if (token) {
-      fetch("https://backend-hazel-xi.vercel.app/api/categories/all", {
-        headers: { "Authorization": `Bearer ${token}` }
-      })
-        .then(res => res.json())
-        .then(data => setCategories(Array.isArray(data) ? data : []))
-        .catch(err => console.error("Error fetching categories for edit form:", err));
-    }
-  }, [room]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setEditFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  // Removed handleAmenityChange
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
-    const token = localStorage.getItem("token");
-
-    try {
-      const response = await fetch(`https://backend-hazel-xi.vercel.app/api/rooms/${room._id}`, {
-        method: 'PUT', // Or PATCH, depending on your API
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(editFormData),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        setSuccess(true);
-        // Call the parent's success handler to refresh data and close modal
-        onSaveSuccess();
-      } else {
-        setError(result.message || 'Failed to update room.');
-      }
-    } catch (err) {
-      setError(err.message || 'Network error during room update.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!room) return null; // Don't render if no room is passed
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl relative max-h-[90vh] overflow-y-auto">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-600 hover:text-gray-900"
-        >
-          <FaTimes size={20} />
-        </button>
-        <h2 className="text-2xl font-bold mb-6 text-center">Edit Room: {room.room_number}</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700">Room Title</label>
-              <InputWithIcon
-                icon={<FaBed />}
-                type="text"
-                name="title"
-                value={editFormData.title}
-                onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm"
-              />
-            </div>
-            <div>
-              <label htmlFor="room_number" className="block text-sm font-medium text-gray-700">Room Number</label>
-              <InputWithIcon
-                icon={<FaDoorOpen />}
-                type="text"
-                name="room_number"
-                value={editFormData.room_number}
-                onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm"
-              />
-            </div>
-            <div>
-              <label htmlFor="price" className="block text-sm font-medium text-gray-700">Price</label>
-              <InputWithIcon
-                icon={<FaRegMoneyBillAlt />}
-                type="number"
-                name="price"
-                value={editFormData.price}
-                onChange={handleChange}
-                min="0"
-                step="0.01"
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm"
-              />
-            </div>
-            <div>
-              <label htmlFor="status" className="block text-sm font-medium text-gray-700">Status</label>
-              <div className="relative flex items-center mt-1">
-                <FaRegCheckCircle className="absolute left-3 text-gray-400 pointer-events-none" />
-                
-                <div className="mb-4">
-  <label className="block text-sm font-medium mb-1">Status</label>
-  <select
-    name="status"
-    value={formData.status}
-    onChange={handleChange}
-    className="w-full px-3 py-2 border rounded-md"
-    required
-  >
-    <option value="Confirmed">Confirmed</option>
-    <option value="Tentative">Tentative</option>
-    <option value="Waiting">Waiting</option>
-    <option value="Cancelled">Cancelled</option>
-  </select>
-</div>
-              </div>
-            </div>
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700">Category</label>
-              <div className="relative flex items-center mt-1">
-                <FaBed className="absolute left-3 text-gray-400 pointer-events-none" />
-                <select
-                  name="category"
-                  value={editFormData.category}
-                  onChange={handleChange}
-                  className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-                >
-                  <option value="">Select Category</option>
-                  {categories.map(cat => (
-                    <option key={cat._id} value={cat._id}>{cat.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div>
-              <label htmlFor="capacity" className="block text-sm font-medium text-gray-700">Capacity</label>
-              <InputWithIcon
-                icon={<FaUser />}
-                type="number"
-                name="capacity"
-                value={editFormData.capacity}
-                onChange={handleChange}
-                min="1"
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm"
-              />
-            </div>
-          </div>
-
-          {/* Removed: Description Textarea */}
-          {/* Removed: Amenities Checkboxes */}
-          {/* Removed: Image URLs Textarea */}
-
-          <div className="flex justify-end gap-3 mt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
-              disabled={loading}
-            >
-              {loading ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
-          {error && <p className="text-red-500 text-sm mt-2 text-center">{error}</p>}
-          {success && <p className="text-green-500 text-sm mt-2 text-center">Room updated successfully!</p>}
-        </form>
-      </div>
-    </div>
-  );
-};
-
-
-// --- ReservationForm Component ---
-const initialFormData = {
-  // grcNo will be autofilled by backend, so it's not part of initial submission data
-  bookingRefNo: "",
-  reservationType: "",
-
-  category: "", // This will be the ID of the selected category
-  bookingDate: new Date().toISOString().split('T')[0], // Default to current date
-  status: "Confirmed",
-
-  salutation: "",
-  guestName: "",
-  nationality: "",
-  city: "",
-  address: "",
-  phoneNo: "",
-  mobileNo: "",
-  email: "",
-  companyName: "",
-  gstApplicable: true,
-  companyGSTIN: "",
-
-  roomHoldStatus: "Pending",
-  roomAssigned: "", // This will be the ID of the selected room
-  roomHoldUntil: "", // Should be a date/time string, e.g., "2025-07-25T12:00:00.000Z"
-  checkInDate: "",
-  checkInTime: "14:00",
-  checkOutDate: "",
-  checkOutTime: "12:00",
-  noOfRooms: 1,
-  noOfAdults: 0,
-  noOfChildren: 0,
-  planPackage: "",
-  rate: 0,
-
-  arrivalFrom: "",
-  purposeOfVisit: "",
-
-  roomPreferences: {
-    smoking: false,
-    bedType: ""
-  },
-
-  specialRequests: "",
-  remarks: "",
-  billingInstruction: "",
-
-  paymentMode: "",
-  refBy: "",
-  advancePaid: 0,
-  isAdvancePaid: false,
-  transactionId: "",
-  discountPercent: 0,
-
-  vehicleDetails: {
-    vehicleNumber: "",
-    vehicleType: "",
-    vehicleModel: "",
-    driverName: "",
-    driverMobile: ""
-  },
-
-  vip: false,
-  isForeignGuest: false,
-  createdBy: "",
-
-  linkedCheckInId: "",
-  cancellationReason: "",
-  cancelledBy: "",
-  isNoShow: false,
-};
-
-const ReservationForm = () => {
-  const [formData, setFormData] = useState(initialFormData);
-  const [categories, setCategories] = useState([]); // For category dropdown
-  const [allRooms, setAllRooms] = useState([]); // Store all rooms fetched from API
-  const [filteredRooms, setFilteredRooms] = useState([]); // Rooms filtered by category
-  const [roomFetchError, setRoomFetchError] = useState(null);
-  const [submissionStatus, setSubmissionStatus] = useState(null); // 'success', 'error', 'submitting'
-  const [responseMessage, setResponseMessage] = useState(''); // Message to display to user
-  const [selectedRoomDetails, setSelectedRoomDetails] = useState(null); // To store details of the selected room for display
-
-  // State for Edit Room Modal
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [roomToEdit, setRoomToEdit] = useState(null);
-
-  // Function to fetch all rooms (can be called to refresh data)
-  const fetchAllRooms = async () => {
-    setRoomFetchError(null); // Clear previous errors
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setRoomFetchError("Authentication token not found. Please log in.");
-      return;
-    }
-
-    try {
-      const res = await fetch("https://backend-hazel-xi.vercel.app/api/rooms/all", {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`HTTP ${res.status}: ${text}`);
-      }
-      const data = await res.json();
-      setAllRooms(data || []);
-    } catch (error) {
-      setRoomFetchError(error.message || "Unknown error fetching rooms");
-      setAllRooms([]);
-    }
-  };
-
-  useEffect(() => {
-    const getAuthToken = () => localStorage.getItem("token");
-    const token = getAuthToken();
-    if (!token) {
-      console.error("No authentication token found. User might not be logged in.");
-      return;
-    }
-
-    // Fetch categories
-    fetch("https://backend-hazel-xi.vercel.app/api/categories/all", {
-      headers: { "Authorization": `Bearer ${token}` }
-    })
-      .then(res => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then(data => setCategories(Array.isArray(data) ? data : []))
-      .catch(error => {
-        console.error("Error fetching categories:", error);
-        setCategories([]);
-      });
-
-    // Initial fetch of all rooms
-    fetchAllRooms();
-  }, []);
-
-  // Effect to filter rooms whenever category or allRooms changes
-  useEffect(() => {
-    if (formData.category && allRooms.length > 0) {
-      // Filtering to show ALL rooms of the selected category, regardless of status
-      const roomsOfSelectedCategory = allRooms.filter(room =>
-        room.category && room.category._id === formData.category
-      );
-      setFilteredRooms(roomsOfSelectedCategory);
-
-      // Update selected room details if category changes or selected room status changes
-      if (selectedRoomDetails) {
-        const updatedSelectedRoom = roomsOfSelectedCategory.find(room => room._id === selectedRoomDetails._id);
-        if (updatedSelectedRoom) {
-          setSelectedRoomDetails(updatedSelectedRoom); // Keep details updated
-        } else {
-          // If previously selected room is no longer in filtered list, clear it
-          setFormData(prev => ({ ...prev, roomAssigned: "" }));
-          setSelectedRoomDetails(null);
-        }
-      } else if (formData.roomAssigned && !roomsOfSelectedCategory.some(room => room._id === formData.roomAssigned)) {
-        // If a room was selected but is no longer in the filtered list (e.g., category changed), clear it
-        setFormData(prev => ({ ...prev, roomAssigned: "" }));
-        setSelectedRoomDetails(null);
-      }
-    } else {
-      setFilteredRooms([]); // Clear filtered rooms if no category is selected
-      setFormData(prev => ({ ...prev, roomAssigned: "" })); // Also clear selected room
-      setSelectedRoomDetails(null); // Clear selected room details
-    }
-  }, [formData.category, allRooms, selectedRoomDetails]);
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    if (name.startsWith("roomPreferences.")) {
-      const key = name.split(".")[1];
-      setFormData((prev) => ({
-        ...prev,
-        roomPreferences: {
-          ...prev.roomPreferences,
-          [key]: type === "checkbox" ? checked : value,
-        },
-      }));
-    } else if (name.startsWith("vehicleDetails.")) {
-      const key = name.split(".")[1];
-      setFormData((prev) => ({
-        ...prev,
-        vehicleDetails: {
-          ...prev.vehicleDetails,
-          [key]: value,
-        },
-      }));
-    } else if (type === "checkbox") {
-      setFormData((prev) => ({ ...prev, [name]: checked }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const handleTextarea = (name, value) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleRoomSelect = (room) => {
-    // Only allow selection if the room is 'available' for a new reservation
-    if (room.status === 'available') {
-      setFormData(prev => ({ ...prev, roomAssigned: room._id }));
-      setSelectedRoomDetails(room); // Store all details for display
-    } else {
-      alert(`Room ${room.title} (#${room.room_number}) is currently ${room.status}. You cannot select it for a new reservation.`);
-    }
-  };
-
-  const handleEditRoom = (room) => {
-    setRoomToEdit(room);
-    setIsEditModalOpen(true);
-  };
-
-  const handleCloseEditModal = () => {
-    setIsEditModalOpen(false);
-    setRoomToEdit(null);
-  };
-
-  const handleRoomSaveSuccess = () => {
-    // Re-fetch all rooms after a successful edit to update the table and selected room details
-    fetchAllRooms();
-    handleCloseEditModal(); // Close the modal
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmissionStatus('submitting');
-    setResponseMessage('');
-
-    const dataToSubmit = { ...formData };
-    delete dataToSubmit.grcNo;
-
-    if (!dataToSubmit.roomAssigned) {
-        setSubmissionStatus('error');
-        setResponseMessage('Please select a room.');
-        return;
-    }
-
-    // Auto-fill rate based on selected room if not manually set and selectedRoomDetails exists
-    if (selectedRoomDetails && dataToSubmit.rate === 0) { // Only auto-fill if rate is 0 (default)
-        dataToSubmit.rate = selectedRoomDetails.price;
-    }
-
-    if (dataToSubmit.linkedCheckInId === "") delete dataToSubmit.linkedCheckInId;
-    if (dataToSubmit.reservationType === "") delete dataToSubmit.reservationType;
-
-    if (dataToSubmit.bookingDate) {
-        dataToSubmit.bookingDate = new Date(dataToSubmit.bookingDate).toISOString();
-    }
-    // Correctly format roomHoldUntil if it exists
-    if (dataToSubmit.roomHoldUntil) {
-        // Assuming roomHoldUntil is just a date from the form
-        dataToSubmit.roomHoldUntil = new Date(`${dataToSubmit.roomHoldUntil}T12:00:00.000Z`).toISOString();
-    }
-
-    const getAuthToken = () => localStorage.getItem("token");
-    const token = getAuthToken();
-    if (!token) {
-      setSubmissionStatus('error');
-      setResponseMessage('Authentication token missing. Please log in.');
-      return;
-    }
-
-    try {
-      const response = await fetch("https://backend-hazel-xi.vercel.app/api/reservations", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify(dataToSubmit),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        setSubmissionStatus('success');
-        setResponseMessage(`Reservation created successfully! GRC No: ${result.grcNo || 'N/A'}`);
-        setFormData(initialFormData);
-        setSelectedRoomDetails(null); // Clear selected room details after submission
-        fetchAllRooms(); // Re-fetch rooms to update their statuses (e.g., the selected room is now booked)
-      } else {
-        setSubmissionStatus('error');
-        setResponseMessage(`Error: ${result.message || 'Something went wrong.'}`);
-        console.error("Submission error:", result);
-      }
-    } catch (error) {
-      setSubmissionStatus('error');
-      setResponseMessage(`Network error: ${error.message}`);
-      console.error("Network error during submission:", error);
-    }
-  };
-
-  return (
-    <div className="w-full p-6 rounded-2xl shadow-md border border-[color:var(--color-border)] text-[color:var(--color-text)]">
-      <h2 className="text-3xl font-extrabold text-center mb-8 text-[color:var(--color-text)] flex items-center justify-center gap-3">
-        Reservation Form
-      </h2>
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Reservation Details */}
-        <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
-          <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-[color:var(--color-text)]">
-            <FaCalendarAlt className="text-amber-400" /> Reservation Details
-          </h3>
-           <div className="grid md:grid-cols-3 gap-6">
-           
-            {/* <InputWithIcon icon={<FaAddressCard />} type="text" name="grcNo" placeholder="GRC No (Auto-generated)" value={formData.grcNo} onChange={() => {}} readOnly className="bg-gray-100 border border-secondary rounded-lg cursor-not-allowed" /> */}
-            <InputWithIcon icon={<FaRegListAlt />} type="text" name="bookingRefNo" placeholder="Booking Ref No" value={formData.bookingRefNo} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <div className="relative flex items-center">
-              <FaRegListAlt className="absolute left-3 text-gray-400 pointer-events-none" />
-              <select name="reservationType" value={formData.reservationType} onChange={handleChange} className="bg-white border border-secondary rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-full">
-                <option value="">Reservation Type</option>
-                <option value="Online">Online</option>
-                <option value="Walk-in">Walk-in</option>
-                <option value="Agent">Agent</option>
-              </select>
-            </div>  
-
-            {/* Category Dropdown */}
-            <div className="relative flex items-center">
-                <FaBed className="absolute left-3 text-gray-400 pointer-events-none" />
-                <select
-                    name="category"
-                    value={formData.category}
-                    onChange={handleChange}
-                    className="bg-white border border-secondary rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-full"
-                >
-                    <option value="">Select Category</option>
-                    {categories.map(cat => (
-                        <option key={cat._id} value={cat._id}>{cat.name}</option>
-                    ))}
-                </select>
-            </div>
-
-            {/* Display Selected Room */}
-            <InputWithIcon
-              icon={<FaDoorOpen />}
-              type="text"
-              name="selectedRoomDisplay"
-              placeholder="Selected Room"
-              value={selectedRoomDetails ? `${selectedRoomDetails.title} (#${selectedRoomDetails.room_number})` : ''}
-              readOnly
-              className="bg-gray-100 border border-secondary rounded-lg cursor-not-allowed"
-            />
-            {/* Hidden input for roomAssigned, updated via handleRoomSelect */}
-            <input type="hidden" name="roomAssigned" value={formData.roomAssigned} />
-
-
-            <InputWithIcon icon={<FaRegCalendarPlus />} type="date" name="bookingDate" value={formData.bookingDate} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <div className="relative flex items-center">
-              <FaRegCheckCircle className="absolute left-3 text-gray-400 pointer-events-none" />
-              <select name="status" value={formData.status} onChange={handleChange} className="bg-white border border-secondary rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-full">
-                <option value="Confirmed">Confirmed</option>
-                <option value="Tentative">Tentative</option>
-                <option value="Waiting">Waiting</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Room Availability Table */}
-          <div className="mt-6 p-4 border border-[color:var(--color-border)] rounded-lg shadow-inner bg-gray-50">
-            <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <FaHotel className="text-amber-400" /> All Rooms for Selected Category
-            </h4>
-            {roomFetchError ? (
-              <div className="text-red-600 font-semibold mb-2">{roomFetchError}</div>
-            ) : !formData.category ? (
-              <div className="text-gray-600">Please select a category above to see rooms.</div>
-            ) : filteredRooms.length === 0 ? (
-              <div className="text-yellow-600 font-semibold">No rooms found for this category.</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Room Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Number</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th> {/* Changed to Actions */}
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredRooms.map(room => (
-                      <tr key={room._id} className={formData.roomAssigned === room._id ? "bg-amber-50" : ""}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{room.title}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">#{room.room_number}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₹{room.price}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            room.status === 'available' ? 'bg-green-100 text-green-800' :
-                            room.status === 'booked' ? 'bg-red-100 text-red-800' :
-                            room.status === 'maintenance' ? 'bg-gray-100 text-gray-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {room.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex gap-2">
-                          {formData.roomAssigned === room._id ? (
-                            <span className="text-green-600 flex items-center gap-1">
-                                <FaRegCheckCircle /> Selected
-                            </span>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleRoomSelect(room)}
-                              className="text-[color:var(--color-primary)] hover:text-[color:var(--color-hover)] px-3 py-1 rounded-md border border-[color:var(--color-primary)] hover:border-[color:var(--color-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                              disabled={room.status !== 'available'}
-                            >
-                              Select
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => handleEditRoom(room)}
-                            className="text-blue-600 hover:text-blue-800 px-3 py-1 rounded-md border border-blue-600 hover:border-blue-800 transition-colors flex items-center gap-1"
-                          >
-                            <FaRegEdit /> Edit
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </section>
-        {/* Guest Details */}
-        <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
-          <h3 className="text-xl font-semibold mb-6 flex items-center gap-2  text-[color:var(--color-text)]">
-            <FaUser className="text-amber-400" /> Guest Details
-          </h3>
-          <div className="grid md:grid-cols-3 gap-6">
-            <InputWithIcon icon={<FaUser />} type="text" name="guestName" placeholder="Guest Name *" value={formData.guestName} onChange={handleChange} required className="bg-white border border-secondary rounded-lg md:col-span-2" />
-            <InputWithIcon icon={<FaRegUser />} type="text" name="salutation" placeholder="Salutation" value={formData.salutation} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaGlobe />} type="text" name="nationality" placeholder="Nationality" value={formData.nationality} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaCity />} type="text" name="city" placeholder="City" value={formData.city} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaRegAddressBook />} type="text" name="address" placeholder="Address" value={formData.address} onChange={handleChange} className="bg-white border border-secondary rounded-lg md:col-span-3" />
-            <InputWithIcon icon={<FaPhone />} type="text" name="phoneNo" placeholder="Phone No" value={formData.phoneNo} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaPhone />} type="text" name="mobileNo" placeholder="Mobile No" value={formData.mobileNo} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaEnvelope />} type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaBuilding />} type="text" name="companyName" placeholder="Company Name" value={formData.companyName} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaIdCard />} type="text" name="companyGSTIN" placeholder="Company GSTIN" value={formData.companyGSTIN} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <div className="flex items-center gap-2 md:col-span-3 mt-2">
-              <input type="checkbox" name="gstApplicable" id="gstApplicable" checked={formData.gstApplicable} onChange={handleChange} className="form-checkbox" />
-              <label htmlFor="gstApplicable" className="text-sm">GST Applicable</label>
-            </div>
-          </div>
-        </section>
-        {/* Stay Info */}
-        <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
-          <h3 className="text-xl font-semibold mb-6 flex items-center gap-2  text-[color:var(--color-text)]">
-            <FaBed className="text-amber-400" /> Stay Info
-          </h3>
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="relative flex items-center">
-              <FaRegCheckCircle className="absolute left-3 text-gray-400 pointer-events-none" />
-              <select name="roomHoldStatus" value={formData.roomHoldStatus} onChange={handleChange} className="bg-white border border-secondary rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-full">
-                <option value="Pending">Pending</option>
-                <option value="Held">Held</option>
-                <option value="Released">Released</option>
-              </select>
-            </div>
-            {/* roomAssigned input is now hidden, managed by handleRoomSelect */}
-            <InputWithIcon icon={<FaRegClone />} type="text" name="roomAssignedDisplay" placeholder="Room Assigned ID (Selected from table)" value={formData.roomAssigned} onChange={() => {}} readOnly className="bg-gray-100 border border-secondary rounded-lg cursor-not-allowed" />
-            <InputWithIcon icon={<FaRegCalendarTimes />} type="date" name="roomHoldUntil" value={formData.roomHoldUntil} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaRegCalendarCheck />} type="date" name="checkInDate" value={formData.checkInDate} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaRegClock />} type="time" name="checkInTime" value={formData.checkInTime} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaRegCalendarCheck />} type="date" name="checkOutDate" value={formData.checkOutDate} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaRegClock />} type="time" name="checkOutTime" value={formData.checkOutTime} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaRegListAlt />} type="number" name="noOfRooms" placeholder="No. of Rooms" value={formData.noOfRooms} onChange={handleChange} min="1" className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaRegUserCircle />} type="number" name="noOfAdults" placeholder="No. of Adults" value={formData.noOfAdults} onChange={handleChange} min="0" className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaRegUserCircle />} type="number" name="noOfChildren" placeholder="No. of Children" value={formData.noOfChildren} onChange={handleChange} min="0" className="bg-white border border-secondary rounded-lg" />
-            {/* planPackage: Consider making this a select with actual plans */}
-            <InputWithIcon icon={<FaRegListAlt />} type="text" name="planPackage" placeholder="Plan/Package (EP, CP, MAP, etc.)" value={formData.planPackage} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaRegMoneyBillAlt />} type="number" name="rate" placeholder="Rate (Total)" value={formData.rate} onChange={handleChange} min="0" step="0.01" className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaRegMap />} type="text" name="arrivalFrom" placeholder="Arrival From" value={formData.arrivalFrom} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaRegListAlt />} type="text" name="purposeOfVisit" placeholder="Purpose of Visit" value={formData.purposeOfVisit} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <div className="flex items-center gap-2">
-              <input type="checkbox" name="roomPreferences.smoking" id="smoking" checked={formData.roomPreferences.smoking} onChange={handleChange} className="form-checkbox" />
-              <label htmlFor="smoking" className="text-sm">Smoking Room Preference</label>
-            </div>
-            <div className="relative flex items-center">
-              <FaRegListAlt className="absolute left-3 text-gray-400 pointer-events-none" />
-              <select name="roomPreferences.bedType" value={formData.roomPreferences.bedType} onChange={handleChange} className="bg-white border border-secondary rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-full">
-                <option value="">Bed Type Preference</option>
-                <option value="King">King</option>
-                <option value="Queen">Queen</option>
-                <option value="Twin">Twin</option>
-                <option value="Double">Double</option>
-              </select>
-            </div>
-            <div className="relative flex items-start">
-              <FaRegCommentDots className="absolute left-3 top-3 text-gray-400 pointer-events-none" />
-              <textarea name="specialRequests" placeholder="Special Requests" value={formData.specialRequests} onChange={e => handleTextarea('specialRequests', e.target.value)} className="bg-white border border-secondary rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-full h-20" />
-            </div>
-            <div className="relative flex items-start">
-              <FaRegStickyNote className="absolute left-3 top-3 text-gray-400 pointer-events-none" />
-              <textarea name="remarks" placeholder="Remarks" value={formData.remarks} onChange={e => handleTextarea('remarks', e.target.value)} className="bg-white border border-secondary rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-full h-20" />
-            </div>
-            <div className="relative flex items-start">
-              <FaRegFileAlt className="absolute left-3 top-3 text-gray-400 pointer-events-none" />
-              <textarea name="billingInstruction" placeholder="Billing Instruction" value={formData.billingInstruction} onChange={e => handleTextarea('billingInstruction', e.target.value)} className="bg-white border border-secondary rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-full h-20" />
-            </div>
-          </div>
-        </section>
-        {/* Payment Info */}
-        <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
-          <h3 className="text-xl font-semibold mb-6 flex items-center gap-2  text-[color:var(--color-text)]">
-            <FaCreditCard className="text-amber-400" /> Payment Info
-          </h3>
-          <div className="grid md:grid-cols-3 gap-6">
-            <InputWithIcon icon={<FaRegCreditCard />} type="text" name="paymentMode" placeholder="Payment Mode" value={formData.paymentMode} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaRegUser />} type="text" name="refBy" placeholder="Referred By" value={formData.refBy} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaRegMoneyBillAlt />} type="number" name="advancePaid" placeholder="Advance Paid" value={formData.advancePaid} onChange={handleChange} min="0" step="0.01" className="bg-white border border-secondary rounded-lg" />
-            <div className="flex items-center gap-2">
-              <input type="checkbox" name="isAdvancePaid" id="isAdvancePaid" checked={formData.isAdvancePaid} onChange={handleChange} className="form-checkbox" />
-              <label htmlFor="isAdvancePaid" className="text-sm">Advance Paid Confirmed</label>
-            </div>
-            <InputWithIcon icon={<FaRegListAlt />} type="text" name="transactionId" placeholder="Transaction ID" value={formData.transactionId} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaRegStar />} type="number" name="discountPercent" placeholder="Discount %" value={formData.discountPercent} onChange={handleChange} min="0" max="100" className="bg-white border border-secondary rounded-lg" />
-          </div>
-        </section>
-        {/* Vehicle Details */}
-        <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
-          <h3 className="text-xl font-semibold mb-6 flex items-center gap-2  text-[color:var(--color-text)]">
-            <FaCar className="text-amber-400" /> Vehicle Details
-          </h3>
-          <div className="grid md:grid-cols-3 gap-6">
-            <InputWithIcon icon={<FaCar />} type="text" name="vehicleDetails.vehicleNumber" placeholder="Vehicle Number" value={formData.vehicleDetails.vehicleNumber} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaCar />} type="text" name="vehicleDetails.vehicleType" placeholder="Vehicle Type" value={formData.vehicleDetails.vehicleType} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaCar />} type="text" name="vehicleDetails.vehicleModel" placeholder="Vehicle Model" value={formData.vehicleDetails.vehicleModel} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaRegUser />} type="text" name="vehicleDetails.driverName" placeholder="Driver Name" value={formData.vehicleDetails.driverName} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-            <InputWithIcon icon={<FaPhone />} type="text" name="vehicleDetails.driverMobile" placeholder="Driver Mobile" value={formData.vehicleDetails.driverMobile} onChange={handleChange} className="bg-white border border-secondary rounded-lg" />
-          </div>
-        </section>
-
-        {/* Additional Details */}
-        {/* <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
-          <h3 className="text-xl font-semibold mb-6 flex items-center gap-2  text-[color:var(--color-text)]">
-            <FaInfoCircle className="text-amber-400" /> Other Details
-          </h3>
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="flex items-center gap-2">
-              <input type="checkbox" name="vip" id="vip" checked={formData.vip} onChange={handleChange} className="form-checkbox" />
-              <label htmlFor="vip" className="text-sm">VIP Guest</label>
-            </div>
-            <div className="flex items-center gap-2">
-              <input type="checkbox" name="isForeignGuest" id="isForeignGuest" checked={formData.isForeignGuest} onChange={handleChange} className="form-checkbox" />
-              <label htmlFor="isForeignGuest" className="text-sm">Foreign Guest</label>
-            </div>
-            <InputWithIcon icon={<FaRegUser />} type="text" name="createdBy" placeholder="Created By" value={formData.createdBy} onChange={handleChange} className="bg-gray-100 border border-secondary rounded-lg cursor-not-allowed" readOnly />
-          </div>
-        </section> */}
-        {/* Additional Details */}
-<section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
-  <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-[color:var(--color-text)]">
-    <FaInfoCircle className="text-amber-400" /> Other Details
-  </h3>
-  <div className="grid md:grid-cols-3 gap-6">
-    <div className="flex items-center gap-2">
-      <input
-        type="checkbox"
-        name="vip"
-        id="vip"
-        checked={formData.vip}
-        onChange={handleChange}
-        className="form-checkbox"
-      />
-      <label htmlFor="vip" className="text-sm">VIP Guest</label>
-    </div>
-
-    <div className="flex items-center gap-2">
-      <input
-        type="checkbox"
-        name="isForeignGuest"
-        id="isForeignGuest"
-        checked={formData.isForeignGuest}
-        onChange={handleChange}
-        className="form-checkbox"
-      />
-      <label htmlFor="isForeignGuest" className="text-sm">Foreign Guest</label>
-    </div>
-
-    {/* Created By Dropdown */}
-    <div className="flex items-center gap-2">
-      <FaRegUser className="text-gray-500" />
-      <select
-        name="createdBy"
-        value={formData.createdBy}
-        onChange={handleChange}
-        className="w-full bg-gray-100 border border-secondary rounded-lg px-3 py-2 text-sm"
-      >
-        <option value="">Select Created By</option>
-        <option value="Admin">Admin</option>
-        <option value="Frontdesk">Frontdesk</option>
-      </select>
-    </div>
+// InputWithIcon for UI consistency
+const InputWithIcon = ({ icon, type, name, placeholder, value, onChange, className, required, min, max, step, readOnly, inputClassName }) => (
+  <div className="relative flex items-center">
+    {icon && <div className="absolute left-3 text-gray-400 pointer-events-none">{icon}</div>}
+    <input
+      type={type}
+      name={name}
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
+      className={`pl-10 pr-4 py-2 w-full ${inputClassName || 'bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'} ${className}`}
+      required={required}
+      min={min}
+      max={max}
+      step={step}
+      readOnly={readOnly}
+    />
   </div>
-</section>
+);
 
 
-        {/* Submission and Status */}
-        {/* <div className="flex justify-center mt-8">
-          <button type="submit" className="px-8 py-3 bg-[color:var(--color-primary)] text-white font-semibold rounded-lg shadow-md hover:bg-[color:var(--color-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" disabled={submissionStatus === 'submitting'}>
-            {submissionStatus === 'submitting' ? 'Submitting...' : 'Create Reservation'}
-          </button>
-        </div> */}
-{/* Submission and Status */}
-<div className="flex justify-end gap-4 mt-8">
-  <button
-    type="button"
-   // Make sure to define this function in your component
-    className="px-8 py-3 bg-gray-300 text-gray-800 font-semibold rounded-lg shadow-md hover:bg-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+
+// Fetch a new, sequential GRC number from backend
+const fetchNewGRCNo = async (setFormData, BASE_URL) => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${BASE_URL}/bookings/grc`, {
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+    });
+    // Defensive JSON parse: only if content-type is JSON
+    const contentType = res.headers.get('content-type');
+    if (!res.ok) throw new Error('Failed to fetch new GRC number');
+    if (contentType && contentType.includes('application/json')) {
+      const data = await res.json();
+      if (data && data.grcNo) {
+        setFormData(prev => ({ ...prev, grcNo: data.grcNo }));
+      } else {
+        setFormData(prev => ({ ...prev, grcNo: '' }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, grcNo: '' }));
+    }
+  } catch (err) {
+    setFormData(prev => ({ ...prev, grcNo: '' }));
+  }
+};
+
+// Shadcn-like components (for a self-contained example)
+const Button = ({ children, onClick, className = '', disabled, type = 'button', variant = 'default' }) => {
+  const baseClasses = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 h-9 px-4 py-2";
+  const variants = {
+    default: "bg-white text-black border border-black shadow hover:bg-gray-100",
+    outline: "border border-gray-200 bg-transparent hover:bg-gray-100 hover:text-gray-900"
+  };
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className={`${baseClasses} ${variants[variant]} ${className}`}
+    >
+      {children}
+    </button>
+  );
+};
+
+const Input = ({ type, placeholder, value, onChange, className = '', ...props }) => (
+  <input
+    type={type}
+    placeholder={placeholder}
+    value={value}
+    onChange={onChange}
+    className={`flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+    {...props}
+  />
+);
+
+const Label = ({ children, htmlFor, className = '' }) => (
+  <label
+    htmlFor={htmlFor}
+    className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${className}`}
   >
-    Cancel
-  </button>
+    {children}
+  </label>
+);
 
-  <button
-    type="submit"
-    className="px-8 py-3 bg-[color:var(--color-primary)] text-white font-semibold rounded-lg shadow-md hover:bg-[color:var(--color-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-    disabled={submissionStatus === 'submitting'}
+const Select = ({ value, onChange, children, className = '', name, ...props }) => (
+  <select
+    value={value}
+    onChange={onChange}
+    name={name}
+    className={`flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 ${className}`}
+    {...props}
   >
-    {submissionStatus === 'submitting' ? 'Submitting...' : 'Create Reservation'}
-  </button>
-</div>
+    {children}
+  </select>
+);
 
-        {submissionStatus && (
-          <div className={`mt-4 p-3 rounded-md text-center ${submissionStatus === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-            {responseMessage}
+const Checkbox = ({ id, checked, onChange, className = '' }) => (
+  <input
+    type="checkbox"
+    id={id}
+    checked={checked}
+    onChange={onChange}
+    className={`peer h-4 w-4 shrink-0 rounded-sm border border-black shadow focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-black data-[state=checked]:text-primary-foreground ${className}`}
+  />
+);
+
+// Lucide-react-like icons
+const CalendarIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-muted-foreground"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+);
+const ChevronLeftIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="m15 18-6-6 6-6"/></svg>
+);
+const ChevronRightIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="m9 18 6-6-6-6"/></svg>
+);
+const UserIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-muted-foreground"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+);
+const BedIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-muted-foreground"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4"/><path d="M12 4h4a2 2 0 0 1 2 2v4"/><path d="M22 10v4"/></svg>
+);
+const DollarSignIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-muted-foreground"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+);
+const CarIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-muted-foreground"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L14 6H4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
+);
+const InfoIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-muted-foreground"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+);
+
+
+// Custom Date Picker Component to avoid browser inconsistencies
+const DatePicker = ({ value, onChange, label }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [currentDate, setCurrentDate] = useState(value ? new Date(value) : new Date());
+  
+  const formattedValue = value ? new Date(value).toLocaleDateString('en-CA') : '';
+
+  const daysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+  const firstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
+
+  const handleDayClick = (day) => {
+    const selectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    onChange(selectedDate.toLocaleDateString('en-CA'));
+    setIsOpen(false);
+  };
+
+  const handleMonthChange = (offset) => {
+    setCurrentDate(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(prev.getMonth() + offset);
+      return newDate;
+    });
+  };
+
+  const renderCalendar = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const totalDays = daysInMonth(year, month);
+    const startDay = firstDayOfMonth(year, month);
+
+    const days = [];
+    for (let i = 0; i < startDay; i++) {
+      days.push(<div key={`empty-${i}`} className="h-10 w-10"></div>);
+    }
+
+    for (let i = 1; i <= totalDays; i++) {
+      const isSelected = value && new Date(value).getDate() === i && new Date(value).getMonth() === month && new Date(value).getFullYear() === year;
+      const dayClasses = `h-10 w-10 flex items-center justify-center rounded-full cursor-pointer transition-colors ${isSelected ? 'bg-black text-white' : 'hover:bg-gray-100'}`;
+      days.push(
+        <div key={i} className={dayClasses} onClick={() => handleDayClick(i)}>
+          {i}
+        </div>
+      );
+    }
+    return days;
+  };
+
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  return (
+    <div className="relative">
+      <Button
+        variant="outline"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full justify-start text-left font-normal"
+      >
+        <CalendarIcon className="mr-2" />
+        {formattedValue || `Select ${label}`}
+      </Button>
+
+      {isOpen && (
+        <div className="absolute z-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 w-full sm:w-80">
+          <div className="flex justify-between items-center mb-4">
+            <Button variant="outline" size="icon" onClick={() => handleMonthChange(-1)}>
+              <ChevronLeftIcon />
+            </Button>
+            <span className="font-semibold">{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</span>
+            <Button variant="outline" size="icon" onClick={() => handleMonthChange(1)}>
+              <ChevronRightIcon />
+            </Button>
           </div>
-        )}
-      </form>
-
-      {/* ReservationEdit Modal (still rendered conditionally) */}
-      {isEditModalOpen && roomToEdit && (
-        <ReservationEdit
-          room={roomToEdit}
-          onClose={handleCloseEditModal}
-          onSaveSuccess={handleRoomSaveSuccess}
-        />
+          <div className="grid grid-cols-7 text-center text-xs text-gray-500 mb-2">
+            {dayNames.map(day => <span key={day}>{day}</span>)}
+          </div>
+          <div className="grid grid-cols-7 text-center">
+            {renderCalendar()}
+          </div>
+        </div>
       )}
     </div>
   );
 };
 
-export default ReservationForm;
+const App = () => {
+  const [formData, setFormData] = useState({
+    grcNo: '',
+
+// Fetch GRC number from backend (outside App to avoid syntax issues)
+
+    bookingRefNo: '',
+    reservationType: 'Online',
+    modeOfReservation: '',
+    category: '',
+    status: 'Confirmed',
+    salutation: 'Mr.',
+    guestName: '',
+    nationality: '',
+    city: '',
+    address: '',
+    phoneNo: '',
+    mobileNo: '',
+    email: '',
+    companyName: '',
+    gstApplicable: true,
+    companyGSTIN: '',
+    roomHoldStatus: 'Pending',
+    roomAssigned: [], // Changed to array to hold multiple room numbers
+    roomHoldUntil: '',
+    checkInDate: '',
+    checkOutDate: '',
+    checkInTime: '14:00',
+    checkOutTime: '12:00',
+    noOfRooms: 1,
+    noOfAdults: 1,
+    noOfChildren: 0,
+    planPackage: 'EP',
+    rate: 0,
+    arrivalFrom: '',
+    purposeOfVisit: 'Leisure',
+    roomPreferences: {
+      smoking: false,
+      bedType: 'King'
+    },
+    specialRequests: '',
+    remarks: '',
+    billingInstruction: '',
+    paymentMode: '',
+    refBy: '',
+    advancePaid: 0,
+    isAdvancePaid: false,
+    transactionId: '',
+    discountPercent: 0,
+    vehicleDetails: {
+      vehicleNumber: '',
+      vehicleType: '',
+      vehicleModel: '',
+      driverName: '',
+      driverMobile: ''
+    },
+    vip: false,
+    isForeignGuest: false,
+    cancellationReason: '',
+    cancelledBy: '',
+    isNoShow: false,
+  });
+
+  const [availableCategories, setAvailableCategories] = useState([]);
+  const [hasCheckedAvailability, setHasCheckedAvailability] = useState(false);
+  const [allRooms, setAllRooms] = useState([]);
+  const [allVehicles, setAllVehicles] = useState([]);
+  const [allDrivers, setAllDrivers] = useState([]);
+  const [availableRoomsByCat, setAvailableRoomsByCat] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [message, setMessage] = useState({ type: '', text: '' });
+  const [selectedRooms, setSelectedRooms] = useState([]); // New state for selected rooms
+
+  const BASE_URL = "https://backend-hazel-xi.vercel.app/api";
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    // Special handling for paymentMode to clear unrelated fields
+    if (name === 'paymentMode') {
+      setFormData(prev => {
+        const cleared = { ...prev };
+        // Clear all payment details fields
+        delete cleared.cardNumber;
+        delete cleared.cardHolder;
+        delete cleared.cardExpiry;
+        delete cleared.cardCVV;
+        delete cleared.upiId;
+        delete cleared.bankName;
+        delete cleared.accountNumber;
+        delete cleared.ifsc;
+        return {
+          ...cleared,
+          paymentMode: value
+        };
+      });
+      return;
+    }
+    if (name.includes('.')) {
+      const [parent, child] = name.split('.');
+      setFormData(prev => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent],
+          [child]: type === 'checkbox' ? checked : value
+        }
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      }));
+    }
+  };
+  
+  const handleDateChange = (name, value) => {
+      setFormData(prev => ({ ...prev, [name]: value }));
+  }
+  
+  const handleRoomSelection = (room) => {
+      setSelectedRooms(prev => {
+          const isSelected = prev.some(r => r._id === room._id);
+          if (isSelected) {
+              return prev.filter(r => r._id !== room._id);
+          } else {
+              return [...prev, room];
+          }
+      });
+  };
+
+  useEffect(() => {
+    // Update formData.roomAssigned whenever selectedRooms changes
+    setFormData(prev => ({
+        ...prev,
+        roomAssigned: selectedRooms.map(r => r.room_number)
+    }));
+    setFormData(prev => ({
+        ...prev,
+        noOfRooms: selectedRooms.length
+    }));
+  }, [selectedRooms]);
+
+  const fetchAllData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [roomsRes, vehiclesRes, driversRes] = await Promise.all([
+        fetch(`${BASE_URL}/rooms/all`),
+        fetch(`${BASE_URL}/vehicle/all`),
+        fetch(`${BASE_URL}/driver`),
+      ]);
+
+      if (!roomsRes.ok) throw new Error('Failed to fetch rooms data.');
+      if (!vehiclesRes.ok) throw new Error('Failed to fetch vehicles data.');
+      if (!driversRes.ok) throw new Error('Failed to fetch drivers data.');
+
+      const roomsData = await roomsRes.json();
+      const vehiclesData = await vehiclesRes.json();
+      const driversData = await driversRes.json();
+
+      setAllRooms(Array.isArray(roomsData) ? roomsData : []);
+      setAllVehicles(Array.isArray(vehiclesData.vehicles) ? vehiclesData.vehicles : []);
+      
+      let drivers = [];
+      if (Array.isArray(driversData)) {
+          drivers = driversData;
+      } else if (driversData && Array.isArray(driversData.drivers)) {
+          drivers = driversData.drivers;
+      }
+      setAllDrivers(drivers);
+
+      // Set default values from fetched data if available
+      if (Array.isArray(vehiclesData.vehicles) && vehiclesData.vehicles.length > 0) {
+        setFormData(prev => ({ ...prev, vehicleDetails: { ...prev.vehicleDetails, vehicleType: vehiclesData.vehicles[0].type } }));
+      }
+      if (Array.isArray(drivers) && drivers.length > 0) {
+        setFormData(prev => ({ ...prev, vehicleDetails: { ...prev.vehicleDetails, driverName: drivers[0].driverName } }));
+      }
+
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Could not fetch initial data. Please check the network and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAvailableRooms = async () => {
+    const { checkInDate, checkOutDate } = formData;
+    if (!checkInDate || !checkOutDate || new Date(checkInDate) >= new Date(checkOutDate)) {
+      setError('Please select valid check-in and check-out dates.');
+      setAvailableCategories([]);
+      setAvailableRoomsByCat({});
+      setFormData(prev => ({ ...prev, category: '' }));
+      setHasCheckedAvailability(true);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setSelectedRooms([]); // Reset selected rooms on new availability check
+    try {
+      const apiUrl = `${BASE_URL}/rooms/available?checkInDate=${checkInDate}&checkOutDate=${checkOutDate}`;
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        throw new Error('Failed to fetch room availability');
+      }
+      const data = await response.json();
+      
+      const availableRoomsList = data.availableRooms || [];
+      if (Array.isArray(availableRoomsList)) {
+        setAvailableCategories(availableRoomsList);
+        
+        const roomsByCategory = availableRoomsList.reduce((acc, current) => {
+          if (current.rooms) {
+            acc[current.category] = current.rooms;
+          }
+          return acc;
+        }, {});
+        setAvailableRoomsByCat(roomsByCategory);
+
+        // Auto-select the first category if available
+        if (availableRoomsList.length > 0) {
+          setFormData(prev => ({ ...prev, category: availableRoomsList[0].category }));
+        } else {
+          setFormData(prev => ({ ...prev, category: '' }));
+        }
+      } else {
+        const errorMessage = 'Received unexpected data from the server. The API for room availability did not return a list of rooms. Please try a different date range or check the API backend.';
+        console.error('API response for rooms/available was not an array:', data);
+        setError(errorMessage);
+        setAvailableCategories([]);
+        setAvailableRoomsByCat({});
+        setFormData(prev => ({ ...prev, category: '' }));
+      }
+
+    } catch (err) {
+      console.error(err);
+      setError('Could not fetch room availability. Please check your network connection and try again.');
+    } finally {
+      setLoading(false);
+      setHasCheckedAvailability(true);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllData();
+    fetchNewGRCNo(setFormData, BASE_URL);
+  }, []);
+
+  const showMessage = (type, text) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log('Final Reservation Object:', formData);
+    showMessage('success', 'Reservation data logged to console. Please check the developer tools.');
+  };
+  
+  const handleCategoryCardClick = (category) => {
+    setFormData(prev => ({ ...prev, category }));
+    setSelectedRooms([]); // Clear selected rooms when category changes
+  };
+  
+  const roomsForSelectedCategory = availableRoomsByCat[formData.category] || [];
+
+  const isCheckAvailabilityDisabled = !formData.checkInDate || !formData.checkOutDate || new Date(formData.checkInDate) >= new Date(formData.checkOutDate);
+
+  return (
+    <div className="w-full max-w-full p-6 rounded-2xl shadow-md border border-[color:var(--color-border)] text-[color:var(--color-text)] overflow-x-hidden">
+      <h2 className="text-3xl font-extrabold text-center mb-8 text-[color:var(--color-text)] flex items-center justify-center gap-3">
+        Reservation Form
+      </h2>
+      {message.text && (
+        <div className={`px-4 py-3 rounded relative mb-4 mx-auto max-w-3xl ${message.type === 'success' ? "bg-green-100 border border-green-400 text-green-700" : "bg-red-100 border border-red-400 text-red-700"}`} role="alert">
+          <span className="block sm:inline">{message.text}</span>
+          <span className="absolute top-0 bottom-0 right-0 px-4 py-3" onClick={() => setMessage({ type: '', text: '' })}>
+            <svg className="fill-current h-6 w-6" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/></svg>
+          </span>
+        </div>
+      )}
+      <form onSubmit={handleSubmit} className="space-y-8">
+          {/* General Information Section */}
+          <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
+            <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-[color:var(--color-text)]">
+              <FaInfoCircle className="text-amber-400" /> General Information
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="grcNo">GRC No.</Label>
+                <InputWithIcon
+                  icon={<FaRegAddressCard />} 
+                  type="text"
+                  name="grcNo"
+                  placeholder="GRC No."
+                  value={formData.grcNo || ''}
+                  onChange={handleChange}
+                  readOnly={true}
+                  inputClassName="bg-gray-100 border border-secondary rounded-lg cursor-not-allowed"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bookingRefNo">Booking Reference No</Label>
+                <InputWithIcon icon={<FaRegListAlt />} type="text" name="bookingRefNo" placeholder="Booking Reference No" value={formData.bookingRefNo} onChange={handleChange} inputClassName="bg-white border border-secondary rounded-lg" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reservationType">Reservation Type</Label>
+                <div className="relative flex items-center">
+                  <FaInfoCircle className="absolute left-3 text-gray-400 pointer-events-none" />
+                  <select
+                    className="bg-white border border-secondary rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-full"
+                    id="reservationType"
+                    name="reservationType"
+                    value={formData.reservationType}
+                    onChange={handleChange}
+                  >
+                    <option key="online-option" value="Online">Online</option>
+                    <option key="walk-in-option" value="Walk-in">Walk-in</option>
+                    <option key="agent-option" value="Agent">Agent</option>
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="modeOfReservation">Mode of Reservation</Label>
+                <InputWithIcon icon={<FaRegUser />} type="text" name="modeOfReservation" placeholder="Mode of Reservation" value={formData.modeOfReservation} onChange={handleChange} inputClassName="bg-white border border-secondary rounded-lg" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <div className="relative flex items-center">
+                  <FaCheckCircle className="absolute left-3 text-gray-400 pointer-events-none" />
+                  <select
+                    className="bg-white border border-secondary rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-full"
+                    id="status"
+                    name="status"
+                    value={formData.status}
+                    onChange={handleChange}
+                  >
+                    <option key="confirmed-option" value="Confirmed">Confirmed</option>
+                    <option key="tentative-option" value="Tentative">Tentative</option>
+                    <option key="waiting-option" value="Waiting">Waiting</option>
+                    <option key="cancelled-option" value="Cancelled">Cancelled</option>
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="roomHoldStatus">Room Hold Status</Label>
+                <div className="relative flex items-center">
+                  <FaRegCheckCircle className="absolute left-3 text-gray-400 pointer-events-none" />
+                  <select
+                    className="bg-white border border-secondary rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-full"
+                    id="roomHoldStatus"
+                    name="roomHoldStatus"
+                    value={formData.roomHoldStatus}
+                    onChange={handleChange}
+                  >
+                    <option key="pending-option" value="Pending">Pending</option>
+                    <option key="held-option" value="Held">Held</option>
+                    <option key="released-option" value="Released">Released</option>
+                  </select>
+                </div>
+              </div>
+              {formData.status === 'Cancelled' && (
+                <div className="space-y-2 col-span-full">
+                  <Label htmlFor="cancellationReason">Cancellation Reason</Label>
+                  <Input id="cancellationReason" name="cancellationReason" value={formData.cancellationReason} onChange={handleChange} />
+                </div>
+              )}
+              <div className="space-y-2 col-span-1 sm:col-span-2">
+                <div className="relative flex items-start col-span-full">
+                  <FaComments className="absolute left-3 top-3 text-gray-400 pointer-events-none" />
+                  <textarea
+                    id="remarks"
+                    name="remarks"
+                    value={formData.remarks}
+                    onChange={handleChange}
+                    placeholder="Remarks"
+                    className="bg-white border border-secondary rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-full h-20"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Room & Availability Section */}
+          <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
+            <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-[color:var(--color-text)]">
+              <BedIcon className="text-amber-400" /> Room & Availability
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="checkInDate">Check-in Date</Label>
+                <DatePicker
+                  value={formData.checkInDate}
+                  onChange={(value) => handleDateChange('checkInDate', value)}
+                  label="check-in date"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="checkOutDate">Check-out Date</Label>
+                <DatePicker
+                  value={formData.checkOutDate}
+                  onChange={(value) => handleDateChange('checkOutDate', value)}
+                  label="check-out date"
+                />
+              </div>
+              <div className="flex items-end">
+                <Button
+                  onClick={fetchAvailableRooms}
+                  disabled={isCheckAvailabilityDisabled}
+                  className="w-full"
+                >
+                  Check Availability
+                </Button>
+              </div>
+            </div>
+            
+            {loading ? (
+              <p className="text-center text-blue-500 mt-4">Checking for available rooms...</p>
+            ) : error ? (
+              <p className="text-center text-red-500 mt-4">{error}</p>
+            ) : (
+              hasCheckedAvailability ? (
+                availableCategories.length > 0 ? (
+                  <div className="space-y-6 mt-4">
+                    <p className="text-lg font-medium">Select a Room Category:</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {availableCategories.map((cat) => (
+                        <div
+                          key={cat.category}
+                          onClick={() =>+ handleCategoryCardClick(cat.category)}
+                          className={`
+                            p-6 rounded-lg shadow-sm border cursor-pointer transition-all
+                            ${formData.category === cat.category ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-400'}
+                          `}
+                        >
+                          <h3 className="text-xl font-semibold">{cat.categoryName}</h3>
+                          <p className="text-sm text-gray-500">{cat.availableRooms} rooms available</p>
+                        </div>
+                      ))}
+                    </div>
+    
+                    {formData.category && roomsForSelectedCategory.length > 0 && (
+                      <div className="mt-6 rounded-lg border border-gray-200 overflow-x-auto sm:overflow-x-visible">
+                        <table className="min-w-full w-full text-sm text-left text-gray-500 table-auto">
+                          <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                              <th scope="col" className="p-4">
+                                <span className="sr-only">Select</span>
+                              </th>
+                              <th scope="col" className="px-2 py-3 break-words max-w-[120px]">Room Number</th>
+                              <th scope="col" className="px-2 py-3 break-words max-w-[180px]">Room Name</th>
+                              <th scope="col" className="px-2 py-3 break-words max-w-[100px]">Capacity</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {roomsForSelectedCategory.map((room) => (
+                              <tr
+                                key={room._id}
+                                className={`border-b ${selectedRooms.some(r => r._id === room._id) ? 'bg-blue-100' : 'bg-white hover:bg-gray-50'}`}
+                              >
+                                <td className="w-4 p-4">
+                                  <Button
+                                    type="button"
+                                    variant="default"
+                                    className={
+                                      selectedRooms.some(r => r._id === room._id)
+                                        ? 'bg-green-500 text-black border-green-500 hover:bg-green-600'
+                                        : 'bg-red-500 text-black border-red-500 hover:bg-red-600'
+                                    }
+                                    onClick={() => handleRoomSelection(room)}
+                                  >
+                                    {selectedRooms.some(r => r._id === room._id) ? 'Unselect' : 'Select'}
+                                  </Button>
+                                </td>
+                                <td className="px-2 py-4 font-medium text-black break-words max-w-[120px] whitespace-normal">
+                                  {room.room_number}
+                                </td>
+                                <td className="px-2 py-4 break-words max-w-[180px] whitespace-normal">{room.title}</td>
+                                <td className="px-2 py-4 break-words max-w-[100px] whitespace-normal">{room.capacity}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                    
+                    {formData.category && roomsForSelectedCategory.length === 0 && (
+                      <p className="text-center text-red-500">No rooms found for the selected category and dates.</p>
+                    )}
+    
+                  </div>
+                ) : (
+                  <p className="text-center text-red-500 mt-4">No rooms available for the selected dates.</p>
+                )
+              ) : (
+                <p className="text-center text-gray-500 mt-4">Please select your check-in and check-out dates and click 'Check Availability'.</p>
+              )
+            )}
+          </section>
+
+          {/* Guest Details Section */}
+          <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
+            <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-[color:var(--color-text)]">
+              <FaUser className="text-amber-400" /> Guest Details
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="salutation">Salutation</Label>
+                <Select id="salutation" name="salutation" value={formData.salutation} onChange={handleChange}>
+                  <option key="mr-option" value="Mr.">Mr.</option>
+                  <option key="ms-option" value="Ms.">Ms.</option>
+                  <option key="dr-option" value="Dr.">Dr.</option>
+                  <option key="prof-option" value="Prof.">Prof.</option>
+                </Select>
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="guestName">Guest Name <span className="text-red-500">*</span></Label>
+                <Input
+                  id="guestName"
+                  name="guestName"
+                  value={formData.guestName}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="nationality">Nationality</Label>
+                <Input id="nationality" name="nationality" value={formData.nationality} onChange={handleChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="city">City</Label>
+                <Input id="city" name="city" value={formData.city} onChange={handleChange} />
+              </div>
+              <div className="space-y-2 col-span-1 sm:col-span-2 lg:col-span-1">
+                <Label htmlFor="address">Address</Label>
+                <Input id="address" name="address" value={formData.address} onChange={handleChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phoneNo">Phone No</Label>
+                <Input id="phoneNo" name="phoneNo" type="tel" value={formData.phoneNo} onChange={handleChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mobileNo">Mobile No</Label>
+                <Input id="mobileNo" name="mobileNo" type="tel" value={formData.mobileNo} onChange={handleChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} />
+              </div>
+              <div className="space-y-2 col-span-1 sm:col-span-2 lg:col-span-3">
+                <Label htmlFor="companyName">Company Name</Label>
+                <Input id="companyName" name="companyName" value={formData.companyName} onChange={handleChange} />
+              </div>
+              <div className="space-y-2 col-span-1 sm:col-span-2 lg:col-span-3 flex items-center gap-2">
+                <Checkbox
+                  id="gstApplicable"
+                  name="gstApplicable"
+                  checked={formData.gstApplicable}
+                  onChange={handleChange}
+                />
+                <Label htmlFor="gstApplicable">GST Applicable</Label>
+              </div>
+              {formData.gstApplicable && (
+                <div className="space-y-2 col-span-1 sm:col-span-2">
+                  <Label htmlFor="companyGSTIN">Company GSTIN</Label>
+                  <Input id="companyGSTIN" name="companyGSTIN" value={formData.companyGSTIN} onChange={handleChange} />
+                </div>
+              )}
+              <div className="space-y-2 flex items-center gap-2">
+                <Checkbox
+                  id="vip"
+                  name="vip"
+                  checked={formData.vip}
+                  onChange={handleChange}
+                />
+                <Label htmlFor="vip">VIP Guest</Label>
+              </div>
+              <div className="space-y-2 flex items-center gap-2">
+                <Checkbox
+                  id="isForeignGuest"
+                  name="isForeignGuest"
+                  checked={formData.isForeignGuest}
+                  onChange={handleChange}
+                />
+                <Label htmlFor="isForeignGuest">Foreign Guest</Label>
+              </div>
+            </div>
+          </section>
+
+          {/* Stay Info Section */}
+          <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
+            <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-[color:var(--color-text)]">
+              <BedIcon className="text-amber-400" /> Stay Information
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="noOfRooms">Number of Rooms</Label>
+                <Input id="noOfRooms" name="noOfRooms" type="number" min="1" value={formData.noOfRooms} onChange={handleChange} readOnly className="bg-gray-200" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="noOfAdults">Adults</Label>
+                <Input id="noOfAdults" name="noOfAdults" type="number" min="1" value={formData.noOfAdults} onChange={handleChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="noOfChildren">Children</Label>
+                <Input id="noOfChildren" name="noOfChildren" type="number" min="0" value={formData.noOfChildren} onChange={handleChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="planPackage">Package Plan</Label>
+                <Select id="planPackage" name="planPackage" value={formData.planPackage} onChange={handleChange}>
+                  <option key="ep-option" value="EP">EP (European Plan)</option>
+                  <option key="cp-option" value="CP">CP (Continental Plan)</option>
+                  <option key="map-option" value="MAP">MAP (Modified American Plan)</option>
+                  <option key="ap-option" value="AP">AP (American Plan)</option>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="checkInTime">Check-in Time</Label>
+                <Input id="checkInTime" name="checkInTime" type="time" value={formData.checkInTime} onChange={handleChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="checkOutTime">Check-out Time</Label>
+                <Input id="checkOutTime" name="checkOutTime" type="time" value={formData.checkOutTime} onChange={handleChange} disabled />
+              </div>
+              <div className="space-y-2 col-span-1 sm:col-span-2 lg:col-span-2">
+                <Label htmlFor="arrivalFrom">Arrival From</Label>
+                <Input id="arrivalFrom" name="arrivalFrom" value={formData.arrivalFrom} onChange={handleChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="purposeOfVisit">Purpose of Visit</Label>
+                <Select id="purposeOfVisit" name="purposeOfVisit" value={formData.purposeOfVisit} onChange={handleChange}>
+                  <option key="leisure-option" value="Leisure">Leisure</option>
+                  <option key="business-option" value="Business">Business</option>
+                  <option key="other-option" value="Other">Other</option>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="roomPreferences.bedType">Bed Type</Label>
+                <Select id="roomPreferences.bedType" name="roomPreferences.bedType" value={formData.roomPreferences.bedType} onChange={handleChange}>
+                  <option key="king-bed" value="King">King</option>
+                  <option key="twin-bed" value="Twin">Twin</option>
+                  <option key="queen-bed" value="Queen">Queen</option>
+                </Select>
+              </div>
+              <div className="space-y-2 col-span-2 flex items-center gap-2">
+                <Checkbox
+                  id="roomPreferences.smoking"
+                  name="roomPreferences.smoking"
+                  checked={formData.roomPreferences.smoking}
+                  onChange={handleChange}
+                />
+                <Label htmlFor="roomPreferences.smoking">Smoking Room</Label>
+              </div>
+              <div className="space-y-2 col-span-full">
+                <Label htmlFor="specialRequests">Special Requests</Label>
+                <textarea
+                  id="specialRequests"
+                  name="specialRequests"
+                  value={formData.specialRequests}
+                  onChange={handleChange}
+                  className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  rows="3"
+                />
+              </div>
+              <div className="space-y-2 col-span-full">
+                <Label htmlFor="billingInstruction">Billing Instruction</Label>
+                <textarea
+                  id="billingInstruction"
+                  name="billingInstruction"
+                  value={formData.billingInstruction}
+                  onChange={handleChange}
+                  className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  rows="3"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Payment Info Section */}
+          <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
+            <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-[color:var(--color-text)]">
+              <FaCreditCard className="text-amber-400" /> Payment Details
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="rate">Total Rate</Label>
+                <Input id="rate" name="rate" type="number" value={formData.rate} onChange={handleChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="paymentMode">Payment Mode</Label>
+                <Select id="paymentMode" name="paymentMode" value={formData.paymentMode} onChange={handleChange}>
+                  <option value="">Select Payment Mode</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Card">Card</option>
+                  <option value="UPI">UPI</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="discountPercent">Discount (%)</Label>
+                <Input id="discountPercent" name="discountPercent" type="number" min="0" max="100" value={formData.discountPercent} onChange={handleChange} />
+              </div>
+
+              {/* Show payment details based on payment mode */}
+              {formData.paymentMode === 'Card' && (
+                <>
+                  <div className="col-span-full"><span className="block font-semibold text-blue-700 mb-2">Card Payment Details</span></div>
+                  <div className="space-y-2 col-span-full sm:col-span-1">
+                    <Label htmlFor="cardNumber">Card Number</Label>
+                    <Input id="cardNumber" name="cardNumber" value={formData.cardNumber || ''} onChange={handleChange} maxLength={19} placeholder="XXXX XXXX XXXX XXXX" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cardHolder">Card Holder Name</Label>
+                    <Input id="cardHolder" name="cardHolder" value={formData.cardHolder || ''} onChange={handleChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cardExpiry">Expiry Date</Label>
+                    <Input id="cardExpiry" name="cardExpiry" value={formData.cardExpiry || ''} onChange={handleChange} placeholder="MM/YY" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cardCVV">CVV</Label>
+                    <Input id="cardCVV" name="cardCVV" value={formData.cardCVV || ''} onChange={handleChange} maxLength={4} />
+                  </div>
+                </>
+              )}
+              {formData.paymentMode === 'UPI' && (
+                <>
+                  <div className="col-span-full"><span className="block font-semibold text-blue-700 mb-2">UPI Payment Details</span></div>
+                  <div className="space-y-2 col-span-full sm:col-span-1">
+                    <Label htmlFor="upiId">UPI ID</Label>
+                    <Input id="upiId" name="upiId" value={formData.upiId || ''} onChange={handleChange} placeholder="example@upi" />
+                  </div>
+                </>
+              )}
+              {formData.paymentMode === 'Bank Transfer' && (
+                <>
+                  <div className="col-span-full"><span className="block font-semibold text-blue-700 mb-2">Bank Transfer Details</span></div>
+                  <div className="space-y-2 col-span-full sm:col-span-1">
+                    <Label htmlFor="bankName">Bank Name</Label>
+                    <Input id="bankName" name="bankName" value={formData.bankName || ''} onChange={handleChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="accountNumber">Account Number</Label>
+                    <Input id="accountNumber" name="accountNumber" value={formData.accountNumber || ''} onChange={handleChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ifsc">IFSC Code</Label>
+                    <Input id="ifsc" name="ifsc" value={formData.ifsc || ''} onChange={handleChange} />
+                  </div>
+                </>
+              )}
+              <div className="space-y-2 col-span-full flex items-center gap-2">
+                <Checkbox
+                  id="isAdvancePaid"
+                  name="isAdvancePaid"
+                  checked={formData.isAdvancePaid}
+                  onChange={handleChange}
+                />
+                <Label htmlFor="isAdvancePaid">Advance Paid</Label>
+              </div>
+              {formData.isAdvancePaid && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="advancePaid">Advance Paid Amount</Label>
+                    <Input id="advancePaid" name="advancePaid" type="number" value={formData.advancePaid} onChange={handleChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="transactionId">Transaction ID</Label>
+                    <Input id="transactionId" name="transactionId" value={formData.transactionId} onChange={handleChange} />
+                  </div>
+                </>
+              )}
+            </div>
+          </section>
+          
+          {/* Vehicle Details Section */}
+          <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
+            <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-[color:var(--color-text)]">
+              <CarIcon className="text-amber-400" /> Vehicle Details
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="vehicleDetails.vehicleType">Vehicle Type</Label>
+                <Select
+                  id="vehicleDetails.vehicleType"
+                  name="vehicleDetails.vehicleType"
+                  value={formData.vehicleDetails.vehicleType}
+                  onChange={handleChange}
+                >
+                  <option value="">Select a vehicle type</option>
+                  {allVehicles.map(vehicle => (
+                    <option key={vehicle._id} value={vehicle.type}>{vehicle.type}</option>
+                  ))}
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="vehicleDetails.vehicleModel">Vehicle Model</Label>
+                <Input
+                  id="vehicleDetails.vehicleModel"
+                  name="vehicleDetails.vehicleModel"
+                  value={formData.vehicleDetails.vehicleModel}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="vehicleDetails.vehicleNumber">Vehicle Number</Label>
+                <Input
+                  id="vehicleDetails.vehicleNumber"
+                  name="vehicleDetails.vehicleNumber"
+                  value={formData.vehicleDetails.vehicleNumber}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="vehicleDetails.driverName">Driver Name</Label>
+                <Select
+                  id="vehicleDetails.driverName"
+                  name="vehicleDetails.driverName"
+                  value={formData.vehicleDetails.driverName}
+                  onChange={handleChange}
+                >
+                  <option value="">Select a driver</option>
+                  {allDrivers.map(driver => (
+                    <option key={driver._id} value={driver.driverName}>{driver.driverName}</option>
+                  ))}
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="vehicleDetails.driverMobile">Driver Mobile</Label>
+                <Input
+                  id="vehicleDetails.driverMobile"
+                  name="vehicleDetails.driverMobile"
+                  type="tel"
+                  value={formData.vehicleDetails.driverMobile}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+          </section>
+
+        <div className="mt-8 flex justify-center gap-4">
+          <Button type="button" className="px-8 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2">
+            Reset
+          </Button>
+          <Button type="submit" className="px-8 py-3 bg-[color:var(--color-primary)] text-black font-semibold rounded-lg shadow-md hover:bg-[color:var(--color-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+            Submit Reservation
+          </Button>
+        </div>
+          
+          {message.text && (
+            <div className={`p-4 rounded-md mt-4 text-center ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+              {message.text}
+            </div>
+          )}
+        </form>
+      </div>
+  );
+}
+
+export default App;
+

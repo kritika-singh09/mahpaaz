@@ -107,30 +107,11 @@ const BookingPage = () => {
     >
       Add Booking
     </Link>
-    <Link
-      to="/updatebookingform"
-      className="bg-[color:var(--color-primary)] text-[color:var(--color-text)] px-4 py-2 rounded"
-    >
-      Update Booking
-    </Link>
+    
   </div>
 </div>
 
-      {/* <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-semibold">Bookings</h2>
-        <Link
-          to="/bookingform"
-          className="bg-[color:var(--color-primary)] text-[color:var(--color-text)] px-4 py-2 rounded"
-        >
-          Add Booking
-        </Link>
-        <Link
-          to="/updatebookingform"
-          className="bg-[color:var(--color-primary)] text-[color:var(--color-text)] px-4 py-2 rounded"
-        >
-          Update Booking
-        </Link>
-      </div> */}
+    
 
       <div className="mb-4">
         <input
@@ -211,7 +192,7 @@ const BookingPage = () => {
 
       {/* Overlay for edit */}
       {editId && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-start pt-10">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs bg-opacity-50 z-50 flex justify-center items-start pt-10">
           <div className="bg-white rounded shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6">
             <BookingEdit
               booking={bookings.find((b) => b.id === editId)?._raw}
