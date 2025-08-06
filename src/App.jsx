@@ -67,10 +67,10 @@
 // //               <Route path="/booking" element={<Booking />} />
 // //                <Route path="/reservation"element={<Reservation/>}/>
 // //               <Route path="/reservationform"element={<ReservationForm/>}/>
-       
+
 // //            <Route path="/updatebookingform"element={<UpdateBookingForm/>}/>
 // //           <Route path="/laundry/ordermanagement"element={<Order/>}/>
-// //               <Route path="/laundry/inventorymanagement"element={<Inventory/>}/>  
+// //               <Route path="/laundry/inventorymanagement"element={<Inventory/>}/>
 // //               <Route path="/cab"element={<Cab/>}/>
 // //               <Route path="/cabbookingform"element={<Cabbookingform/>}/>
 // //                   <Route path="/pantry"element={<Pantry/>}/>
@@ -189,20 +189,24 @@ import Booking from "./components/booking/Booking";
 import Reservation from "./components/reservation/Reservation";
 import ReservationForm from "./components/reservation/Reservationform";
 
-import Order from "./components/laundary/Order.jsx"
-import Inventory from "./components/laundary/Inventory.jsx"
+import Order from "./components/laundary/Order.jsx";
+import Inventory from "./components/laundary/Inventory.jsx";
 import { useNavigate } from "react-router-dom";
-import Cabbookingform from "./components/cab/cabbookingform.jsx"
+import Cabbookingform from "./components/cab/cabbookingform.jsx";
 import Cab from "./components/cab/cab.jsx";
 import Vehile from "./components/cab/Vehicle.jsx";
-import Driver from "./components/cab/Driver.jsx"
-import Pantry from "./components/Pantry/Pantry.jsx"
-import PantryItems from "./components/Pantry/Item.jsx"
-import PantryOrders from "./components/Pantry/Order.jsx"
-import Resturant from "./components/Resturant/Resturant.jsx"
+import Driver from "./components/cab/Driver.jsx";
+import Pantry from "./components/Pantry/Pantry.jsx";
+import PantryItems from "./components/Pantry/Item.jsx";
+import PantryOrders from "./components/Pantry/Order.jsx";
+import Resturant from "./components/Resturant/Resturant.jsx";
+import StaffWorkTask from "./components/StaffWorkTask";
+import Orders from "./components/orders/Orders.jsx";
+import { ToastContainer } from "react-toastify";
+
 const BookingFormPage = () => {
   const navigate = useNavigate();
-  return <BookingForm onClose={() => navigate('/booking')} />;
+  return <BookingForm onClose={() => navigate("/booking")} />;
 };
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -214,6 +218,7 @@ const ProtectedRoute = ({ children }) => {
 const App = () => {
   return (
     <AppContextProvider>
+      <ToastContainer />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
 
@@ -232,25 +237,42 @@ const App = () => {
                       <Route path="/category" element={<CategoryList />} />
                       <Route path="/room" element={<RoomList />} />
                       <Route path="/staff" element={<StaffList />} />
- <Route path="/bookingform" element={<BookingFormPage />} />
-              <Route path="/booking" element={<Booking />} />
-               <Route path="/reservation"element={<Reservation/>}/>
-              <Route path="/reservationform"element={<ReservationForm/>}/>
-          <Route path="/laundry/ordermanagement"element={<Order/>}/>
-              <Route path="/laundry/inventorymanagement"element={<Inventory/>}/>  
-              <Route path="/cab"element={<Cab/>}/>
-              <Route path="/cabbookingform"element={<Cabbookingform/>}/>
-              <Route path="/cab/vehicle"element={<Vehile/>}/>
-              <Route path="/cab/driver" element={<Driver/>}/>
-                  <Route path="/pantry"element={<Pantry/>}/>
-                  <Route path="/resturant"element={<Resturant/>}/>
-                  <Route path="/pantry/item" element={<PantryItems />} />
-                  <Route path="/pantry/orders" element={<PantryOrders />} />
-                </Routes>
-              </main>
-            </div>
-          </div>
-        </ProtectedRoute>
+                      <Route
+                        path="/bookingform"
+                        element={<BookingFormPage />}
+                      />
+                      <Route path="/booking" element={<Booking />} />
+                      <Route path="/reservation" element={<Reservation />} />
+                      <Route
+                        path="/reservationform"
+                        element={<ReservationForm />}
+                      />
+                      <Route
+                        path="/laundry/ordermanagement"
+                        element={<Order />}
+                      />
+                      <Route
+                        path="/laundry/inventorymanagement"
+                        element={<Inventory />}
+                      />
+                      <Route path="/cab" element={<Cab />} />
+                      <Route
+                        path="/cabbookingform"
+                        element={<Cabbookingform />}
+                      />
+                      <Route path="/cab/vehicle" element={<Vehile />} />
+                      <Route path="/cab/driver" element={<Driver />} />
+                      <Route path="/pantry" element={<Pantry />} />
+                      <Route path="/resturant" element={<Resturant />} />
+                      <Route path="/pantry/item" element={<PantryItems />} />
+                      <Route path="/pantry/orders" element={<PantryOrders />} />
+                      <Route path="/staff-work" element={<StaffWorkTask />} />
+                      <Route path="/orders" element={<Orders />} />
+                    </Routes>
+                  </main>
+                </div>
+              </div>
+            </ProtectedRoute>
           }
         />
       </Routes>

@@ -223,6 +223,7 @@ import {
   ChevronUp,
   ListChecks,
   Package,
+  Bell,
 } from "lucide-react";
 import logoImage from "../assets/buddhaavenuelogo.png";
 
@@ -294,6 +295,7 @@ const Sidebar = () => {
     { icon: BedDouble, label: "Room", path: "/room" },
     { icon: FileText, label: "Booking", path: "/booking" },
     { icon: FileText, label: "Reservation", path: "/reservation" },
+    { icon: Bell, label: "My Task", path: "/staff-work", count: taskCount },
     { icon: UserRound, label: "Staff", path: "/staff" },
     {
       icon: UserRound,
@@ -333,8 +335,16 @@ const Sidebar = () => {
         { label: "Vehicle Management", path: "/cab/vehicle", icon: Package },
       ],
     },
-    { icon: UserRound, label: "Resturant", path: "/resturant" },
-    { icon: ShoppingCart, label: "Orders", path: "/orders" },
+    {
+      icon: UserRound,
+      label: "Restaurant",
+      path: "/resturant",
+      isDropdown: true,
+      children: [
+        { label: "Restaurant", path: "/resturant", icon: UserRound },
+        { label: "Orders", path: "/orders", icon: ShoppingCart },
+      ],
+    },
     { icon: Users, label: "Customers", path: "/customers" },
   ];
 
@@ -350,8 +360,27 @@ const Sidebar = () => {
       } transition-transform duration-300 ease-in-out md:relative md:translate-x-0 z-30 flex flex-col h-screen overflow-y-auto`}
     >
       <div className="flex items-center justify-center p-2">
+        <button
+          onClick={closeSidebar}
+          className="md:hidden p-2 text-[#c2ab65] hover:text-white"
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
         <img src={logoImage} alt="Buddha Avenue" className="h-30 mx-auto" />
       </div>
+      <div className="text-center mt-2 font-bold text-lg">{userRole}</div>
 
       <nav className="flex-1 p-4 space-y-2">
         {navItems.map((item, index) => (
@@ -386,6 +415,9 @@ const Sidebar = () => {
                       <Link
                         key={subIndex}
                         to={subItem.path}
+                        onClick={() =>
+                          window.innerWidth < 768 && closeSidebar()
+                        }
                         className={`flex items-center px-4 py-2 rounded-lg transition-colors duration-200 text-sm
                           ${
                             location.pathname === subItem.path
@@ -405,6 +437,7 @@ const Sidebar = () => {
             ) : (
               <Link
                 to={item.path}
+                onClick={() => window.innerWidth < 768 && closeSidebar()}
                 className={`flex items-center px-4 py-2.5 rounded-lg transition-colors duration-200 ${
                   location.pathname === item.path
                     ? "bg-[#c2ab65] text-[#1f2937] font-semibold"
@@ -424,6 +457,7 @@ const Sidebar = () => {
           <Link
             key={index}
             to={item.path}
+            onClick={() => window.innerWidth < 768 && closeSidebar()}
             className="flex items-center px-4 py-2.5 rounded-lg hover:bg-hover transition-colors duration-200"
           >
             <item.icon className="w-5 h-5 mr-3" />
