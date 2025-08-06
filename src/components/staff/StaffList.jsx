@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Edit, Trash2, User } from "lucide-react";
-import axios from "axios";
+import { useAppContext } from "../../context/AppContext";
 import StaffForm from "../staff/StaffForm";
 
 const StaffList = () => {
+  const { axios } = useAppContext();
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -75,8 +76,8 @@ const StaffList = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await axios.get(
-        "http://localhost:5000/api/housekeeping/available-staff",
+      const { data } = await axios.get(
+        "/api/housekeeping/available-staff",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -85,10 +86,10 @@ const StaffList = () => {
       );
 
       // Check if the response has the expected structure
-      if (response.data && response.data.availableStaff) {
-        setStaff(response.data.availableStaff);
+      if (data && data.availableStaff) {
+        setStaff(data.availableStaff);
       } else {
-        setStaff(response.data || []);
+        setStaff(data || []);
       }
 
       setError(null);
@@ -129,7 +130,7 @@ const StaffList = () => {
   const handleDeleteStaff = async (id) => {
     if (window.confirm("Are you sure you want to delete this staff member?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/auth/delete/${id}`, {
+        await axios.delete(`/api/auth/delete/${id}`, {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`,
           },
@@ -159,13 +160,13 @@ const StaffList = () => {
           delete staffData.password;
         }
 
-        const response = await axios.put(
-          `http://localhost:5000/api/auth/update/${currentStaff._id}`,
+        const { data } = await axios.put(
+          `/api/auth/update/${currentStaff._id}`,
           staffData,
           config
         );
         setStaff(
-          staff.map((s) => (s._id === currentStaff._id ? response.data : s))
+          staff.map((s) => (s._id === currentStaff._id ? data : s))
         );
       } else {
         // Make sure department is properly formatted for staff role
@@ -179,15 +180,15 @@ const StaffList = () => {
           staffData.department = [];
         }
 
-        const response = await axios.post(
-          "http://localhost:5000/api/auth/register",
+        const { data } = await axios.post(
+          "/api/auth/register",
           staffData,
           config
         );
 
         // Add the new staff member to the list
-        if (response.data) {
-          setStaff([...staff, response.data]);
+        if (data) {
+          setStaff([...staff, data]);
         }
       }
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X, Camera } from "lucide-react";
-import axios from "axios";
+import { useAppContext } from "../../context/AppContext";
 
 const RoomForm = ({
   showModal,
@@ -16,6 +16,7 @@ const RoomForm = ({
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
+  const { axios } = useAppContext();
 
   useEffect(() => {
     fetchCategories();
@@ -24,9 +25,7 @@ const RoomForm = ({
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        "http://localhost:5000/api/categories/all"
-      );
+      const response = await axios.get("/api/categories/all");
       setCategories(response.data);
     } catch (err) {
       console.error("Error fetching categories:", err);

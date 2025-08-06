@@ -1,20 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-
-// Base API Root
-const BASE_API_ROOT = 'https://backend-hazel-xi.vercel.app';
-
-// Specific API Endpoints
-const ORDERS_API_BASE = `${BASE_API_ROOT}/api/restaurant-orders`;
-const TABLES_API_URL = `${BASE_API_ROOT}/api/restaurant/tables`;
-
-// Order/Booking related URLs (as per user's request, bookings now use order endpoints)
-const ORDERS_CREATE_URL = `${ORDERS_API_BASE}/orders`; // For creating new orders/bookings
-const ORDERS_FETCH_ALL_URL = `${ORDERS_API_BASE}/all`; // For fetching all orders/bookings
-const ORDERS_UPDATE_STATUS_URL = (orderId) => `${ORDERS_API_BASE}/${orderId}/status`;
-const ORDERS_DELETE_URL = (orderId) => `${ORDERS_API_BASE}/${orderId}`; // New URL for deleting orders
-const ORDERS_DETAILS_URL = (orderId) => `${ORDERS_API_BASE}/details/${orderId}`;
-const ORDERS_INVOICE_URL = (orderId) => `${ORDERS_API_BASE}/invoice/${orderId}`;
+import { useAppContext } from '../../context/AppContext';
 
 // Initial empty states (all dummy data removed)
 const initialCategories = [];

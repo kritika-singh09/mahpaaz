@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from "react";
 import { Edit, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAppContext } from "../../context/AppContext";
 
 // Inline ReservationEdit for simplicity
 const ReservationEdit = ({ reservation, onSave, onCancel }) => {
@@ -24,7 +24,10 @@ const ReservationEdit = ({ reservation, onSave, onCancel }) => {
   if (!reservation) return null;
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-lg mx-auto bg-white p-6 rounded shadow">
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-lg mx-auto bg-white p-6 rounded shadow"
+    >
       <div className="mb-4">
         <label className="block text-sm font-medium mb-1">GRC No</label>
         <input
@@ -80,10 +83,9 @@ const ReservationEdit = ({ reservation, onSave, onCancel }) => {
   );
 };
 
-const API_BASE_URL = "https://backend-hazel-xi.vercel.app/api/reservations";
-
 const ReservationPage = () => {
   const navigate = useNavigate();
+  const { axios } = useAppContext();
   const [reservations, setReservations] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -98,33 +100,29 @@ const ReservationPage = () => {
     setError(null);
     try {
       const token = localStorage.getItem("token");
+
       if (!token) {
-        setError("No authentication token found. Please log in to view reservations.");
+        setError(
+          "No authentication token found. Please log in to view reservations."
+        );
         setIsLoading(false);
         return;
       }
-      const response = await fetch(API_BASE_URL, {
+      const { data } = await axios.get("/api/reservations", {
         headers: {
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
-      if (!response.ok) {
-        let errorMsg = `HTTP error! status: ${response.status}`;
-        try {
-          const errData = await response.json();
-          if (errData && errData.error) errorMsg += `: ${errData.error}`;
-        } catch {}
-        throw new Error(errorMsg);
-      }
-      const data = await response.json();
-      setReservations(Array.isArray(data.reservations) ? data.reservations : []);
+      setReservations(
+        Array.isArray(data.reservations) ? data.reservations : []
+      );
     } catch (err) {
       setError(err.message || "Failed to load reservations. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
-// useeffect
+  // useeffect
   useEffect(() => {
     fetchReservations();
   }, []);
@@ -147,23 +145,15 @@ const ReservationPage = () => {
       checkOutDate: updatedData.checkOutDate,
     };
     try {
-      const res = await fetch(`https://backend-hazel-xi.vercel.app/api/reservations/${reservationId}`, {
-        method: "PUT",
+      await axios.put(`/api/reservations/${reservationId}`, payload, {
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload)
       });
-      if (res.ok) {
-        fetchReservations();
-        setEditId(null);
-      } else {
-        const data = await res.json();
-        alert(`Update failed: ${typeof data.error === 'string' ? data.error : JSON.stringify(data)}`);
-      }
+      fetchReservations();
+      setEditId(null);
     } catch (error) {
-      alert(`Error updating reservation: ${error.message}.`);
+      alert(`Update failed: ${error.response?.data?.error || error.message}`);
     }
   };
 
@@ -175,15 +165,11 @@ const ReservationPage = () => {
     }
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/${reservation._id}`, {
-        method: "DELETE",
+      await axios.delete(`/api/reservations/${reservation._id}`, {
         headers: {
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
       fetchReservations();
     } catch (err) {
       setError("Failed to delete reservation. Please try again.");
@@ -191,9 +177,10 @@ const ReservationPage = () => {
   };
 
   const filtered = Array.isArray(reservations)
-    ? reservations.filter((r) =>
-        typeof r.guestName === "string" &&
-        r.guestName.toLowerCase().includes(searchQuery.toLowerCase())
+    ? reservations.filter(
+        (r) =>
+          typeof r.guestName === "string" &&
+          r.guestName.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : [];
 
@@ -203,7 +190,9 @@ const ReservationPage = () => {
   return (
     <div className="w-full p-6 text-[color:var(--color-text)]">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-[color:var(--color-text)]">Reservation Page</h1>
+        <h1 className="text-3xl font-bold text-[color:var(--color-text)]">
+          Reservation Page
+        </h1>
         <button
           onClick={() => navigate("/reservationform")}
           className="bg-[color:var(--color-primary)] text-[color:var(--color-text)] px-4 py-2 rounded"
@@ -223,9 +212,15 @@ const ReservationPage = () => {
       </div>
 
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <div
+          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
+          role="alert"
+        >
           <strong className="font-bold">Error!</strong>
-          <span className="block sm:inline"> {typeof error === 'string' ? error : JSON.stringify(error)}</span>
+          <span className="block sm:inline">
+            {" "}
+            {typeof error === "string" ? error : JSON.stringify(error)}
+          </span>
         </div>
       )}
 
@@ -236,21 +231,39 @@ const ReservationPage = () => {
           <table className="min-w-full text-sm text-[color:var(--color-text)] border border-[color:var(--color-border)]">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guest Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GRC No</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check In</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check Out</th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Guest Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  GRC No
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Check In
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Check Out
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filtered.length > 0 ? (
                 filtered.map((b) => (
                   <tr key={b._id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{b.guestName}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{b.grcNo || "N/A"}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{b.checkInDate}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{b.checkOutDate}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {b.guestName}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {b.grcNo || "N/A"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {b.checkInDate}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {b.checkOutDate}
+                    </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex space-x-2">
                         <button
@@ -273,7 +286,10 @@ const ReservationPage = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
+                  <td
+                    colSpan="5"
+                    className="px-6 py-4 text-center text-gray-500"
+                  >
                     No reservations found.
                   </td>
                 </tr>
