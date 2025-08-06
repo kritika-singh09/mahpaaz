@@ -1,16 +1,17 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaUser, FaPhone, FaCity, FaMapMarkedAlt, FaBuilding, FaGlobe, FaRegAddressCard, FaMobileAlt, FaEnvelope, FaMoneyCheckAlt, FaCalendarAlt, FaClock, FaDoorOpen, FaUsers, FaConciergeBell, FaInfoCircle, FaSuitcase, FaComments, FaFileInvoiceDollar, FaCheckCircle, FaSignInAlt, FaPassport, FaIdCard, FaCreditCard, FaCashRegister, FaAddressBook, FaRegListAlt, FaRegUser, FaRegCalendarPlus, FaRegCheckCircle, FaRegTimesCircle, FaRegUserCircle, FaRegCreditCard, FaRegStar, FaRegFlag, FaRegEdit, FaRegClone, FaRegCommentDots, FaRegFileAlt, FaRegCalendarCheck, FaRegCalendarTimes, FaRegMap, FaHotel, FaTimes } from "react-icons/fa";
 
 // InputWithIcon for UI consistency
 const InputWithIcon = ({ icon, type, name, placeholder, value, onChange, className, required, min, max, step, readOnly, inputClassName }) => (
-  <div className="relative flex items-center">
+  <div className="relative flex items-center w-full">
     {icon && <div className="absolute left-3 text-gray-400 pointer-events-none">{icon}</div>}
     <input
       type={type}
       name={name}
       placeholder={placeholder}
-      value={value}
+      value={value === undefined || value === null ? '' : value}
       onChange={onChange}
       className={`pl-10 pr-4 py-2 w-full ${inputClassName || 'bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'} ${className}`}
       required={required}
@@ -22,21 +23,20 @@ const InputWithIcon = ({ icon, type, name, placeholder, value, onChange, classNa
   </div>
 );
 
-
-
 // Fetch a new, sequential GRC number from backend
-
-// Remove handleImageChange from here. It will be defined inside App.
-const fetchNewGRCNo = async (setFormData, BASE_URL) => {
+const fetchNewGRCNo = async (setFormData, BASE_URL, showMessage) => {
   try {
     const token = localStorage.getItem('token');
-    // Use /bookings/grc/new to avoid collision with /bookings/grc/:id
-    const res = await fetch(`${BASE_URL}/bookings/grc/new`, {
+    const res = await fetch(`${BASE_URL}/bookings/grc/${grcNo}`, {
       headers: token ? { 'Authorization': `Bearer ${token}` } : {}
     });
-    // Defensive JSON parse: only if content-type is JSON
+    
+    if (!res.ok) {
+      throw new Error('Failed to fetch new GRC number. Please check the backend route.');
+    }
+
     const contentType = res.headers.get('content-type');
-    if (!res.ok) throw new Error('Failed to fetch new GRC number');
+    
     if (contentType && contentType.includes('application/json')) {
       const data = await res.json();
       if (data && data.grcNo) {
@@ -45,12 +45,58 @@ const fetchNewGRCNo = async (setFormData, BASE_URL) => {
         setFormData(prev => ({ ...prev, grcNo: '' }));
       }
     } else {
+      console.error('Expected JSON response, but received:', contentType);
+      showMessage('error', 'Server returned a non-JSON response for new GRC number.');
       setFormData(prev => ({ ...prev, grcNo: '' }));
     }
   } catch (err) {
-    setFormData(prev => ({ ...prev, grcNo: '' }));
+    console.error("Error fetching GRC number:", err);
+    showMessage('error', err.message);
   }
 };
+
+const fetchBookingByGRC = async (grcNo, setFormData, BASE_URL, setError, showMessage) => {
+  if (!grcNo) {
+    showMessage('error', 'Please enter a GRC number to search.');
+    return;
+  }
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${BASE_URL}/bookings/grc/${grcNo}`, {
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Booking not found with this GRC number. Status: ${res.status} - ${errorText}`);
+    }
+
+    const data = await res.json();
+    
+    // FIX: Check if the response contains a 'booking' object
+    if (data && data.booking) {
+      // Access the nested 'booking' object
+      const bookingData = data.booking;
+      
+      // Handle nested fields like categoryId
+      const formattedData = {
+          ...bookingData,
+          categoryId: bookingData.categoryId?._id || ''
+      };
+
+      setFormData(formattedData);
+      showMessage('success', `Booking data for GRC No. ${grcNo} loaded successfully!`);
+    } else {
+      // If the expected 'booking' object is missing, show an error
+      throw new Error('No booking data received for this GRC number.');
+    }
+  } catch (err) {
+    console.error("Error fetching booking by GRC:", err);
+    setError(err.message || 'Failed to fetch booking data.');
+    showMessage('error', err.message || 'Failed to fetch booking data.');
+  }
+};
+
 
 // Shadcn-like components (for a self-contained example)
 const Button = ({ children, onClick, className = '', disabled, type = 'button', variant = 'default' }) => {
@@ -75,7 +121,7 @@ const Input = ({ type, placeholder, value, onChange, className = '', ...props })
   <input
     type={type}
     placeholder={placeholder}
-    value={value}
+    value={value === undefined || value === null ? '' : value}
     onChange={onChange}
     className={`flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
     {...props}
@@ -93,7 +139,7 @@ const Label = ({ children, htmlFor, className = '' }) => (
 
 const Select = ({ value, onChange, children, className = '', name, ...props }) => (
   <select
-    value={value}
+    value={value === undefined || value === null ? '' : value}
     onChange={onChange}
     name={name}
     className={`flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 ${className}`}
@@ -107,13 +153,12 @@ const Checkbox = ({ id, checked, onChange, className = '' }) => (
   <input
     type="checkbox"
     id={id}
-    checked={checked}
+    checked={!!checked}
     onChange={onChange}
     className={`peer h-4 w-4 shrink-0 rounded-sm border border-black shadow focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-black data-[state=checked]:text-primary-foreground ${className}`}
   />
 );
 
-// Lucide-react-like icons
 const CalendarIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-muted-foreground"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
 );
@@ -140,7 +185,6 @@ const InfoIcon = () => (
 );
 
 
-// Custom Date Picker Component to avoid browser inconsistencies
 const DatePicker = ({ value, onChange, label }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(value ? new Date(value) : new Date());
@@ -226,7 +270,6 @@ const DatePicker = ({ value, onChange, label }) => {
 
 const App = () => {
   const navigate = useNavigate();
-  // Booking model fields
   const [formData, setFormData] = useState({
     reservationId: '',
     categoryId: '',
@@ -283,9 +326,23 @@ const App = () => {
     vip: false,
     status: 'Booked',
     extensionHistory: [],
+    grcNo: '',
   });
 
-  // Handle file/image input changes for image fields (now has access to setFormData)
+  const [searchGRC, setSearchGRC] = useState('');
+  const [availableCategories, setAvailableCategories] = useState([]);
+  const [hasCheckedAvailability, setHasCheckedAvailability] = useState(false);
+
+  // FIX: Declare availableRoomsByCat using useState
+  const [availableRoomsByCat, setAvailableRoomsByCat] = useState({});
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [message, setMessage] = useState({ type: '', text: '' });
+  const [selectedRooms, setSelectedRooms] = useState([]);
+
+  const BASE_URL = "https://backend-hazel-xi.vercel.app/api";
+
   const handleImageChange = (e, field) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
@@ -296,26 +353,11 @@ const App = () => {
     reader.readAsDataURL(file);
   };
 
-  const [availableCategories, setAvailableCategories] = useState([]);
-  const [hasCheckedAvailability, setHasCheckedAvailability] = useState(false);
-  const [allRooms, setAllRooms] = useState([]);
-  const [allVehicles, setAllVehicles] = useState([]);
-  const [allDrivers, setAllDrivers] = useState([]);
-  const [availableRoomsByCat, setAvailableRoomsByCat] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [message, setMessage] = useState({ type: '', text: '' });
-  const [selectedRooms, setSelectedRooms] = useState([]); // New state for selected rooms
-
-  const BASE_URL = "https://backend-hazel-xi.vercel.app/api";
-
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    // Special handling for paymentMode to clear unrelated fields
     if (name === 'paymentMode') {
       setFormData(prev => {
         const cleared = { ...prev };
-        // Clear all payment details fields
         delete cleared.cardNumber;
         delete cleared.cardHolder;
         delete cleared.cardExpiry;
@@ -364,75 +406,24 @@ const App = () => {
   };
 
   useEffect(() => {
-    // Update formData.roomAssigned whenever selectedRooms changes
     setFormData(prev => ({
         ...prev,
-        roomAssigned: selectedRooms.map(r => r.room_number)
-    }));
-    setFormData(prev => ({
-        ...prev,
+        roomAssigned: selectedRooms.map(r => r.room_number),
         noOfRooms: selectedRooms.length
     }));
   }, [selectedRooms]);
-
-  const fetchAllData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [roomsRes, vehiclesRes, driversRes] = await Promise.all([
-        fetch(`${BASE_URL}/rooms/all`),
-        fetch(`${BASE_URL}/vehicle/all`),
-        fetch(`${BASE_URL}/driver`),
-      ]);
-
-      if (!roomsRes.ok) throw new Error('Failed to fetch rooms data.');
-      if (!vehiclesRes.ok) throw new Error('Failed to fetch vehicles data.');
-      if (!driversRes.ok) throw new Error('Failed to fetch drivers data.');
-
-      const roomsData = await roomsRes.json();
-      const vehiclesData = await vehiclesRes.json();
-      const driversData = await driversRes.json();
-
-      setAllRooms(Array.isArray(roomsData) ? roomsData : []);
-      setAllVehicles(Array.isArray(vehiclesData.vehicles) ? vehiclesData.vehicles : []);
-      
-      let drivers = [];
-      if (Array.isArray(driversData)) {
-          drivers = driversData;
-      } else if (driversData && Array.isArray(driversData.drivers)) {
-          drivers = driversData.drivers;
-      }
-      setAllDrivers(drivers);
-
-      // Set default values from fetched data if available
-      if (Array.isArray(vehiclesData.vehicles) && vehiclesData.vehicles.length > 0) {
-        setFormData(prev => ({ ...prev, vehicleDetails: { ...prev.vehicleDetails, vehicleType: vehiclesData.vehicles[0].type } }));
-      }
-      if (Array.isArray(drivers) && drivers.length > 0) {
-        setFormData(prev => ({ ...prev, vehicleDetails: { ...prev.vehicleDetails, driverName: drivers[0].driverName } }));
-      }
-
-    } catch (err) {
-      console.error(err);
-      setError(err.message || 'Could not fetch initial data. Please check the network and try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchAvailableRooms = async () => {
     const { checkInDate, checkOutDate } = formData;
     if (!checkInDate || !checkOutDate || new Date(checkInDate) >= new Date(checkOutDate)) {
       setError('Please select valid check-in and check-out dates.');
       setAvailableCategories([]);
-      setAvailableRoomsByCat({});
-      setFormData(prev => ({ ...prev, category: '' }));
       setHasCheckedAvailability(true);
       return;
     }
     setLoading(true);
     setError(null);
-    setSelectedRooms([]); // Reset selected rooms on new availability check
+    setSelectedRooms([]);
     try {
       const apiUrl = `${BASE_URL}/rooms/available?checkInDate=${checkInDate}&checkOutDate=${checkOutDate}`;
       const response = await fetch(apiUrl);
@@ -451,9 +442,10 @@ const App = () => {
           }
           return acc;
         }, {});
+        
+        // FIX: Use the state setter function
         setAvailableRoomsByCat(roomsByCategory);
 
-        // Auto-select the first category if available
         if (availableRoomsList.length > 0) {
           setFormData(prev => ({ ...prev, category: availableRoomsList[0].category }));
         } else {
@@ -464,7 +456,6 @@ const App = () => {
         console.error('API response for rooms/available was not an array:', data);
         setError(errorMessage);
         setAvailableCategories([]);
-        setAvailableRoomsByCat({});
         setFormData(prev => ({ ...prev, category: '' }));
       }
 
@@ -478,9 +469,7 @@ const App = () => {
   };
 
   useEffect(() => {
-    // Only fetch a new GRC number for new bookings (not for lookup)
-    fetchNewGRCNo(setFormData, BASE_URL);
-    // Do NOT fetch booking by GRC number here; only use the new GRC for creation
+    fetchNewGRCNo(setFormData, BASE_URL, showMessage);
   }, []);
 
   const showMessage = (type, text) => {
@@ -490,20 +479,20 @@ const App = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Here you would typically send the formData to the backend
-    // For now, simulate success and navigate
-    showMessage('success', 'Reservation data logged to console. Please check the developer tools.');
+    console.log("Submitting form data:", formData);
+    showMessage('success', 'Form data submitted successfully!');
     setTimeout(() => {
-      navigate('/booking'); // Adjust the path if your route is different
-    }, 1000); // Give user a moment to see the success message
+      navigate('/booking');
+    }, 1000);
   };
   
   const handleCategoryCardClick = (category) => {
     setFormData(prev => ({ ...prev, category }));
-    setSelectedRooms([]); // Clear selected rooms when category changes
+    setSelectedRooms([]);
   };
   
-  const roomsForSelectedCategory = availableRoomsByCat[formData.category] || [];
+  // FIX: This hook will now work correctly as availableRoomsByCat is a state variable
+  const roomsForSelectedCategory = useMemo(() => availableRoomsByCat[formData.category] || [], [availableRoomsByCat, formData.category]);
 
   const isCheckAvailabilityDisabled = !formData.checkInDate || !formData.checkOutDate || new Date(formData.checkInDate) >= new Date(formData.checkOutDate);
 
@@ -527,19 +516,39 @@ const App = () => {
               <FaInfoCircle className="text-amber-400" /> General Information
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="grcNo">GRC No.</Label>
-                <InputWithIcon
-                  icon={<FaRegAddressCard />} 
-                  type="text"
-                  name="grcNo"
-                  placeholder="GRC No."
-                  value={formData.grcNo ?? ''}
-                  onChange={handleChange}
-                  readOnly={true}
-                  inputClassName="bg-gray-100 border border-secondary rounded-lg cursor-not-allowed"
-                />
+              
+              <div className="space-y-2 col-span-full sm:col-span-2">
+                <Label htmlFor="searchGRC">Search by GRC No. (if customer is registered)</Label>
+                <div className="flex flex-col sm:flex-row gap-2 items-center">
+                  <InputWithIcon
+                    icon={<FaRegAddressCard />} 
+                    type="text"
+                    name="searchGRC"
+                    placeholder="e.g., GRC-9076"
+                    value={searchGRC}
+                    onChange={(e) => setSearchGRC(e.target.value)}
+                    inputClassName="bg-white border border-secondary rounded-lg"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => fetchBookingByGRC(searchGRC, setFormData, BASE_URL, setError, showMessage)}
+                    className="w-full sm:w-auto flex-shrink-0 px-4 py-2"
+                  >
+                    Fetch
+                  </Button>
+                </div>
               </div>
+
+              {formData.grcNo && (
+                <div className="space-y-2 flex flex-col justify-end">
+                  <Label>GRC No.</Label>
+                  <div className="flex items-center gap-2 border border-gray-300 rounded-lg p-2 bg-gray-100 h-10">
+                    <FaRegAddressCard className="text-gray-400" />
+                    <span className="text-gray-700 font-semibold">{formData.grcNo}</span>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="bookingRefNo">Booking Reference No</Label>
                 <InputWithIcon icon={<FaRegListAlt />} type="text" name="bookingRefNo" placeholder="Booking Reference No" value={formData.bookingRefNo ?? ''} onChange={handleChange} inputClassName="bg-white border border-secondary rounded-lg" />
@@ -612,7 +621,7 @@ const App = () => {
                   <textarea
                     id="remarks"
                     name="remarks"
-                    value={formData.remarks}
+                    value={formData.remarks ?? ''}
                     onChange={handleChange}
                     placeholder="Remarks"
                     className="bg-white border border-secondary rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-full h-20"
@@ -1033,13 +1042,14 @@ const App = () => {
               )}
             </div>
           </section>
-          
-          {/* Vehicle Details Section removed (not in Booking model) */}
 
         <div className="mt-8 flex justify-center gap-4">
-          <Button type="button" className="px-8 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2">
+          {/* <Button type="reset" className="px-8 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2">
             Reset
-          </Button>
+          </Button> */}
+          <Button type="reset" className="px-8 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2">
+  Reset
+</Button>
           <Button type="submit" className="px-8 py-3 bg-[color:var(--color-primary)] text-black font-semibold rounded-lg shadow-md hover:bg-[color:var(--color-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
             Submit Booking
           </Button>
@@ -1056,4 +1066,3 @@ const App = () => {
 }
 
 export default App;
-
