@@ -1,4 +1,3 @@
-
 // // // import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 // // // import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
 
@@ -118,7 +117,7 @@
 
 // // //   const filteredBookings = (bookings || []).filter((booking) => {
 // // //     const lowerSearchTerm = searchTerm.toLowerCase().trim();
-    
+
 // // //     if (!booking || typeof booking !== 'object') {
 // // //         return false;
 // // //     }
@@ -128,13 +127,13 @@
 // // //         String(value).toLowerCase().includes(lowerSearchTerm)
 // // //       );
 
-// // //     const matchesStatus = filterStatus === 'all' || 
+// // //     const matchesStatus = filterStatus === 'all' ||
 // // //                           (booking.status && booking.status.toLowerCase().trim() === filterStatus.toLowerCase().trim());
-    
-// // //     const matchesCabType = filterCabType === 'all' || 
+
+// // //     const matchesCabType = filterCabType === 'all' ||
 // // //                            (booking.cabType && booking.cabType.toLowerCase().trim() === filterCabType.toLowerCase().trim());
-    
-// // //     const matchesPurpose = filterPurpose === 'all' || 
+
+// // //     const matchesPurpose = filterPurpose === 'all' ||
 // // //                            (booking.purpose && booking.purpose.toLowerCase().trim() === filterPurpose.toLowerCase().trim());
 
 // // //     return matchesSearch && matchesStatus && matchesCabType && matchesPurpose;
@@ -145,7 +144,6 @@
 // // //       console.log("Current state - filteredBookings:", filteredBookings);
 // // //       console.log("Current filter states:", { searchTerm, filterStatus, filterCabType, filterPurpose });
 // // //   }, [bookings, filteredBookings, searchTerm, filterStatus, filterCabType, filterPurpose]);
-
 
 // // //   return (
 // // //     <div className="w-full max-w-7xl bg-white p-8 rounded-xl shadow-2xl border border-gray-200 mx-auto">
@@ -260,7 +258,7 @@
 // // //                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{booking.guestName || 'N/A'}</td>
 // // //                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
 // // //                     <button
-                     
+
 // // //                       className="text-indigo-600 hover:text-indigo-900 mr-4 transition duration-150 ease-in-out"
 // // //                     >
 // // //                       Edit
@@ -715,7 +713,6 @@
 // //     setBookingToDeleteId(null);
 // //   };
 
-
 // //   const filteredBookings = (bookings || []).filter((booking) => {
 // //     const lowerSearchTerm = searchTerm.toLowerCase().trim();
 
@@ -803,7 +800,7 @@
 // //         >
 // //           Book New Cab
 // //         </button> */}
-        
+
 // //         <button
 // //           onClick={() => navigate('/cabbookingform')}
 // //           className="inline-flex items-center px-6 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out"
@@ -1335,7 +1332,6 @@
 //     setBookingToDeleteId(null);
 //   };
 
-
 //   const filteredBookings = (bookings || []).filter((booking) => {
 //     const lowerSearchTerm = searchTerm.toLowerCase().trim();
 
@@ -1516,11 +1512,15 @@
 
 // export default CabBookingListPage;
 
-
-
-import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAppContext } from '../context/AppContext';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useImperativeHandle,
+  forwardRef,
+} from "react";
+import { useNavigate } from "react-router-dom";
+import { useAppContext } from "../../context/AppContext";
 
 // Utility function to get the authentication token
 const getAuthToken = () => {
@@ -1556,16 +1556,18 @@ const ConfirmationModal = ({ message, onConfirm, onCancel }) => {
 const EditBookingModal = ({ booking, onClose, onSave, showMessage }) => {
   // Local state to manage form inputs, initialized with current booking data
   const [formData, setFormData] = useState({
-    pickupLocation: booking.pickupLocation || '',
-    destination: booking.destination || '',
-    pickupTime: booking.pickupTime ? new Date(booking.pickupTime).toISOString().slice(0, 16) : '', // Format for datetime-local input
-    status: booking.status || 'pending',
-    cabType: booking.cabType || 'standard',
-    purpose: booking.purpose || 'guest_transport',
-    guestName: booking.guestName || '',
-    guestContact: booking.guestContact || '',
+    pickupLocation: booking.pickupLocation || "",
+    destination: booking.destination || "",
+    pickupTime: booking.pickupTime
+      ? new Date(booking.pickupTime).toISOString().slice(0, 16)
+      : "", // Format for datetime-local input
+    status: booking.status || "pending",
+    cabType: booking.cabType || "standard",
+    purpose: booking.purpose || "guest_transport",
+    guestName: booking.guestName || "",
+    guestContact: booking.guestContact || "",
     numberOfGuests: booking.numberOfGuests || 1,
-    specialInstructions: booking.specialInstructions || '',
+    specialInstructions: booking.specialInstructions || "",
   });
 
   // Handle input changes
@@ -1589,7 +1591,9 @@ const EditBookingModal = ({ booking, onClose, onSave, showMessage }) => {
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white p-8 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative">
-        <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">Edit Cab Booking</h3>
+        <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+          Edit Cab Booking
+        </h3>
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-3xl font-bold"
@@ -1599,15 +1603,29 @@ const EditBookingModal = ({ booking, onClose, onSave, showMessage }) => {
         </button>
 
         {showMessage && (
-          <div className={`p-3 rounded-md text-center mb-4 ${showMessage.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+          <div
+            className={`p-3 rounded-md text-center mb-4 ${
+              showMessage.type === "success"
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-800"
+            }`}
+          >
             {showMessage.text}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <form
+          onSubmit={handleSubmit}
+          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
           {/* Pickup Location */}
           <div>
-            <label htmlFor="pickupLocation" className="block text-sm font-medium text-gray-700 mb-1">Pickup Location</label>
+            <label
+              htmlFor="pickupLocation"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Pickup Location
+            </label>
             <input
               type="text"
               id="pickupLocation"
@@ -1621,7 +1639,12 @@ const EditBookingModal = ({ booking, onClose, onSave, showMessage }) => {
 
           {/* Destination */}
           <div>
-            <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-1">Destination</label>
+            <label
+              htmlFor="destination"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Destination
+            </label>
             <input
               type="text"
               id="destination"
@@ -1635,7 +1658,12 @@ const EditBookingModal = ({ booking, onClose, onSave, showMessage }) => {
 
           {/* Pickup Time */}
           <div>
-            <label htmlFor="pickupTime" className="block text-sm font-medium text-gray-700 mb-1">Pickup Time</label>
+            <label
+              htmlFor="pickupTime"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Pickup Time
+            </label>
             <input
               type="datetime-local"
               id="pickupTime"
@@ -1649,7 +1677,12 @@ const EditBookingModal = ({ booking, onClose, onSave, showMessage }) => {
 
           {/* Status */}
           <div>
-            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <label
+              htmlFor="status"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Status
+            </label>
             <select
               id="status"
               name="status"
@@ -1667,7 +1700,12 @@ const EditBookingModal = ({ booking, onClose, onSave, showMessage }) => {
 
           {/* Cab Type */}
           <div>
-            <label htmlFor="cabType" className="block text-sm font-medium text-gray-700 mb-1">Cab Type</label>
+            <label
+              htmlFor="cabType"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Cab Type
+            </label>
             <select
               id="cabType"
               name="cabType"
@@ -1683,7 +1721,12 @@ const EditBookingModal = ({ booking, onClose, onSave, showMessage }) => {
 
           {/* Purpose */}
           <div>
-            <label htmlFor="purpose" className="block text-sm font-medium text-gray-700 mb-1">Purpose</label>
+            <label
+              htmlFor="purpose"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Purpose
+            </label>
             <select
               id="purpose"
               name="purpose"
@@ -1701,7 +1744,12 @@ const EditBookingModal = ({ booking, onClose, onSave, showMessage }) => {
 
           {/* Guest Name */}
           <div>
-            <label htmlFor="guestName" className="block text-sm font-medium text-gray-700 mb-1">Guest Name</label>
+            <label
+              htmlFor="guestName"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Guest Name
+            </label>
             <input
               type="text"
               id="guestName"
@@ -1714,7 +1762,12 @@ const EditBookingModal = ({ booking, onClose, onSave, showMessage }) => {
 
           {/* Guest Contact */}
           <div>
-            <label htmlFor="guestContact" className="block text-sm font-medium text-gray-700 mb-1">Guest Contact</label>
+            <label
+              htmlFor="guestContact"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Guest Contact
+            </label>
             <input
               type="text"
               id="guestContact"
@@ -1727,7 +1780,12 @@ const EditBookingModal = ({ booking, onClose, onSave, showMessage }) => {
 
           {/* Number of Guests */}
           <div>
-            <label htmlFor="numberOfGuests" className="block text-sm font-medium text-gray-700 mb-1">Number of Guests</label>
+            <label
+              htmlFor="numberOfGuests"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Number of Guests
+            </label>
             <input
               type="number"
               id="numberOfGuests"
@@ -1741,7 +1799,12 @@ const EditBookingModal = ({ booking, onClose, onSave, showMessage }) => {
 
           {/* Special Instructions */}
           <div className="md:col-span-2">
-            <label htmlFor="specialInstructions" className="block text-sm font-medium text-gray-700 mb-1">Special Instructions</label>
+            <label
+              htmlFor="specialInstructions"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Special Instructions
+            </label>
             <textarea
               id="specialInstructions"
               name="specialInstructions"
@@ -1778,13 +1841,13 @@ const CabBookingListPage = forwardRef(({ onBookingActionSuccess }, ref) => {
   const { axios } = useAppContext();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [filterCabType, setFilterCabType] = useState('all');
-  const [filterPurpose, setFilterPurpose] = useState('all');
-  const [message, setMessage] = useState('');
-  const [messageType, setMessageType] = useState('');
+  const [error, setError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterCabType, setFilterCabType] = useState("all");
+  const [filterPurpose, setFilterPurpose] = useState("all");
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
 
   // State for edit modal
   const [editingBooking, setEditingBooking] = useState(null);
@@ -1800,20 +1863,20 @@ const CabBookingListPage = forwardRef(({ onBookingActionSuccess }, ref) => {
 
   const fetchBookings = async () => {
     setLoading(true);
-    setError('');
+    setError("");
     const token = getAuthToken();
 
     if (!token) {
-      setError('Authentication token not found. Please log in.');
+      setError("Authentication token not found. Please log in.");
       setLoading(false);
       setBookings([]);
       return;
     }
 
     try {
-      const { data: responseData } = await axios.get('/api/cab/bookings', {
+      const { data: responseData } = await axios.get("/api/cab/bookings", {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
       const bookingsArray = responseData.bookings;
@@ -1821,12 +1884,15 @@ const CabBookingListPage = forwardRef(({ onBookingActionSuccess }, ref) => {
       if (Array.isArray(bookingsArray)) {
         setBookings(bookingsArray);
       } else {
-        console.warn("API response 'bookings' property was not an array or was missing:", responseData);
+        console.warn(
+          "API response 'bookings' property was not an array or was missing:",
+          responseData
+        );
         setBookings([]);
       }
     } catch (e) {
       setError(`Failed to fetch bookings: ${e.message}`);
-      console.error('Fetch error:', e);
+      console.error("Fetch error:", e);
       setBookings([]);
     } finally {
       setLoading(false);
@@ -1834,7 +1900,7 @@ const CabBookingListPage = forwardRef(({ onBookingActionSuccess }, ref) => {
   };
 
   useImperativeHandle(ref, () => ({
-    fetchBookings: fetchBookings
+    fetchBookings: fetchBookings,
   }));
 
   useEffect(() => {
@@ -1860,27 +1926,36 @@ const CabBookingListPage = forwardRef(({ onBookingActionSuccess }, ref) => {
     setEditMessage(null); // Clear previous messages
     const token = getAuthToken();
     if (!token) {
-      setEditMessage({ text: 'Authentication token not found. Please log in.', type: 'error' });
+      setEditMessage({
+        text: "Authentication token not found. Please log in.",
+        type: "error",
+      });
       return;
     }
 
-    console.log('Attempting to update booking with ID:', id);
-    console.log('Data being sent:', updatedData);
+    console.log("Attempting to update booking with ID:", id);
+    console.log("Data being sent:", updatedData);
 
     try {
       await axios.put(`/api/cab/bookings/${id}`, updatedData, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
-      setEditMessage({ text: 'Booking successfully updated!', type: 'success' });
+      setEditMessage({
+        text: "Booking successfully updated!",
+        type: "success",
+      });
       fetchBookings(); // Refresh the list
       if (onBookingActionSuccess) onBookingActionSuccess();
       // Optionally close modal after a short delay or user interaction
       setTimeout(() => handleCloseEditModal(), 1500);
     } catch (e) {
-      setEditMessage({ text: `Network error during update: ${e.message}`, type: 'error' });
-      console.error('Update error:', e);
+      setEditMessage({
+        text: `Network error during update: ${e.message}`,
+        type: "error",
+      });
+      console.error("Update error:", e);
     }
   };
 
@@ -1892,31 +1967,31 @@ const CabBookingListPage = forwardRef(({ onBookingActionSuccess }, ref) => {
 
   // Handler for confirming deletion
   const confirmDelete = async () => {
-    setMessage('');
-    setMessageType('');
+    setMessage("");
+    setMessageType("");
     setShowDeleteConfirmModal(false); // Close the confirmation modal
     const token = getAuthToken();
 
     if (!token) {
-      setMessage('Authentication token not found. Please log in.');
-      setMessageType('error');
+      setMessage("Authentication token not found. Please log in.");
+      setMessageType("error");
       return;
     }
 
     try {
       await axios.delete(`/api/cab/bookings/${bookingToDeleteId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
-      setMessage('Booking successfully deleted!');
-      setMessageType('success');
+      setMessage("Booking successfully deleted!");
+      setMessageType("success");
       fetchBookings(); // Refresh the list after deletion
       if (onBookingActionSuccess) onBookingActionSuccess();
     } catch (e) {
       setMessage(`Network error during delete: ${e.message}`);
-      setMessageType('error');
-      console.error('Delete error:', e);
+      setMessageType("error");
+      console.error("Delete error:", e);
     } finally {
       setBookingToDeleteId(null); // Clear the ID after action
     }
@@ -1928,37 +2003,54 @@ const CabBookingListPage = forwardRef(({ onBookingActionSuccess }, ref) => {
     setBookingToDeleteId(null);
   };
 
-
   const filteredBookings = (bookings || []).filter((booking) => {
     const lowerSearchTerm = searchTerm.toLowerCase().trim();
 
-    if (!booking || typeof booking !== 'object') {
+    if (!booking || typeof booking !== "object") {
       return false;
     }
 
-    const matchesSearch = lowerSearchTerm === '' ||
-      Object.values(booking).some(value =>
+    const matchesSearch =
+      lowerSearchTerm === "" ||
+      Object.values(booking).some((value) =>
         String(value).toLowerCase().includes(lowerSearchTerm)
       );
 
-    const matchesStatus = filterStatus === 'all' ||
-      (booking.status && booking.status.toLowerCase().trim() === filterStatus.toLowerCase().trim());
+    const matchesStatus =
+      filterStatus === "all" ||
+      (booking.status &&
+        booking.status.toLowerCase().trim() ===
+          filterStatus.toLowerCase().trim());
 
-    const matchesCabType = filterCabType === 'all' ||
-      (booking.cabType && booking.cabType.toLowerCase().trim() === filterCabType.toLowerCase().trim());
+    const matchesCabType =
+      filterCabType === "all" ||
+      (booking.cabType &&
+        booking.cabType.toLowerCase().trim() ===
+          filterCabType.toLowerCase().trim());
 
-    const matchesPurpose = filterPurpose === 'all' ||
-      (booking.purpose && booking.purpose.toLowerCase().trim() === filterPurpose.toLowerCase().trim());
+    const matchesPurpose =
+      filterPurpose === "all" ||
+      (booking.purpose &&
+        booking.purpose.toLowerCase().trim() ===
+          filterPurpose.toLowerCase().trim());
 
     return matchesSearch && matchesStatus && matchesCabType && matchesPurpose;
   });
 
   return (
     <div className="w-full max-w-7xl bg-white p-8 rounded-xl shadow-2xl border border-gray-200 mx-auto font-sans">
-      <h2 className="text-3xl font-extrabold text-gray-900 mb-8 text-center">Cab Booking List</h2>
+      <h2 className="text-3xl font-extrabold text-gray-900 mb-8 text-center">
+        Cab Booking List
+      </h2>
 
       {message && (
-        <div className={`p-3 rounded-md text-center mb-4 ${messageType === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+        <div
+          className={`p-3 rounded-md text-center mb-4 ${
+            messageType === "success"
+              ? "bg-green-100 text-green-800"
+              : "bg-red-100 text-red-800"
+          }`}
+        >
           {message}
         </div>
       )}
@@ -2010,7 +2102,7 @@ const CabBookingListPage = forwardRef(({ onBookingActionSuccess }, ref) => {
         </select>
 
         <button
-          onClick={() => navigate('/cabbookingform')}
+          onClick={() => navigate("/cabbookingform")}
           className="inline-flex items-center px-6 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-[color:var(--color-primary)] focus:ring-2 focus:ring-offset-2 focus:bg-[color:var(--color-primary)]n-out"
         >
           Book New Cab
@@ -2018,33 +2110,83 @@ const CabBookingListPage = forwardRef(({ onBookingActionSuccess }, ref) => {
       </div>
 
       {loading ? (
-        <div className="text-center text-lg font-semibold text-gray-700">Loading bookings...</div>
+        <div className="text-center text-lg font-semibold text-gray-700">
+          Loading bookings...
+        </div>
       ) : error ? (
         <div className="text-center text-lg font-semibold text-red-600 p-4 bg-red-100 rounded-md shadow-md">
           {error}
         </div>
       ) : filteredBookings.length === 0 ? (
-        <div className="text-center text-lg text-gray-600 p-4 bg-gray-50 rounded-md">No bookings found matching your criteria.</div>
+        <div className="text-center text-lg text-gray-600 p-4 bg-gray-50 rounded-md">
+          No bookings found matching your criteria.
+        </div>
       ) : (
         <div className="overflow-x-auto rounded-lg shadow-md border border-gray-200">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-100">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purpose</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pickup/Destination</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pickup Time</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cab Type</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guest Name</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  ID
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Purpose
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Pickup/Destination
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Pickup Time
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Status
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Cab Type
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Guest Name
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredBookings.map((booking) => (
                 <tr key={booking._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{booking._id.slice(-6)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{booking.purpose ? booking.purpose.replace(/_/g, ' ') : 'N/A'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {booking._id.slice(-6)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
+                    {booking.purpose
+                      ? booking.purpose.replace(/_/g, " ")
+                      : "N/A"}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {booking.pickupLocation} to {booking.destination}
                   </td>
@@ -2052,18 +2194,44 @@ const CabBookingListPage = forwardRef(({ onBookingActionSuccess }, ref) => {
                     {new Date(booking.pickupTime).toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                      ${booking.status === 'completed' ? 'bg-green-100 text-green-800' : ''}
-                      ${booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : ''}
-                      ${booking.status === 'confirmed' ? 'bg-blue-100 text-blue-800' : ''}
-                      ${booking.status === 'on_route' ? 'bg-purple-100 text-purple-800' : ''}
-                      ${booking.status === 'cancelled' ? 'bg-red-100 text-red-800' : ''}
-                      capitalize`}>
-                      {booking.status || 'N/A'}
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                      ${
+                        booking.status === "completed"
+                          ? "bg-green-100 text-green-800"
+                          : ""
+                      }
+                      ${
+                        booking.status === "pending"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : ""
+                      }
+                      ${
+                        booking.status === "confirmed"
+                          ? "bg-blue-100 text-blue-800"
+                          : ""
+                      }
+                      ${
+                        booking.status === "on_route"
+                          ? "bg-purple-100 text-purple-800"
+                          : ""
+                      }
+                      ${
+                        booking.status === "cancelled"
+                          ? "bg-red-100 text-red-800"
+                          : ""
+                      }
+                      capitalize`}
+                    >
+                      {booking.status || "N/A"}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{booking.cabType || 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{booking.guestName || 'N/A'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
+                    {booking.cabType || "N/A"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {booking.guestName || "N/A"}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
                       onClick={() => handleEditClick(booking)}
