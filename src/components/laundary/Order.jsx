@@ -1,9 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Filter, X, Save, DollarSign, User, Package, List, CheckCircle, Clock, Truck } from 'lucide-react';
+import { useAppContext } from '../../context/AppContext';
+import { useAppContext } from '../../context/AppContext';
 
 // Main App Component
 const App = () => {
+  const { axios } = useAppContext();
+  const { axios } = useAppContext();
 
   const [orders, setOrders] = useState([]);
  
@@ -16,10 +20,7 @@ const App = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
 
-  const getAuthToken = () => localStorage.getItem("token");
-  
-  
-  const apiEndpoint = 'https://backend-hazel-xi.vercel.app/api/laundry'; 
+  const getAuthToken = () => localStorage.getItem("token"); 
 
  
   useEffect(() => {
@@ -31,17 +32,12 @@ const App = () => {
       }
       
       try {
-        const response = await fetch(apiEndpoint, {
-          method: 'GET',
+        const response = await axios.get('/api/laundry', {
           headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}` // Use the token from localStorage
           }
         });
-        if (!response.ok) {
-          throw new Error('Failed to fetch orders');
-        }
-        const data = await response.json();
+        const data = response.data;
         
         if (data && Array.isArray(data.laundry)) {
           console.log("Successfully fetched laundry data.");
@@ -57,7 +53,7 @@ const App = () => {
     };
 
     fetchOrders();
-  }, [apiEndpoint]); 
+  }, []); 
 
   // Function to save (add or update) an order via the API
   const handleSaveOrder = async (orderData) => {
@@ -70,18 +66,12 @@ const App = () => {
     if (editingOrder) {
       // If editing an existing order, update it with a PUT request
       try {
-        const response = await fetch(`${apiEndpoint}/${editingOrder._id}`, {
-          method: 'PUT',
+        const response = await axios.put(`/api/laundry/${editingOrder._id}`, orderData, {
           headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}` 
-          },
-          body: JSON.stringify(orderData),
+          }
         });
-        if (!response.ok) {
-          throw new Error('Failed to update order');
-        }
-        const updatedOrder = await response.json();
+        const updatedOrder = response.data;
         setOrders(orders.map(order => (order._id === updatedOrder._id ? updatedOrder : order)));
       } catch (error) {
         console.error('Error updating order:', error);
@@ -89,19 +79,13 @@ const App = () => {
     } else {
       // If adding a new order, create it with a POST request
       try {
-        const response = await fetch(apiEndpoint, {
-          method: 'POST',
+        const response = await axios.post('/api/laundry', orderData, {
           headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(orderData),
+          }
         });
-        if (!response.ok) {
-          throw new Error('Failed to add new order');
-        }
         
-        const data = await response.json();
+        const data = response.data;
         console.log('API response for new order:', data); 
 
         const newOrder = data.laundry || data.order || data;
@@ -127,15 +111,11 @@ const App = () => {
     const confirmDelete = window.confirm("Are you sure you want to delete this order?");
     if (confirmDelete) {
       try {
-        const response = await fetch(`${apiEndpoint}/${id}`, {
-          method: 'DELETE',
+        await axios.delete(`/api/laundry/${id}`, {
           headers: {
             'Authorization': `Bearer ${token}` 
           }
         });
-        if (!response.ok) {
-          throw new Error('Failed to delete order');
-        }
         setOrders(orders.filter(order => order._id !== id));
       } catch (error) {
           console.error('Error deleting order:', error);

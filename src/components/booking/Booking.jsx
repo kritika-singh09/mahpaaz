@@ -1170,13 +1170,11 @@
 // export default BookingPage;
 
 import React, { useState, useEffect } from "react";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, XCircle, CheckCircle, Search, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppContext } from "../../context/AppContext";
 import BookingView from "./BookingView";
 import BookingEdit from "./BookingEdit";
-import { useNavigate } from "react-router-dom";
-import { Edit, XCircle, CheckCircle, Search, X } from "lucide-react";
 
 const BookingEdit = ({ booking, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -1385,24 +1383,18 @@ const BookingPage = () => {
         status: newStatus,
       };
 
-      const res = await fetch(
-        `https://backend-hazel-xi.vercel.app/api/bookings/update/${bookingId}`,
+      const response = await axios.put(
+        `/api/bookings/update/${bookingId}`,
+        updateData,
         {
-          method: "PUT",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(updateData),
         }
       );
 
-      const responseData = await res.json();
-
-      if (!res.ok) {
-        throw new Error(
-          responseData.message || "Failed to update booking status"
-        );
+      if (!response.data) {
+        throw new Error("Failed to update booking status");
       }
 
       setBookings((prev) =>
@@ -1445,33 +1437,6 @@ const BookingPage = () => {
         }
       );
 
-      const responseData = await res.json();
-      if (!res.ok) throw new Error(responseData.message || "Update failed");
-
-      setError(null);
-      setBookings((prev) =>
-        prev.map((b) =>
-          b.id === bookingId
-            ? {
-                ...b,
-                grcNo: responseData.grcNo,
-                name: responseData.name,
-                mobileNo: responseData.mobileNo,
-                roomNumber: responseData.roomNumber,
-                checkIn: new Date(
-                  responseData.checkInDate
-                ).toLocaleDateString(),
-                checkOut: new Date(
-                  responseData.checkOutDate
-                ).toLocaleDateString(),
-                status: responseData.status,
-                vip: responseData.vip,
-                _raw: responseData,
-              }
-            : b
-        )
-      );
-      setEditId(null);
       if (data && data.success) {
         setError(null);
         fetchBookings(); // Refresh bookings list

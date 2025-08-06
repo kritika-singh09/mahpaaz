@@ -679,6 +679,7 @@
 //   );
 // }
 import React, { useState, useEffect } from 'react';
+import { useAppContext } from '../context/AppContext';
 
 // Main App component that renders either CabBookingForm or CabList
 export default function App() {
@@ -707,6 +708,7 @@ export default function App() {
 
 // CabBookingForm component (remains largely the same, but now accepts a prop)
 function CabBookingForm({ onSubmissionSuccess }) {
+  const { axios } = useAppContext();
   // State to hold form data, initialized with default values
   const [formData, setFormData] = useState({
     _id: '', // Added for update functionality
@@ -753,15 +755,8 @@ function CabBookingForm({ onSubmissionSuccess }) {
     const fetchData = async () => {
       // Fetch Drivers
       try {
-        const driverResponse = await fetch('https://backend-hazel-xi.vercel.app/api/driver');
-        if (driverResponse.ok) {
-          const driverData = await driverResponse.json();
-          setDrivers(Array.isArray(driverData) ? driverData : []);
-        } else {
-          console.error('Failed to fetch drivers:', driverResponse.statusText);
-          setMessage('Error fetching driver list.');
-          setMessageType('error');
-        }
+        const { data: driverData } = await axios.get('/api/driver');
+        setDrivers(Array.isArray(driverData) ? driverData : []);
       } catch (error) {
         console.error('Network error fetching drivers:', error);
         setMessage(`Network error fetching drivers: ${error.message}`);
@@ -770,15 +765,8 @@ function CabBookingForm({ onSubmissionSuccess }) {
 
       // Fetch Vehicles
       try {
-        const vehicleResponse = await fetch('https://backend-hazel-xi.vercel.app/api/vehicle/all');
-        if (vehicleResponse.ok) {
-          const vehicleData = await vehicleResponse.json();
-          setVehicles(Array.isArray(vehicleData.vehicles) ? vehicleData.vehicles : []);
-        } else {
-          console.error('Failed to fetch vehicles:', vehicleResponse.statusText);
-          setMessage('Error fetching vehicle list.');
-          setMessageType('error');
-        }
+        const { data: vehicleData } = await axios.get('/api/vehicle/all');
+        setVehicles(Array.isArray(vehicleData.vehicles) ? vehicleData.vehicles : []);
       } catch (error) {
         console.error('Network error fetching vehicles:', error);
         setMessage(`Network error fetching vehicles: ${error.message}`);
@@ -833,27 +821,15 @@ function CabBookingForm({ onSubmissionSuccess }) {
       return;
     }
 
-    let urlToFetch = '';
-    if (fetchBookingId) {
-      urlToFetch = `https://backend-hazel-xi.vercel.app/api/cab/bookings/${fetchBookingId}`;
-    } else if (fetchGrcNo) {
-      urlToFetch = `https://backend-hazel-xi.vercel.app/api/cab/bookings?grcNo=${fetchGrcNo}`;
-    }
-
     try {
-      const response = await fetch(urlToFetch);
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const errorText = await response.text();
-        console.error('Server did not return JSON. Raw response:', errorText);
-        setMessage(`Error: Expected JSON, but received unexpected response from server. Status: ${response.status}`);
-        setMessageType('error');
-        return;
+      let data;
+      if (fetchBookingId) {
+        const response = await axios.get(`/api/cab/bookings/${fetchBookingId}`);
+        data = response.data;
+      } else if (fetchGrcNo) {
+        const response = await axios.get(`/api/cab/bookings?grcNo=${fetchGrcNo}`);
+        data = response.data;
       }
-
-      if (response.ok) {
-        const data = await response.json();
         if (fetchGrcNo && Array.isArray(data.bookings) && data.bookings.length > 0) {
           bookingData = data.bookings[0];
           setMessage('Booking fetched successfully by GRC No. (first match)!');
@@ -867,13 +843,7 @@ function CabBookingForm({ onSubmissionSuccess }) {
           setMessageType('error');
           return;
         }
-      } else {
-        const errorData = await response.json();
-        setMessage(`Error fetching booking: ${errorData.message || 'Failed to fetch booking.'}`);
-        setMessageType('error');
-        console.error('Error fetching booking:', errorData);
-        return;
-      }
+
     } catch (error) {
       setMessage(`Network error or invalid JSON response: ${error.message}`);
       setMessageType('error');
@@ -923,10 +893,6 @@ function CabBookingForm({ onSubmissionSuccess }) {
     setMessageType('');
 
     const isUpdate = !!formData._id;
-    const method = isUpdate ? 'PUT' : 'POST';
-    const url = isUpdate
-      ? `https://backend-hazel-xi.vercel.app/api/cab/bookings/${formData._id}`
-      : 'https://backend-hazel-xi.vercel.app/api/cab/bookings';
 
     const dataToSend = {
       ...formData,
@@ -946,41 +912,20 @@ function CabBookingForm({ onSubmissionSuccess }) {
     });
 
     try {
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(dataToSend),
-      });
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const errorText = await response.text();
-        console.error('Server did not return JSON on submission. Raw response:', errorText);
-        setMessage(`Error: Expected JSON, but received unexpected response from server after submission. Status: ${response.status}`);
-        setMessageType('error');
-        return;
-      }
-
-      if (response.ok) {
-        const result = await response.json();
-        setMessage(`Cab booking successfully ${isUpdate ? 'updated' : 'created'}!`);
-        setMessageType('success');
-        console.log('Success:', result);
-        // Call the callback to switch view on success
-        if (onSubmissionSuccess) {
-          onSubmissionSuccess();
-        }
-        handleClearForm(); // Clear form after successful submission
+      let result;
+      if (isUpdate) {
+        result = await axios.put(`/api/cab/bookings/${formData._id}`, dataToSend);
       } else {
-        const errorData = await response.json();
-        setMessage(
-          `Error: ${errorData.message || `Failed to ${isUpdate ? 'update' : 'create'} cab booking.`}`
-        );
-        setMessageType('error');
-        console.error('Error:', errorData);
+        result = await axios.post('/api/cab/bookings', dataToSend);
       }
+      setMessage(`Cab booking successfully ${isUpdate ? 'updated' : 'created'}!`);
+      setMessageType('success');
+      console.log('Success:', result.data);
+      // Call the callback to switch view on success
+      if (onSubmissionSuccess) {
+        onSubmissionSuccess();
+      }
+      handleClearForm(); // Clear form after successful submission
     } catch (error) {
       setMessage(`Network error or invalid JSON response: ${error.message}`);
       setMessageType('error');

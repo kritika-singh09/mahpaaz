@@ -1021,10 +1021,10 @@
 
 // export default App;
 import React, { useState, useEffect } from 'react';
+import { useAppContext } from '../context/AppContext';
 
 function App() {
-  const API_BASE_URL = 'https://backend-hazel-xi.vercel.app/api/vehicle';
-
+  const { axios } = useAppContext();
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -1056,57 +1056,44 @@ function App() {
 
       if (isPotentialId) {
         try {
-          response = await fetch(`${API_BASE_URL}/get/${searchQuery}`);
-          if (!response.ok) {
-            console.warn(`Vehicle with ID ${searchQuery} not found. Attempting general search.`);
-            response = await fetch(`${API_BASE_URL}/all`);
-          } else {
-            const vehicleData = await response.json();
-            const formattedVehicle = {
-              ...vehicleData,
-              insuranceValidTill: vehicleData.insuranceValidTill ? new Date(vehicleData.insuranceValidTill).toISOString().split('T')[0] : '',
-              registrationExpiry: vehicleData.registrationExpiry ? new Date(vehicleData.registrationExpiry).toISOString().split('T')[0] : '',
-            };
-            setSingleVehicleFound(formattedVehicle);
-            setVehicles([]);
-            setLoading(false);
-            return;
-          }
+          const { data: vehicleData } = await axios.get(`/api/vehicle/get/${searchQuery}`);
+          const formattedVehicle = {
+            ...vehicleData,
+            insuranceValidTill: vehicleData.insuranceValidTill ? new Date(vehicleData.insuranceValidTill).toISOString().split('T')[0] : '',
+            registrationExpiry: vehicleData.registrationExpiry ? new Date(vehicleData.registrationExpiry).toISOString().split('T')[0] : '',
+          };
+          setSingleVehicleFound(formattedVehicle);
+          setVehicles([]);
+          setLoading(false);
+          return;
         } catch (idFetchError) {
-          console.error("Error during ID fetch attempt, falling back to general search:", idFetchError);
-          response = await fetch(`${API_BASE_URL}/all`);
+          console.warn(`Vehicle with ID ${searchQuery} not found. Attempting general search.`);
         }
-      } else {
-        response = await fetch(`${API_BASE_URL}/all`);
       }
+      
+      try {
+        const { data } = await axios.get('/api/vehicle/all');
 
-      if (!response.ok) {
-        let errorMsg = 'Failed to fetch vehicles.';
-        try {
-          const errorData = await response.json();
-          errorMsg = errorData.message || errorMsg;
-        } catch (jsonError) {
-          console.error("Failed to parse error response as JSON for fetching vehicles:", jsonError);
-          errorMsg = `Server error: ${response.status} ${response.statusText}. Please check the backend API.`;
+        let vehicleData;
+        if (data && typeof data === 'object' && data.vehicles && Array.isArray(data.vehicles)) {
+          vehicleData = data.vehicles;
+        } else if (!Array.isArray(data)) {
+          console.warn("API response for /all was not an array or did not contain a 'vehicles' array:", data);
+          vehicleData = [];
+        } else {
+          vehicleData = data;
         }
-        throw new Error(errorMsg);
+
+        const formattedData = vehicleData.map(vehicle => ({
+          ...vehicle,
+          insuranceValidTill: vehicle.insuranceValidTill ? new Date(vehicle.insuranceValidTill).toISOString().split('T')[0] : '',
+          registrationExpiry: vehicle.registrationExpiry ? new Date(vehicle.registrationExpiry).toISOString().split('T')[0] : '',
+        }));
+        setVehicles(formattedData);
+      } catch (fetchError) {
+        console.error("Error fetching vehicles:", fetchError);
+        setError(`Failed to load vehicles: ${fetchError.message}`);
       }
-
-      data = await response.json();
-
-      if (data && typeof data === 'object' && data.vehicles && Array.isArray(data.vehicles)) {
-        data = data.vehicles;
-      } else if (!Array.isArray(data)) {
-        console.warn("API response for /all was not an array or did not contain a 'vehicles' array:", data);
-        data = [];
-      }
-
-      const formattedData = data.map(vehicle => ({
-        ...vehicle,
-        insuranceValidTill: vehicle.insuranceValidTill ? new Date(vehicle.insuranceValidTill).toISOString().split('T')[0] : '',
-        registrationExpiry: vehicle.registrationExpiry ? new Date(vehicle.registrationExpiry).toISOString().split('T')[0] : '',
-      }));
-      setVehicles(formattedData);
     } catch (err) {
       console.error("Error fetching vehicles:", err);
       setError(`Failed to load vehicles: ${err.message}`);
@@ -1145,33 +1132,9 @@ function App() {
       let url;
 
       if (editingVehicle) {
-        url = `${API_BASE_URL}/update/${editingVehicle._id}`;
-        console.log("Attempting to update vehicle with PUT to:", url);
-        response = await fetch(url, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(vehicleData),
-        });
+        await axios.put(`/api/vehicle/update/${editingVehicle._id}`, vehicleData);
       } else {
-        url = `${API_BASE_URL}/add`;
-        console.log("Attempting to add vehicle with POST to:", url);
-        response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(vehicleData),
-        });
-      }
-
-      if (!response.ok) {
-        let errorMsg = `Failed to ${editingVehicle ? 'update' : 'add'} vehicle.`;
-        try {
-          const errorData = await response.json();
-          errorMsg = errorData.message || errorMsg;
-        } catch (jsonError) {
-          console.error("Failed to parse error response as JSON:", jsonError);
-          errorMsg = `Server error: ${response.status} ${response.statusText}. Please check the backend API.`;
-        }
-        throw new Error(errorMsg);
+        await axios.post('/api/vehicle/add', vehicleData);
       }
 
       setMessage(`Vehicle ${editingVehicle ? 'updated' : 'added'} successfully!`);
@@ -1206,26 +1169,8 @@ function App() {
       setMessage('');
       setError(null);
       try {
-        const response = await fetch(`${API_BASE_URL}/delete/${id}`, {
-          method: 'DELETE',
-        });
-
-        if (response.status === 204) {
-          setMessage('Vehicle deleted successfully!');
-        } else if (response.ok) {
-          const data = await response.json();
-          setMessage(data.message || 'Vehicle deleted successfully!');
-        } else {
-          let errorMsg = 'Failed to delete vehicle.';
-          try {
-            const errorData = await response.json();
-            errorMsg = errorData.message || errorMsg;
-          } catch (jsonError) {
-            console.error("Failed to parse error response as JSON for delete:", jsonError);
-            errorMsg = `Server error: ${response.status} ${response.statusText}. Please check the backend API.`;
-          }
-          throw new Error(errorMsg);
-        }
+        await axios.delete(`/api/vehicle/delete/${id}`);
+        setMessage('Vehicle deleted successfully!');
 
         fetchVehicles();
       } catch (err) {

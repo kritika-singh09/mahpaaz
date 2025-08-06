@@ -2114,6 +2114,7 @@
 // export default App;
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppContext } from '../../context/AppContext';
 import { FaUser, FaPhone, FaCity, FaMapMarkedAlt, FaBuilding, FaGlobe, FaRegAddressCard, FaMobileAlt, FaEnvelope, FaMoneyCheckAlt, FaCalendarAlt, FaClock, FaDoorOpen, FaUsers, FaConciergeBell, FaInfoCircle, FaSuitcase, FaComments, FaFileInvoiceDollar, FaCheckCircle, FaSignInAlt, FaPassport, FaIdCard, FaCreditCard, FaCashRegister, FaAddressBook, FaRegListAlt, FaRegUser, FaRegCalendarPlus, FaRegCheckCircle, FaRegTimesCircle, FaRegUserCircle, FaRegCreditCard, FaRegStar, FaRegFlag, FaRegEdit, FaRegClone, FaRegCommentDots, FaRegFileAlt, FaRegCalendarCheck, FaRegCalendarTimes, FaRegMap, FaHotel, FaTimes } from "react-icons/fa";
 
 // InputWithIcon for UI consistency
@@ -2137,29 +2138,16 @@ const InputWithIcon = ({ icon, type, name, placeholder, value, onChange, classNa
 );
 
 // Fetch a new, sequential GRC number from backend
-const fetchNewGRCNo = async (setFormData, BASE_URL, showMessage) => {
+const fetchNewGRCNo = async (setFormData, axios, showMessage) => {
   try {
     const token = localStorage.getItem('token');
-    const res = await fetch(`${BASE_URL}/bookings/grc/new`, {
+    const res = await axios.get('/api/bookings/grc/new', {
       headers: token ? { 'Authorization': `Bearer ${token}` } : {}
     });
     
-    if (!res.ok) {
-      throw new Error('Failed to fetch new GRC number. Please check the backend route.');
-    }
-
-    const contentType = res.headers.get('content-type');
-    
-    if (contentType && contentType.includes('application/json')) {
-      const data = await res.json();
-      if (data && data.grcNo) {
-        setFormData(prev => ({ ...prev, grcNo: data.grcNo }));
-      } else {
-        setFormData(prev => ({ ...prev, grcNo: '' }));
-      }
+    if (res.data && res.data.grcNo) {
+      setFormData(prev => ({ ...prev, grcNo: res.data.grcNo }));
     } else {
-      console.error('Expected JSON response, but received:', contentType);
-      showMessage('error', 'Server returned a non-JSON response for new GRC number.');
       setFormData(prev => ({ ...prev, grcNo: '' }));
     }
   } catch (err) {
@@ -2169,25 +2157,19 @@ const fetchNewGRCNo = async (setFormData, BASE_URL, showMessage) => {
   }
 };
 
-const fetchBookingByGRC = async (grcNo, setFormData, BASE_URL, setError, showMessage) => {
+const fetchBookingByGRC = async (grcNo, setFormData, axios, setError, showMessage) => {
   if (!grcNo) {
     showMessage('error', 'Please enter a GRC number to search.');
     return;
   }
   try {
     const token = localStorage.getItem('token');
-    const res = await fetch(`${BASE_URL}/bookings/grc/${grcNo}`, {
+    const res = await axios.get(`/api/bookings/grc/${grcNo}`, {
       headers: token ? { 'Authorization': `Bearer ${token}` } : {}
     });
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(`Booking not found with this GRC number. Status: ${res.status} - ${errorText}`);
-    }
-
-    const data = await res.json();
-    if (data) {
-      setFormData(data);
+    if (res.data) {
+      setFormData(res.data);
       showMessage('success', `Booking data for GRC No. ${grcNo} loaded successfully!`);
     } else {
       throw new Error('No data received for this GRC number.');
@@ -2372,6 +2354,7 @@ const DatePicker = ({ value, onChange, label }) => {
 
 const App = () => {
   const navigate = useNavigate();
+  const { axios } = useAppContext();
   const [formData, setFormData] = useState({
     reservationId: '',
     categoryId: '',
@@ -2438,8 +2421,6 @@ const App = () => {
   const [error, setError] = useState(null);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [selectedRooms, setSelectedRooms] = useState([]);
-
-  const BASE_URL = "https://backend-hazel-xi.vercel.app/api";
 
   const handleImageChange = (e, field) => {
     const file = e.target.files && e.target.files[0];
@@ -2523,12 +2504,8 @@ const App = () => {
     setError(null);
     setSelectedRooms([]);
     try {
-      const apiUrl = `${BASE_URL}/rooms/available?checkInDate=${checkInDate}&checkOutDate=${checkOutDate}`;
-      const response = await fetch(apiUrl);
-      if (!response.ok) {
-        throw new Error('Failed to fetch room availability');
-      }
-      const data = await response.json();
+      const response = await axios.get(`/api/rooms/available?checkInDate=${checkInDate}&checkOutDate=${checkOutDate}`);
+      const data = response.data;
       
       const availableRoomsList = data.availableRooms || [];
       if (Array.isArray(availableRoomsList)) {
@@ -2565,7 +2542,7 @@ const App = () => {
   };
 
   useEffect(() => {
-    fetchNewGRCNo(setFormData, BASE_URL, showMessage);
+    fetchNewGRCNo(setFormData, axios, showMessage);
   }, []);
 
   const showMessage = (type, text) => {
@@ -2626,7 +2603,7 @@ const App = () => {
                   />
                   <Button
                     type="button"
-                    onClick={() => fetchBookingByGRC(searchGRC, setFormData, BASE_URL, setError, showMessage)}
+                    onClick={() => fetchBookingByGRC(searchGRC, setFormData, axios, setError, showMessage)}
                     className="w-full sm:w-auto flex-shrink-0 px-4 py-2"
                   >
                     Fetch

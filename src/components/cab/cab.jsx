@@ -1519,7 +1519,8 @@
 
 
 import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
+import { useNavigate } from 'react-router-dom';
+import { useAppContext } from '../context/AppContext';
 
 // Utility function to get the authentication token
 const getAuthToken = () => {
@@ -1774,6 +1775,7 @@ const EditBookingModal = ({ booking, onClose, onSave, showMessage }) => {
 };
 
 const CabBookingListPage = forwardRef(({ onBookingActionSuccess }, ref) => {
+  const { axios } = useAppContext();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -1809,21 +1811,11 @@ const CabBookingListPage = forwardRef(({ onBookingActionSuccess }, ref) => {
     }
 
     try {
-      const response = await fetch('https://backend-hazel-xi.vercel.app/api/cab/bookings', {
+      const { data: responseData } = await axios.get('/api/cab/bookings', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
-
-      if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          throw new Error('Unauthorized: Please log in or check your permissions.');
-        }
-        const errorBody = await response.text();
-        throw new Error(`HTTP error! Status: ${response.status}. Message: ${errorBody || 'Unknown error'}`);
-      }
-
-      const responseData = await response.json();
       const bookingsArray = responseData.bookings;
 
       if (Array.isArray(bookingsArray)) {
@@ -1876,29 +1868,16 @@ const CabBookingListPage = forwardRef(({ onBookingActionSuccess }, ref) => {
     console.log('Data being sent:', updatedData);
 
     try {
-      const response = await fetch(`https://backend-hazel-xi.vercel.app/api/cab/bookings/${id}`, {
-        method: 'PUT',
+      await axios.put(`/api/cab/bookings/${id}`, updatedData, {
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(updatedData),
       });
-
-      console.log('Response status:', response.status);
-      console.log('Response OK:', response.ok);
-
-      if (response.ok) {
-        setEditMessage({ text: 'Booking successfully updated!', type: 'success' });
-        fetchBookings(); // Refresh the list
-        if (onBookingActionSuccess) onBookingActionSuccess();
-        // Optionally close modal after a short delay or user interaction
-        setTimeout(() => handleCloseEditModal(), 1500);
-      } else {
-        const errorData = await response.json();
-        console.error('Error response data:', errorData); // Log the full error response
-        setEditMessage({ text: `Error: ${errorData.message || 'Failed to update booking.'}`, type: 'error' });
-      }
+      setEditMessage({ text: 'Booking successfully updated!', type: 'success' });
+      fetchBookings(); // Refresh the list
+      if (onBookingActionSuccess) onBookingActionSuccess();
+      // Optionally close modal after a short delay or user interaction
+      setTimeout(() => handleCloseEditModal(), 1500);
     } catch (e) {
       setEditMessage({ text: `Network error during update: ${e.message}`, type: 'error' });
       console.error('Update error:', e);
@@ -1925,23 +1904,15 @@ const CabBookingListPage = forwardRef(({ onBookingActionSuccess }, ref) => {
     }
 
     try {
-      const response = await fetch(`https://backend-hazel-xi.vercel.app/api/cab/bookings/${bookingToDeleteId}`, {
-        method: 'DELETE',
+      await axios.delete(`/api/cab/bookings/${bookingToDeleteId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
-
-      if (response.ok) {
-        setMessage('Booking successfully deleted!');
-        setMessageType('success');
-        fetchBookings(); // Refresh the list after deletion
-        if (onBookingActionSuccess) onBookingActionSuccess();
-      } else {
-        const errorData = await response.json();
-        setMessage(`Error: ${errorData.message || 'Failed to delete booking.'}`);
-        setMessageType('error');
-      }
+      setMessage('Booking successfully deleted!');
+      setMessageType('success');
+      fetchBookings(); // Refresh the list after deletion
+      if (onBookingActionSuccess) onBookingActionSuccess();
     } catch (e) {
       setMessage(`Network error during delete: ${e.message}`);
       setMessageType('error');

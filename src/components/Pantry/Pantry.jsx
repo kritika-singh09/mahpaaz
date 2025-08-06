@@ -1,9 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-
-// API Base URLs
-const API_BASE_URL = "https://backend-hazel-xi.vercel.app/api/pantry"; // Updated to Vercel URL
-const PANTRY_ITEMS_URL = `${API_BASE_URL}/items`;
-const PANTRY_ORDERS_URL = `${API_BASE_URL}/orders`;
+import { useAppContext } from '../../context/AppContext';
 
 // Gemini API Key (left empty for Canvas runtime injection)
 const apiKey = "";
@@ -1021,6 +1017,7 @@ function PantryOrderTableRow({ order, onEdit, onDelete, users }) {
 
 // Main App Component
 function App() {
+  const { axios } = useAppContext();
   // State variables for application data and UI
   const [pantryItems, setPantryItems] = useState([]);
   const [pantryOrders, setPantryOrders] = useState([]); // New state for orders
@@ -1061,28 +1058,12 @@ function App() {
         );
       }
 
-      const response = await fetch(PANTRY_ITEMS_URL, {
+      const response = await axios.get('/api/pantry/items', {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-
-      if (!response.ok) {
-        let errorMsg = "Failed to fetch pantry items.";
-        try {
-          const errorData = await response.json();
-          errorMsg = errorData.message || errorMsg;
-        } catch (jsonError) {
-          console.error(
-            "Failed to parse error response as JSON for fetching items:",
-            jsonError
-          );
-          errorMsg = `Server error: ${response.status} ${response.statusText}. Please check the backend API and its authentication requirements.`;
-        }
-        throw new Error(errorMsg);
-      }
-      const data = await response.json();
+      const data = response.data;
 
       const formattedData = Array.isArray(data.items)
         ? data.items.map((item) => ({
@@ -1117,28 +1098,12 @@ function App() {
         );
       }
 
-      const response = await fetch(PANTRY_ORDERS_URL, {
+      const response = await axios.get('/api/pantry/orders', {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-
-      if (!response.ok) {
-        let errorMsg = "Failed to fetch pantry orders.";
-        try {
-          const errorData = await response.json();
-          errorMsg = errorData.message || errorMsg;
-        } catch (jsonError) {
-          console.error(
-            "Failed to parse error response as JSON for fetching orders:",
-            jsonError
-          );
-          errorMsg = `Server error: ${response.status} ${response.statusText}. Please check the backend API and its authentication requirements.`;
-        }
-        throw new Error(errorMsg);
-      }
-      const data = await response.json();
+      const data = response.data;
       setPantryOrders(Array.isArray(data.orders) ? data.orders : []); // Access data.orders
     } catch (err) {
       console.error("Error fetching pantry orders:", err);
@@ -1176,29 +1141,13 @@ function App() {
       };
 
       if (id) {
-        response = await fetch(`${PANTRY_ITEMS_URL}/${id}`, {
-          method: "PUT",
-          headers: headers,
-          body: JSON.stringify(data),
+        await axios.put(`/api/pantry/items/${id}`, data, {
+          headers: { Authorization: `Bearer ${token}` },
         });
       } else {
-        response = await fetch(PANTRY_ITEMS_URL, {
-          method: "POST",
-          headers: headers,
-          body: JSON.stringify(data),
+        await axios.post('/api/pantry/items', data, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-      }
-
-      if (!response.ok) {
-        let errorMsg = `Failed to ${id ? "update" : "add"} item.`;
-        try {
-          const errorData = await response.json();
-          errorMsg = errorData.message || errorMsg;
-        } catch (jsonError) {
-          console.error("Failed to parse error response as JSON:", jsonError);
-          errorMsg = `Server error: ${response.status} ${response.statusText}. Please check the backend API.`;
-        }
-        throw new Error(errorMsg);
       }
 
       setMessage(`Pantry item ${id ? "updated" : "added"} successfully!`);

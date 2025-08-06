@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useAppContext } from "../../context/AppContext";
 import {
   FaUser,
   FaPhone,
@@ -88,22 +89,15 @@ const InputWithIcon = ({
 );
 
 // Fetch a new, sequential GRC number from backend
-const fetchNewGRCNo = async (setFormData, BASE_URL) => {
+const fetchNewGRCNo = async (setFormData, axios) => {
   try {
     const token = localStorage.getItem("token");
-    const res = await fetch(`${BASE_URL}/bookings/grc`, {
+    const res = await axios.get('/api/bookings/grc', {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-    // Defensive JSON parse: only if content-type is JSON
-    const contentType = res.headers.get("content-type");
-    if (!res.ok) throw new Error("Failed to fetch new GRC number");
-    if (contentType && contentType.includes("application/json")) {
-      const data = await res.json();
-      if (data && data.grcNo) {
-        setFormData((prev) => ({ ...prev, grcNo: data.grcNo }));
-      } else {
-        setFormData((prev) => ({ ...prev, grcNo: "" }));
-      }
+    
+    if (res.data && res.data.grcNo) {
+      setFormData((prev) => ({ ...prev, grcNo: res.data.grcNo }));
     } else {
       setFormData((prev) => ({ ...prev, grcNo: "" }));
     }
@@ -461,6 +455,7 @@ const DatePicker = ({ value, onChange, label }) => {
 };
 
 const App = () => {
+  const { axios } = useAppContext();
   const [formData, setFormData] = useState({
     grcNo: "",
 
@@ -534,8 +529,6 @@ const App = () => {
   const [message, setMessage] = useState({ type: "", text: "" });
   const [selectedRooms, setSelectedRooms] = useState([]); // New state for selected rooms
 
-  const BASE_URL = "https://backend-hazel-xi.vercel.app/api";
-
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     // Special handling for paymentMode to clear unrelated fields
@@ -607,18 +600,14 @@ const App = () => {
     setError(null);
     try {
       const [roomsRes, vehiclesRes, driversRes] = await Promise.all([
-        fetch(`${BASE_URL}/rooms/all`),
-        fetch(`${BASE_URL}/vehicle/all`),
-        fetch(`${BASE_URL}/driver`),
+        axios.get('/api/rooms/all'),
+        axios.get('/api/vehicle/all'),
+        axios.get('/api/driver'),
       ]);
 
-      if (!roomsRes.ok) throw new Error("Failed to fetch rooms data.");
-      if (!vehiclesRes.ok) throw new Error("Failed to fetch vehicles data.");
-      if (!driversRes.ok) throw new Error("Failed to fetch drivers data.");
-
-      const roomsData = await roomsRes.json();
-      const vehiclesData = await vehiclesRes.json();
-      const driversData = await driversRes.json();
+      const roomsData = roomsRes.data;
+      const vehiclesData = vehiclesRes.data;
+      const driversData = driversRes.data;
 
       setAllRooms(Array.isArray(roomsData) ? roomsData : []);
       setAllVehicles(
@@ -684,12 +673,8 @@ const App = () => {
     setError(null);
     setSelectedRooms([]); // Reset selected rooms on new availability check
     try {
-      const apiUrl = `${BASE_URL}/rooms/available?checkInDate=${checkInDate}&checkOutDate=${checkOutDate}`;
-      const response = await fetch(apiUrl);
-      if (!response.ok) {
-        throw new Error("Failed to fetch room availability");
-      }
-      const data = await response.json();
+      const response = await axios.get(`/api/rooms/available?checkInDate=${checkInDate}&checkOutDate=${checkOutDate}`);
+      const data = response.data;
 
       const availableRoomsList = data.availableRooms || [];
       if (Array.isArray(availableRoomsList)) {
@@ -737,7 +722,7 @@ const App = () => {
 
   useEffect(() => {
     fetchAllData();
-    fetchNewGRCNo(setFormData, BASE_URL);
+    fetchNewGRCNo(setFormData, axios);
   }, []);
 
   const showMessage = (type, text) => {
