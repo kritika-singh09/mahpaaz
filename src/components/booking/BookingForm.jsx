@@ -2769,6 +2769,8 @@ const App = () => {
           }
           return acc;
         }, {});
+        
+        // FIX: Use the state setter function
         setAvailableRoomsByCat(roomsByCategory);
 
         if (availableRoomsList.length > 0) {
@@ -3858,7 +3860,7 @@ const App = () => {
           </div>
         </section>
 
-        <div className="mt-8 flex justify-center gap-4">
+       <div className="mt-8 flex justify-center gap-4">
           <Button
             type="button"
             className="px-8 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
