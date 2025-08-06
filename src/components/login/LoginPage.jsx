@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useAppContext } from "../../context/AppContext";
 import backgroundImage from "../../assets/9e5a6b521cd43319c86acf395f110951.jpg";
 import logoImage from "../../assets/buddhaavenuelogo.png";
 
@@ -10,6 +10,7 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { axios } = useAppContext();
 
   // In LoginPage.jsx
   // In LoginPage.jsx, update the handleSubmit function:
@@ -20,7 +21,7 @@ const LoginPage = () => {
 
     try {
       const response = await axios.post(
-        "https://backend-hazel-xi.vercel.app/api/auth/login",
+        "/api/auth/login",
         {
           username,
           password,

@@ -1,10 +1,11 @@
 // src/components/category/CategoryList.jsx
 import React, { useState, useEffect } from "react";
 import { Plus, Edit, Trash2 } from "lucide-react";
+import { useAppContext } from "../../context/AppContext";
 import CategoryForm from "./CategoryForm";
-import axios from "axios";
 
 const CategoryList = () => {
+  const { axios } = useAppContext();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -25,10 +26,10 @@ const CategoryList = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        "http://localhost:5000/api/categories/all"
+      const { data } = await axios.get(
+        "/api/categories/all"
       );
-      setCategories(response.data);
+      setCategories(data);
       setError(null);
     } catch (err) {
       setError("Failed to fetch categories");
@@ -63,7 +64,7 @@ const CategoryList = () => {
   const handleDeleteCategory = async (id) => {
     if (window.confirm("Are you sure you want to delete this category?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/categories/delete/${id}`);
+        await axios.delete(`/api/categories/delete/${id}`);
         setCategories(categories.filter((category) => category._id !== id));
       } catch (err) {
         console.error("Error deleting category:", err);
@@ -78,8 +79,8 @@ const CategoryList = () => {
     try {
       if (editMode) {
         // Update existing category
-        const response = await axios.put(
-          `http://localhost:5000/api/categories/update/${currentCategory._id}`,
+        const { data } = await axios.put(
+          `/api/categories/update/${currentCategory._id}`,
           {
             name: currentCategory.name,
             description: currentCategory.description,
@@ -89,13 +90,13 @@ const CategoryList = () => {
 
         setCategories(
           categories.map((category) =>
-            category._id === currentCategory._id ? response.data : category
+            category._id === currentCategory._id ? data : category
           )
         );
       } else {
         // Create new category
-        const response = await axios.post(
-          "http://localhost:5000/api/categories/add",
+        const { data } = await axios.post(
+          "/api/categories/add",
           {
             name: currentCategory.name,
             description: currentCategory.description,
@@ -103,7 +104,7 @@ const CategoryList = () => {
           }
         );
 
-        setCategories([...categories, response.data]);
+        setCategories([...categories, data]);
       }
 
       setShowModal(false);

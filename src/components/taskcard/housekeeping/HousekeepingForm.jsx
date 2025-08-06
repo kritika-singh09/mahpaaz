@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { useAppContext } from "../../../context/AppContext";
 
 const HousekeepingForm = ({
   onClose,
@@ -7,6 +7,7 @@ const HousekeepingForm = ({
   editMode = false,
   currentTask = null,
 }) => {
+  const { axios } = useAppContext();
   const [housekeepingTask, setHousekeepingTask] = useState({
     roomId: "",
     cleaningType: "daily",
@@ -44,33 +45,31 @@ const HousekeepingForm = ({
           },
         };
 
-        const roomsResponse = await axios.get(
-          "http://localhost:5000/api/rooms/all",
+        const { data: roomsData } = await axios.get(
+          "/api/rooms/all",
           config
         );
-        setRooms(roomsResponse.data);
+        setRooms(roomsData);
 
-        const staffResponse = await axios.get(
-          "http://localhost:5000/api/housekeeping/available-staff",
+        const { data: staffData } = await axios.get(
+          "/api/housekeeping/available-staff",
           config
         );
-        console.log("Staff response:", staffResponse.data);
+        console.log("Staff response:", staffData);
 
         if (
-          staffResponse.data &&
-          staffResponse.data.success &&
-          Array.isArray(staffResponse.data.availableStaff)
+          staffData &&
+          staffData.success &&
+          Array.isArray(staffData.availableStaff)
         ) {
-          setStaff(staffResponse.data.availableStaff);
+          setStaff(staffData.availableStaff);
         }
 
         if (editMode && currentTask?._id) {
-          const taskResponse = await axios.get(
-            `http://localhost:5000/api/housekeeping/tasks/${currentTask._id}`,
+          const { data: taskData } = await axios.get(
+            `/api/housekeeping/tasks/${currentTask._id}`,
             config
           );
-
-          const taskData = taskResponse.data;
 
           setHousekeepingTask({
             _id: taskData._id,
@@ -139,8 +138,8 @@ const HousekeepingForm = ({
       let response;
 
       if (editMode && housekeepingTask._id) {
-        response = await axios.put(
-          `http://localhost:5000/api/housekeeping/tasks/${housekeepingTask._id}`,
+        const { data } = await axios.put(
+          `/api/housekeeping/tasks/${housekeepingTask._id}`,
           taskData,
           {
             headers: {
@@ -148,9 +147,10 @@ const HousekeepingForm = ({
             },
           }
         );
+        onTaskAdded(data);
       } else {
-        response = await axios.post(
-          "http://localhost:5000/api/housekeeping/tasks",
+        const { data } = await axios.post(
+          "/api/housekeeping/tasks",
           taskData,
           {
             headers: {
@@ -158,9 +158,8 @@ const HousekeepingForm = ({
             },
           }
         );
+        onTaskAdded(data);
       }
-
-      onTaskAdded(response.data);
       onClose();
     } catch (error) {
       console.error("Error saving task:", error);

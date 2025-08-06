@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAppContext } from "../../context/AppContext";
 import Select from "react-select";
 import {
   FaUser, FaPhone, FaCity, FaMapMarkedAlt, FaBuilding, FaGlobe,
@@ -39,6 +40,7 @@ const InputWithIcon = ({ icon, type, name, placeholder, value, onChange, classNa
 
 const UpdateBookingForm = ({ bookingId, onUpdateSuccess, onClose }) => {
   const navigate = useNavigate();
+  const { axios } = useAppContext();
 
   const [formData, setFormData] = useState({
     idImages: [],
@@ -99,19 +101,12 @@ const UpdateBookingForm = ({ bookingId, onUpdateSuccess, onClose }) => {
     }
 
     // Fetch all rooms
-    fetch("https://backend-hazel-xi.vercel.app/api/rooms/all", {
+    axios.get("/api/rooms/all", {
       headers: { "Authorization": `Bearer ${token}` }
     })
-      .then(async res => {
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(`HTTP ${res.status}: ${text}`);
-        }
-        return res.json();
-      })
-      .then(data => {
-        setAllAvailableRooms(data || []);
-        setFilteredRooms(data || []);
+      .then(res => {
+        setAllAvailableRooms(res.data || []);
+        setFilteredRooms(res.data || []);
         setRoomFetchError(null);
       })
       .catch(error => {
@@ -122,18 +117,11 @@ const UpdateBookingForm = ({ bookingId, onUpdateSuccess, onClose }) => {
       });
 
     // Fetch all categories
-    fetch("https://backend-hazel-xi.vercel.app/api/categories/all", {
+    axios.get("/api/categories/all", {
       headers: { "Authorization": `Bearer ${token}` }
     })
-      .then(async res => {
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(`HTTP ${res.status}: ${text}`);
-        }
-        return res.json();
-      })
-      .then(data => {
-        setCategories(Array.isArray(data) ? data : []);
+      .then(res => {
+        setCategories(Array.isArray(res.data) ? res.data : []);
         setCategoryFetchError(null);
       })
       .catch(error => {
@@ -155,16 +143,9 @@ const UpdateBookingForm = ({ bookingId, onUpdateSuccess, onClose }) => {
       }
 
       try {
-        const res = await fetch(`https://backend-hazel-xi.vercel.app/api/bookings/${bookingId}`, {
+        const { data } = await axios.get(`/api/bookings/${bookingId}`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
-
-        if (!res.ok) {
-          const errorText = await res.text();
-          throw new Error(`Failed to fetch booking: ${res.status} - ${errorText}`);
-        }
-
-        const data = await res.json();
         if (data && data.booking) {
           const booking = data.booking;
           // Populate form data with existing booking details
@@ -312,17 +293,13 @@ const UpdateBookingForm = ({ bookingId, onUpdateSuccess, onClose }) => {
 
 
     try {
-      const res = await fetch(`https://backend-hazel-xi.vercel.app/api/bookings/update/${bookingId}`, {
-        method: "PUT", // Changed to PUT method for updates
+      const { data } = await axios.put(`/api/bookings/update/${bookingId}`, payload, {
         headers: {
-          "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
+        }
       });
 
-      const data = await res.json();
-      if ((res.ok && data && data.booking) || (data && data.success === true)) {
+      if ((data && data.booking) || (data && data.success === true)) {
         setMessage("Booking updated successfully!");
         if (onUpdateSuccess) {
           onUpdateSuccess(data.booking);

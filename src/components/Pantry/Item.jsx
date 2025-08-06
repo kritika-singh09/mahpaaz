@@ -1,8 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-
-// API Base URL
-const API_BASE_URL = 'https://backend-hazel-xi.vercel.app/api/pantry';
-const PANTRY_ITEMS_URL = `${API_BASE_URL}/items`;
+import { useAppContext } from '../../context/AppContext';
 
 // Gemini API Key (left empty for Canvas runtime injection)
 const apiKey = "";
@@ -371,6 +368,7 @@ function PantryForm({ initialData, onSubmit, onCancel }) {
 
 // Main App Component
 function App() {
+  const { axios } = useAppContext();
   // State variables for application data and UI
   const [pantryItems, setPantryItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -403,25 +401,9 @@ function App() {
         throw new Error("Authentication token not found. Please ensure you have a token in local storage.");
       }
 
-      const response = await fetch(PANTRY_ITEMS_URL, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+      const { data } = await axios.get('/api/pantry/items', {
+        headers: { Authorization: `Bearer ${token}` }
       });
-
-      if (!response.ok) {
-        let errorMsg = 'Failed to fetch pantry items.';
-        try {
-          const errorData = await response.json();
-          errorMsg = errorData.message || errorMsg;
-        } catch (jsonError) {
-          console.error("Failed to parse error response as JSON for fetching items:", jsonError);
-          errorMsg = `Server error: ${response.status} ${response.statusText}. Please check the backend API and its authentication requirements.`;
-        }
-        throw new Error(errorMsg);
-      }
-      const data = await response.json();
 
       const formattedData = Array.isArray(data.items) ? data.items.map(item => ({
         ...item,
@@ -457,36 +439,16 @@ function App() {
         throw new Error("Authentication token not found.");
       }
 
-      let response;
-      const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      };
+
 
       if (id) {
-        response = await fetch(`${PANTRY_ITEMS_URL}/${id}`, {
-          method: 'PUT',
-          headers: headers,
-          body: JSON.stringify(data),
+        await axios.put(`/api/pantry/items/${id}`, data, {
+          headers: { Authorization: `Bearer ${token}` }
         });
       } else {
-        response = await fetch(PANTRY_ITEMS_URL, {
-          method: 'POST',
-          headers: headers,
-          body: JSON.stringify(data),
+        await axios.post('/api/pantry/items', data, {
+          headers: { Authorization: `Bearer ${token}` }
         });
-      }
-
-      if (!response.ok) {
-        let errorMsg = `Failed to ${id ? 'update' : 'add'} item.`;
-        try {
-          const errorData = await response.json();
-          errorMsg = errorData.message || errorMsg;
-        } catch (jsonError) {
-          console.error("Failed to parse error response as JSON:", jsonError);
-          errorMsg = `Server error: ${response.status} ${response.statusText}. Please check the backend API.`;
-        }
-        throw new Error(errorMsg);
       }
 
       setMessage(`Pantry item ${id ? 'updated' : 'added'} successfully!`);
@@ -520,24 +482,10 @@ function App() {
           throw new Error("Authentication token not found.");
         }
 
-        const response = await fetch(`${PANTRY_ITEMS_URL}/${id}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
+        await axios.delete(`/api/pantry/items/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
         });
-
-        if (response.status === 204 || response.ok) {
-          setMessage('Pantry item deleted successfully!');
-        } else {
-          let errorMsg = 'Failed to delete pantry item.';
-          try {
-            const errorData = await response.json();
-            errorMsg = errorData.message || errorMsg;
-          } catch (jsonError) {
-            console.error("Failed to parse error response as JSON for delete:", jsonError);
-            errorMsg = `Server error: ${response.status} ${response.statusText}.`;
-          }
-          throw new Error(errorMsg);
-        }
+        setMessage('Pantry item deleted successfully!');
         fetchPantryItems();
       } catch (err) {
         console.error("Error deleting pantry item:", err);
