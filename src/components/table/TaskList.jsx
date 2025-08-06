@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { Loader, Edit, Trash2 } from "lucide-react";
+import { useAppContext } from "../../context/AppContext";
 
 const TaskList = () => {
   const [tasks, setTasks] = useState([]);
@@ -15,6 +15,7 @@ const TaskList = () => {
   const [taskToEdit, setTaskToEdit] = useState(null);
   const [newStatus, setNewStatus] = useState("");
   const [staffMembers, setStaffMembers] = useState([]);
+  const { axios } = useAppContext();
 
   useEffect(() => {
     fetchTasks();
@@ -24,14 +25,11 @@ const TaskList = () => {
   const fetchStaffMembers = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(
-        "http://localhost:5000/api/housekeeping/available-staff",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await axios.get("/api/housekeeping/available-staff", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (response.data && response.data.availableStaff) {
         setStaffMembers(response.data.availableStaff);
@@ -51,10 +49,7 @@ const TaskList = () => {
         },
       };
 
-      const response = await axios.get(
-        "http://localhost:5000/api/housekeeping/tasks",
-        config
-      );
+      const response = await axios.get("/api/housekeeping/tasks", config);
 
       const tasksArray = Array.isArray(response.data)
         ? response.data
@@ -92,7 +87,7 @@ const TaskList = () => {
       };
 
       await axios.patch(
-        `http://localhost:5000/api/housekeeping/tasks/${taskToEdit.id}/status`,
+        `/api/housekeeping/tasks/${taskToEdit.id}/status`,
         { status: newStatus },
         config
       );
@@ -128,10 +123,7 @@ const TaskList = () => {
         },
       };
 
-      await axios.delete(
-        `http://localhost:5000/api/housekeeping/tasks/${taskId}`,
-        config
-      );
+      await axios.delete(`/api/housekeeping/tasks/${taskId}`, config);
 
       setTasks(tasks.filter((task) => task.id !== taskId));
     } catch (err) {

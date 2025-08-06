@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useAppContext } from '../../context/AppContext';
 import InputWithIcon from "./InputWithIcon";
 import {
   FaUser, FaPhone, FaCity, FaMapMarkedAlt, FaBuilding, FaGlobe,
@@ -11,6 +12,7 @@ import {
 
 // BookingEditForm accepts initialData and onEditSuccess props
 const BookingEditForm = ({ initialData, onEditSuccess }) => {
+  const { axios } = useAppContext();
   const [formData, setFormData] = useState({ ...initialData });
   const [showCamera, setShowCamera] = useState(false);
   const [availableRooms, setAvailableRooms] = useState([]);
@@ -27,16 +29,14 @@ const BookingEditForm = ({ initialData, onEditSuccess }) => {
   useEffect(() => {
     const token = getAuthToken();
     if (!token) return;
-    fetch("https://backend-hazel-xi.vercel.app/api/rooms/all", {
+    axios.get("/api/rooms/all", {
       headers: { "Authorization": `Bearer ${token}` }
     })
-      .then(res => res.json())
-      .then(data => setAvailableRooms(data || []));
-    fetch("https://backend-hazel-xi.vercel.app/api/categories/all", {
+      .then(({ data }) => setAvailableRooms(data || []));
+    axios.get("/api/categories/all", {
       headers: { "Authorization": `Bearer ${token}` }
     })
-      .then(res => res.json())
-      .then(data => setCategories(Array.isArray(data) ? data : []));
+      .then(({ data }) => setCategories(Array.isArray(data) ? data : []));
   }, []);
 
   const handleChange = (field, value) => {
@@ -94,21 +94,15 @@ const BookingEditForm = ({ initialData, onEditSuccess }) => {
     };
     try {
       // Replace with actual update endpoint and method
-      const res = await fetch(`https://backend-hazel-xi.vercel.app/api/bookings/update/${formData._id}`, {
-        method: "PUT",
+      const { data } = await axios.put(`/api/bookings/update/${formData._id}`, payload, {
         headers: {
-          "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
+        }
       });
-      const data = await res.json();
-      if (res.ok && data && data.booking) {
+      if (data && data.booking) {
         setMessage("Booking updated successfully!");
         if (onEditSuccess) onEditSuccess(data.booking);
-      } else {
-        setMessage(`Update failed: ${data.error || "Unknown error."}`);
-      }
+
     } catch (error) {
       setMessage(`Error updating booking: ${error.message}`);
     }

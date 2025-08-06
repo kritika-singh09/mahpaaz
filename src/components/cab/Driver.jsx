@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useAppContext } from '../../context/AppContext';
 
 function App() {
-  const API_BASE_URL = 'https://backend-hazel-xi.vercel.app/api'; // Base URL for driver APIs
+  const { axios } = useAppContext();
 
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -37,12 +38,8 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/driver`); // API for getting all drivers
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch drivers.');
-      }
-      let data = await response.json();
+      const response = await axios.get('/api/driver'); // API for getting all drivers
+      let data = response.data;
 
       // Ensure data is an array, handling various API response structures
       if (data && typeof data === 'object' && data.drivers && Array.isArray(data.drivers)) {
@@ -179,36 +176,12 @@ function App() {
 
       if (editingDriver) {
         // Changed URL to use singular 'driver' for update
-        url = `${API_BASE_URL}/driver/${editingDriver._id}`;
-        console.log("Attempting to update driver with PUT to:", url); // Log the URL for debugging
-        response = await fetch(url, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(driverData),
-        });
+        response = await axios.put(`/api/driver/${editingDriver._id}`, driverData);
       } else {
-        url = `${API_BASE_URL}/driver/add`;
-        console.log("Attempting to add driver with POST to:", url); // Log the URL for debugging
-        response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(driverData),
-        });
+        response = await axios.post('/api/driver/add', driverData);
       }
 
-      if (!response.ok) {
-        let errorMsg = `Failed to ${editingDriver ? 'update' : 'add'} driver.`;
-        try {
-          // Try to parse JSON error message
-          const errorData = await response.json();
-          errorMsg = errorData.message || errorMsg;
-        } catch (jsonError) {
-          // If response is not JSON (e.g., HTML 404 page), use generic message
-          console.error("Failed to parse error response as JSON:", jsonError);
-          errorMsg = `Server error: ${response.status} ${response.statusText}. Please check the backend API.`;
-        }
-        throw new Error(errorMsg);
-      }
+
 
       setMessage(`Driver ${editingDriver ? 'updated' : 'added'} successfully!`);
       resetForm();
@@ -250,28 +223,8 @@ function App() {
       setError(null);
       try {
         // Updated: The delete API now uses /api/driver/{id} (singular)
-        const response = await fetch(`${API_BASE_URL}/driver/${id}`, {
-          method: 'DELETE',
-        });
-
-        console.log('Delete response status:', response.status); // Log the status for debugging
-
-        if (response.status === 204) { // Common status for successful DELETE with no content
-          setMessage('Driver deleted successfully!');
-        } else if (response.ok) { // If status is 2xx but not 204, try to parse JSON
-          const data = await response.json();
-          setMessage(data.message || 'Driver deleted successfully!');
-        } else { // Handle error statuses (4xx, 5xx)
-          let errorMsg = 'Failed to delete driver.';
-          try {
-            const errorData = await response.json();
-            errorMsg = errorData.message || errorMsg;
-          } catch (jsonError) {
-            console.error("Failed to parse error response as JSON for delete:", jsonError);
-            errorMsg = `Server error: ${response.status} ${response.statusText}. Please check the backend API.`;
-          }
-          throw new Error(errorMsg);
-        }
+        await axios.delete(`/api/driver/${id}`);
+        setMessage('Driver deleted successfully!');
 
         fetchDrivers(); // Re-fetch drivers to update the list
       } catch (err) {

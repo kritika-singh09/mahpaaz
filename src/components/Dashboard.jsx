@@ -13,7 +13,6 @@ import {
   AlertTriangle,
   LogOut,
 } from "lucide-react";
-
 import BookingCalendar from "./BookingCalendar";
 import BookingCard from "./cards/BookingCard.jsx";
 import RoomCard from "./cards/RoomCard.jsx";
@@ -22,8 +21,6 @@ import OccupancyCard from "./cards/OccupancyCard.jsx";
 import GuestCard from "./cards/GuestCard.jsx";
 import RatingCard from "./cards/RatingCard.jsx";
 import QuickActions from "./cards/QuickActions.jsx";
-
-// At the top of your Dashboard.jsx file
 import {
   dashboardCards,
   revenueData,

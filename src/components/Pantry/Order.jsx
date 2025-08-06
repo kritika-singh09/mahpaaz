@@ -1,9 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-
-// API Base URL
-const API_BASE_URL = 'https://backend-hazel-xi.vercel.app/api/pantry';
-const PANTRY_ITEMS_URL = `${API_BASE_URL}/items`;
-const ORDERS_URL = `${API_BASE_URL}/orders`;
+import { useAppContext } from '../../context/AppContext';
 
 // Confirmation Modal Component
 function ConfirmationModal({ message, onConfirm, onCancel }) {
@@ -242,6 +238,7 @@ function OrderForm({ initialData, pantryItems, onSubmit, onCancel }) {
 
 // Main App Component for Orders Management
 function App() {
+  const { axios } = useAppContext();
   // State variables for application data and UI
   const [orders, setOrders] = useState([]);
   const [pantryItems, setPantryItems] = useState([]);
@@ -275,18 +272,9 @@ function App() {
         throw new Error("Authentication token not found.");
       }
 
-      const response = await fetch(PANTRY_ITEMS_URL, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+      const { data } = await axios.get('/api/pantry/items', {
+        headers: { Authorization: `Bearer ${token}` }
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch pantry items.');
-      }
-      const data = await response.json();
       setPantryItems(data.items);
     } catch (err) {
       console.error("Error fetching pantry items:", err);
@@ -307,18 +295,9 @@ function App() {
         throw new Error("Authentication token not found.");
       }
 
-      const response = await fetch(ORDERS_URL, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+      const { data } = await axios.get('/api/pantry/orders', {
+        headers: { Authorization: `Bearer ${token}` }
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch orders.');
-      }
-      const data = await response.json();
       setOrders(data.orders);
     } catch (err) {
       console.error("Error fetching orders:", err);
@@ -345,29 +324,16 @@ function App() {
         throw new Error("Authentication token not found.");
       }
 
-      let response;
-      const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      };
+
 
       if (id) {
-        response = await fetch(`${ORDERS_URL}/${id}`, {
-          method: 'PUT',
-          headers: headers,
-          body: JSON.stringify(data),
+        await axios.put(`/api/pantry/orders/${id}`, data, {
+          headers: { Authorization: `Bearer ${token}` }
         });
       } else {
-        response = await fetch(ORDERS_URL, {
-          method: 'POST',
-          headers: headers,
-          body: JSON.stringify(data),
+        await axios.post('/api/pantry/orders', data, {
+          headers: { Authorization: `Bearer ${token}` }
         });
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to ${id ? 'update' : 'place'} order.`);
       }
 
       setSuccessMessage(`Order ${id ? 'updated' : 'placed'} successfully!`);
@@ -400,18 +366,11 @@ function App() {
           throw new Error("Authentication token not found.");
         }
 
-        const response = await fetch(`${ORDERS_URL}/${id}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
+        await axios.delete(`/api/pantry/orders/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
         });
-
-        if (response.status === 204 || response.ok) {
-          setSuccessMessage('Order deleted successfully!');
-          setShowSuccessModal(true);
-        } else {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to delete order.');
-        }
+        setSuccessMessage('Order deleted successfully!');
+        setShowSuccessModal(true);
         fetchOrders();
       } catch (err) {
         console.error("Error deleting order:", err);

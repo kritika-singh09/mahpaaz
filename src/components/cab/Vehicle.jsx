@@ -324,7 +324,6 @@
 // //           </div>
 // //         )}
 
-
 // //         {/* Add/Edit Vehicle Form Modal */}
 // //         {isFormOpen && (
 // //           <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50">
@@ -886,7 +885,6 @@
 //           </div>
 //         )}
 
-
 //         {/* Add/Edit Vehicle Form Modal */}
 //         {isFormOpen && (
 //           <div
@@ -1020,27 +1018,27 @@
 // }
 
 // export default App;
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
+import { useAppContext } from "../../context/AppContext";
 
 function App() {
-  const API_BASE_URL = 'https://backend-hazel-xi.vercel.app/api/vehicle';
-
+  const { axios } = useAppContext();
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [formData, setFormData] = useState({
-    vehicleNumber: '',
-    seatingCapacity: '',
-    status: 'active',
-    insuranceValidTill: '',
-    registrationExpiry: '',
-    remarks: '',
+    vehicleNumber: "",
+    seatingCapacity: "",
+    status: "active",
+    insuranceValidTill: "",
+    registrationExpiry: "",
+    remarks: "",
   });
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
   const [singleVehicleFound, setSingleVehicleFound] = useState(null);
 
   const fetchVehicles = async () => {
@@ -1052,61 +1050,73 @@ function App() {
       let response;
       let data;
 
-      const isPotentialId = searchQuery.length === 24 && /^[0-9a-fA-F]+$/.test(searchQuery);
+      const isPotentialId =
+        searchQuery.length === 24 && /^[0-9a-fA-F]+$/.test(searchQuery);
 
       if (isPotentialId) {
         try {
-          response = await fetch(`${API_BASE_URL}/get/${searchQuery}`);
-          if (!response.ok) {
-            console.warn(`Vehicle with ID ${searchQuery} not found. Attempting general search.`);
-            response = await fetch(`${API_BASE_URL}/all`);
-          } else {
-            const vehicleData = await response.json();
-            const formattedVehicle = {
-              ...vehicleData,
-              insuranceValidTill: vehicleData.insuranceValidTill ? new Date(vehicleData.insuranceValidTill).toISOString().split('T')[0] : '',
-              registrationExpiry: vehicleData.registrationExpiry ? new Date(vehicleData.registrationExpiry).toISOString().split('T')[0] : '',
-            };
-            setSingleVehicleFound(formattedVehicle);
-            setVehicles([]);
-            setLoading(false);
-            return;
-          }
+          const { data: vehicleData } = await axios.get(
+            `/api/vehicle/get/${searchQuery}`
+          );
+          const formattedVehicle = {
+            ...vehicleData,
+            insuranceValidTill: vehicleData.insuranceValidTill
+              ? new Date(vehicleData.insuranceValidTill)
+                  .toISOString()
+                  .split("T")[0]
+              : "",
+            registrationExpiry: vehicleData.registrationExpiry
+              ? new Date(vehicleData.registrationExpiry)
+                  .toISOString()
+                  .split("T")[0]
+              : "",
+          };
+          setSingleVehicleFound(formattedVehicle);
+          setVehicles([]);
+          setLoading(false);
+          return;
         } catch (idFetchError) {
-          console.error("Error during ID fetch attempt, falling back to general search:", idFetchError);
-          response = await fetch(`${API_BASE_URL}/all`);
+          console.warn(
+            `Vehicle with ID ${searchQuery} not found. Attempting general search.`
+          );
         }
-      } else {
-        response = await fetch(`${API_BASE_URL}/all`);
       }
 
-      if (!response.ok) {
-        let errorMsg = 'Failed to fetch vehicles.';
-        try {
-          const errorData = await response.json();
-          errorMsg = errorData.message || errorMsg;
-        } catch (jsonError) {
-          console.error("Failed to parse error response as JSON for fetching vehicles:", jsonError);
-          errorMsg = `Server error: ${response.status} ${response.statusText}. Please check the backend API.`;
+      try {
+        const { data } = await axios.get("/api/vehicle/all");
+
+        let vehicleData;
+        if (
+          data &&
+          typeof data === "object" &&
+          data.vehicles &&
+          Array.isArray(data.vehicles)
+        ) {
+          vehicleData = data.vehicles;
+        } else if (!Array.isArray(data)) {
+          console.warn(
+            "API response for /all was not an array or did not contain a 'vehicles' array:",
+            data
+          );
+          vehicleData = [];
+        } else {
+          vehicleData = data;
         }
-        throw new Error(errorMsg);
+
+        const formattedData = vehicleData.map((vehicle) => ({
+          ...vehicle,
+          insuranceValidTill: vehicle.insuranceValidTill
+            ? new Date(vehicle.insuranceValidTill).toISOString().split("T")[0]
+            : "",
+          registrationExpiry: vehicle.registrationExpiry
+            ? new Date(vehicle.registrationExpiry).toISOString().split("T")[0]
+            : "",
+        }));
+        setVehicles(formattedData);
+      } catch (fetchError) {
+        console.error("Error fetching vehicles:", fetchError);
+        setError(`Failed to load vehicles: ${fetchError.message}`);
       }
-
-      data = await response.json();
-
-      if (data && typeof data === 'object' && data.vehicles && Array.isArray(data.vehicles)) {
-        data = data.vehicles;
-      } else if (!Array.isArray(data)) {
-        console.warn("API response for /all was not an array or did not contain a 'vehicles' array:", data);
-        data = [];
-      }
-
-      const formattedData = data.map(vehicle => ({
-        ...vehicle,
-        insuranceValidTill: vehicle.insuranceValidTill ? new Date(vehicle.insuranceValidTill).toISOString().split('T')[0] : '',
-        registrationExpiry: vehicle.registrationExpiry ? new Date(vehicle.registrationExpiry).toISOString().split('T')[0] : '',
-      }));
-      setVehicles(formattedData);
     } catch (err) {
       console.error("Error fetching vehicles:", err);
       setError(`Failed to load vehicles: ${err.message}`);
@@ -1121,14 +1131,14 @@ function App() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     setLoading(true);
-    setMessage('');
+    setMessage("");
     setError(null);
 
     try {
@@ -1136,8 +1146,12 @@ function App() {
         vehicleNumber: formData.vehicleNumber,
         seatingCapacity: parseInt(formData.seatingCapacity) || 0,
         status: formData.status,
-        insuranceValidTill: formData.insuranceValidTill ? new Date(formData.insuranceValidTill).toISOString() : null,
-        registrationExpiry: formData.registrationExpiry ? new Date(formData.registrationExpiry).toISOString() : null,
+        insuranceValidTill: formData.insuranceValidTill
+          ? new Date(formData.insuranceValidTill).toISOString()
+          : null,
+        registrationExpiry: formData.registrationExpiry
+          ? new Date(formData.registrationExpiry).toISOString()
+          : null,
         remarks: formData.remarks,
       };
 
@@ -1145,36 +1159,17 @@ function App() {
       let url;
 
       if (editingVehicle) {
-        url = `${API_BASE_URL}/update/${editingVehicle._id}`;
-        console.log("Attempting to update vehicle with PUT to:", url);
-        response = await fetch(url, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(vehicleData),
-        });
+        await axios.put(
+          `/api/vehicle/update/${editingVehicle._id}`,
+          vehicleData
+        );
       } else {
-        url = `${API_BASE_URL}/add`;
-        console.log("Attempting to add vehicle with POST to:", url);
-        response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(vehicleData),
-        });
+        await axios.post("/api/vehicle/add", vehicleData);
       }
 
-      if (!response.ok) {
-        let errorMsg = `Failed to ${editingVehicle ? 'update' : 'add'} vehicle.`;
-        try {
-          const errorData = await response.json();
-          errorMsg = errorData.message || errorMsg;
-        } catch (jsonError) {
-          console.error("Failed to parse error response as JSON:", jsonError);
-          errorMsg = `Server error: ${response.status} ${response.statusText}. Please check the backend API.`;
-        }
-        throw new Error(errorMsg);
-      }
-
-      setMessage(`Vehicle ${editingVehicle ? 'updated' : 'added'} successfully!`);
+      setMessage(
+        `Vehicle ${editingVehicle ? "updated" : "added"} successfully!`
+      );
       resetForm();
       fetchVehicles();
     } catch (err) {
@@ -1182,7 +1177,7 @@ function App() {
       setError(`Failed to save vehicle: ${err.message}`);
     } finally {
       setLoading(false);
-      setTimeout(() => setMessage(''), 3000);
+      setTimeout(() => setMessage(""), 3000);
       setTimeout(() => setError(null), 3000);
     }
   };
@@ -1193,8 +1188,12 @@ function App() {
       vehicleNumber: vehicle.vehicleNumber,
       seatingCapacity: vehicle.seatingCapacity,
       status: vehicle.status,
-      insuranceValidTill: vehicle.insuranceValidTill ? new Date(vehicle.insuranceValidTill).toISOString().split('T')[0] : '',
-      registrationExpiry: vehicle.registrationExpiry ? new Date(vehicle.registrationExpiry).toISOString().split('T')[0] : '',
+      insuranceValidTill: vehicle.insuranceValidTill
+        ? new Date(vehicle.insuranceValidTill).toISOString().split("T")[0]
+        : "",
+      registrationExpiry: vehicle.registrationExpiry
+        ? new Date(vehicle.registrationExpiry).toISOString().split("T")[0]
+        : "",
       remarks: vehicle.remarks,
     });
     setIsFormOpen(true);
@@ -1203,29 +1202,11 @@ function App() {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this vehicle?")) {
       setLoading(true);
-      setMessage('');
+      setMessage("");
       setError(null);
       try {
-        const response = await fetch(`${API_BASE_URL}/delete/${id}`, {
-          method: 'DELETE',
-        });
-
-        if (response.status === 204) {
-          setMessage('Vehicle deleted successfully!');
-        } else if (response.ok) {
-          const data = await response.json();
-          setMessage(data.message || 'Vehicle deleted successfully!');
-        } else {
-          let errorMsg = 'Failed to delete vehicle.';
-          try {
-            const errorData = await response.json();
-            errorMsg = errorData.message || errorMsg;
-          } catch (jsonError) {
-            console.error("Failed to parse error response as JSON for delete:", jsonError);
-            errorMsg = `Server error: ${response.status} ${response.statusText}. Please check the backend API.`;
-          }
-          throw new Error(errorMsg);
-        }
+        await axios.delete(`/api/vehicle/delete/${id}`);
+        setMessage("Vehicle deleted successfully!");
 
         fetchVehicles();
       } catch (err) {
@@ -1233,7 +1214,7 @@ function App() {
         setError(`Failed to delete vehicle: ${err.message}`);
       } finally {
         setLoading(false);
-        setTimeout(() => setMessage(''), 3000);
+        setTimeout(() => setMessage(""), 3000);
         setTimeout(() => setError(null), 3000);
       }
     }
@@ -1242,29 +1223,33 @@ function App() {
   const resetForm = () => {
     setEditingVehicle(null);
     setFormData({
-      vehicleNumber: '',
-      seatingCapacity: '',
-      status: 'active',
-      insuranceValidTill: '',
-      registrationExpiry: '',
-      remarks: '',
+      vehicleNumber: "",
+      seatingCapacity: "",
+      status: "active",
+      insuranceValidTill: "",
+      registrationExpiry: "",
+      remarks: "",
     });
     setIsFormOpen(false);
   };
 
   const handleModalClick = (e) => {
-    if (e.target.id === 'vehicle-form-modal-overlay') {
+    if (e.target.id === "vehicle-form-modal-overlay") {
       resetForm();
     }
   };
 
   const vehiclesToDisplay = singleVehicleFound
     ? [singleVehicleFound]
-    : vehicles.filter(vehicle => {
-        const matchesSearch = searchQuery === '' ||
-          vehicle.vehicleNumber.toLowerCase().includes(searchQuery.toLowerCase());
+    : vehicles.filter((vehicle) => {
+        const matchesSearch =
+          searchQuery === "" ||
+          vehicle.vehicleNumber
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase());
 
-        const matchesStatus = filterStatus === 'all' || vehicle.status === filterStatus;
+        const matchesStatus =
+          filterStatus === "all" || vehicle.status === filterStatus;
 
         return matchesSearch && matchesStatus;
       });
@@ -1272,15 +1257,23 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8 font-sans">
       <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">Vehicle Management</h1>
+        <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">
+          Vehicle Management
+        </h1>
 
         {message && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <div
+            className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4"
+            role="alert"
+          >
             <span className="block sm:inline">{message}</span>
           </div>
         )}
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <div
+            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
+            role="alert"
+          >
             <span className="block sm:inline">{error}</span>
           </div>
         )}
@@ -1307,7 +1300,7 @@ function App() {
             value={filterStatus}
             onChange={(e) => {
               setFilterStatus(e.target.value);
-              setSearchQuery('');
+              setSearchQuery("");
             }}
             className="w-full sm:w-auto p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm"
           >
@@ -1330,30 +1323,63 @@ function App() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle No.</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Capacity</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Insurance Expiry</th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Vehicle No.
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Capacity
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Status
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Insurance Expiry
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {vehiclesToDisplay.length > 0 ? (
                   vehiclesToDisplay.map((vehicle) => (
                     <tr key={vehicle._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-3 text-sm font-medium text-gray-900">{vehicle.vehicleNumber}</td>
-                      <td className="px-6 py-3 text-sm text-gray-500">{vehicle.seatingCapacity}</td>
+                      <td className="px-6 py-3 text-sm font-medium text-gray-900">
+                        {vehicle.vehicleNumber}
+                      </td>
+                      <td className="px-6 py-3 text-sm text-gray-500">
+                        {vehicle.seatingCapacity}
+                      </td>
                       <td className="px-6 py-3 text-sm">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          vehicle.status === 'active' ? 'bg-green-100 text-green-800' :
-                          vehicle.status === 'under_maintenance' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        } capitalize`}>
-                          {vehicle.status.replace('_', ' ')}
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            vehicle.status === "active"
+                              ? "bg-green-100 text-green-800"
+                              : vehicle.status === "under_maintenance"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-red-100 text-red-800"
+                          } capitalize`}
+                        >
+                          {vehicle.status.replace("_", " ")}
                         </span>
                       </td>
                       <td className="px-6 py-3 text-sm text-gray-500">
-                        {vehicle.insuranceValidTill || 'N/A'}
+                        {vehicle.insuranceValidTill || "N/A"}
                       </td>
                       <td className="px-6 py-3 text-right text-sm font-medium flex items-center justify-end space-x-2">
                         <button
@@ -1373,8 +1399,13 @@ function App() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="px-6 py-3 text-center text-sm text-gray-500">
-                      {searchQuery.trim() && !loading && !singleVehicleFound ? "No vehicle found with this ID or number." : "No vehicles found."}
+                    <td
+                      colSpan="5"
+                      className="px-6 py-3 text-center text-sm text-gray-500"
+                    >
+                      {searchQuery.trim() && !loading && !singleVehicleFound
+                        ? "No vehicle found with this ID or number."
+                        : "No vehicles found."}
                     </td>
                   </tr>
                 )}
@@ -1404,11 +1435,19 @@ function App() {
             </style>
             <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto transform scale-95 animate-fade-in hide-scrollbar">
               <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-                {editingVehicle ? 'Edit Vehicle' : 'Add New Vehicle'}
+                {editingVehicle ? "Edit Vehicle" : "Add New Vehicle"}
               </h2>
-              <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <form
+                onSubmit={handleSubmit}
+                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+              >
                 <div>
-                  <label htmlFor="vehicleNumber" className="block text-sm font-medium text-gray-700 mb-1">Vehicle Number</label>
+                  <label
+                    htmlFor="vehicleNumber"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Vehicle Number
+                  </label>
                   <input
                     type="text"
                     id="vehicleNumber"
@@ -1421,7 +1460,12 @@ function App() {
                 </div>
 
                 <div>
-                  <label htmlFor="seatingCapacity" className="block text-sm font-medium text-gray-700 mb-1">Seating Capacity</label>
+                  <label
+                    htmlFor="seatingCapacity"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Seating Capacity
+                  </label>
                   <input
                     type="number"
                     id="seatingCapacity"
@@ -1433,7 +1477,12 @@ function App() {
                 </div>
 
                 <div>
-                  <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <label
+                    htmlFor="status"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Status
+                  </label>
                   <select
                     id="status"
                     name="status"
@@ -1448,7 +1497,12 @@ function App() {
                 </div>
 
                 <div>
-                  <label htmlFor="insuranceValidTill" className="block text-sm font-medium text-gray-700 mb-1">Insurance Valid Till</label>
+                  <label
+                    htmlFor="insuranceValidTill"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Insurance Valid Till
+                  </label>
                   <input
                     type="date"
                     id="insuranceValidTill"
@@ -1460,7 +1514,12 @@ function App() {
                 </div>
 
                 <div>
-                  <label htmlFor="registrationExpiry" className="block text-sm font-medium text-gray-700 mb-1">Registration Expiry</label>
+                  <label
+                    htmlFor="registrationExpiry"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Registration Expiry
+                  </label>
                   <input
                     type="date"
                     id="registrationExpiry"
@@ -1472,7 +1531,12 @@ function App() {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label htmlFor="remarks" className="block text-sm font-medium text-gray-700 mb-1">Remarks</label>
+                  <label
+                    htmlFor="remarks"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Remarks
+                  </label>
                   <textarea
                     id="remarks"
                     name="remarks"
@@ -1495,7 +1559,7 @@ function App() {
                     type="submit"
                     className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
                   >
-                    {editingVehicle ? 'Update Vehicle' : 'Add Vehicle'}
+                    {editingVehicle ? "Update Vehicle" : "Add Vehicle"}
                   </button>
                 </div>
               </form>

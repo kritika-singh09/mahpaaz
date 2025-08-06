@@ -678,7 +678,8 @@
 //     </div>
 //   );
 // }
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
+import { useAppContext } from "../../context/AppContext";
 
 // Main App component that renders either CabBookingForm or CabList
 export default function App() {
@@ -707,44 +708,45 @@ export default function App() {
 
 // CabBookingForm component (remains largely the same, but now accepts a prop)
 function CabBookingForm({ onSubmissionSuccess }) {
+  const { axios } = useAppContext();
   // State to hold form data, initialized with default values
   const [formData, setFormData] = useState({
-    _id: '', // Added for update functionality
-    purpose: 'guest_transport',
-    guestName: '',
-    roomNumber: '',
-    grcNo: '',
-    guestType: 'inhouse',
-    pickupLocation: '',
-    destination: '',
-    pickupTime: '', // Will be set by datetime-local input
-    cabType: 'standard',
-    specialInstructions: '',
+    _id: "", // Added for update functionality
+    purpose: "guest_transport",
+    guestName: "",
+    roomNumber: "",
+    grcNo: "",
+    guestType: "inhouse",
+    pickupLocation: "",
+    destination: "",
+    pickupTime: "", // Will be set by datetime-local input
+    cabType: "standard",
+    specialInstructions: "",
     scheduled: false,
-    estimatedFare: '',
-    actualFare: '',
-    distanceInKm: '',
-    paymentStatus: 'unpaid',
-    vehicleId: '', // Added for Mongoose ObjectId reference
-    vehicleNumber: '', // Now selected from dropdown
-    vehicleType: '', // New: Auto-filled based on vehicle selection
-    vehicleModel: '', // New: Auto-filled based on vehicle selection
-    insuranceValidTill: '', // New: Auto-filled based on vehicle selection
-    driverId: '', // Added for Mongoose ObjectId reference
-    driverName: '', // Now selected from dropdown
-    driverContact: '', // Auto-filled based on driverName selection
-    licenseNumber: '', // New: Auto-filled based on driver selection
-    licenseExpiry: '', // New: Auto-filled based on driver selection
-    driverStatus: '', // New: Auto-filled based on driver selection
-    status: 'pending',
-    cancellationReason: '',
+    estimatedFare: "",
+    actualFare: "",
+    distanceInKm: "",
+    paymentStatus: "unpaid",
+    vehicleId: "", // Added for Mongoose ObjectId reference
+    vehicleNumber: "", // Now selected from dropdown
+    vehicleType: "", // New: Auto-filled based on vehicle selection
+    vehicleModel: "", // New: Auto-filled based on vehicle selection
+    insuranceValidTill: "", // New: Auto-filled based on vehicle selection
+    driverId: "", // Added for Mongoose ObjectId reference
+    driverName: "", // Now selected from dropdown
+    driverContact: "", // Auto-filled based on driverName selection
+    licenseNumber: "", // New: Auto-filled based on driver selection
+    licenseExpiry: "", // New: Auto-filled based on driver selection
+    driverStatus: "", // New: Auto-filled based on driver selection
+    status: "pending",
+    cancellationReason: "",
   });
 
   // State for managing form submission messages
-  const [message, setMessage] = useState('');
-  const [messageType, setMessageType] = useState(''); // 'success' or 'error'
-  const [fetchBookingId, setFetchBookingId] = useState(''); // State for the ID to fetch
-  const [fetchGrcNo, setFetchGrcNo] = useState(''); // New state for GRC No. to fetch
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState(""); // 'success' or 'error'
+  const [fetchBookingId, setFetchBookingId] = useState(""); // State for the ID to fetch
+  const [fetchGrcNo, setFetchGrcNo] = useState(""); // New state for GRC No. to fetch
   const [drivers, setDrivers] = useState([]); // State to store fetched driver data
   const [vehicles, setVehicles] = useState([]); // State to store fetched vehicle data
 
@@ -753,36 +755,24 @@ function CabBookingForm({ onSubmissionSuccess }) {
     const fetchData = async () => {
       // Fetch Drivers
       try {
-        const driverResponse = await fetch('https://backend-hazel-xi.vercel.app/api/driver');
-        if (driverResponse.ok) {
-          const driverData = await driverResponse.json();
-          setDrivers(Array.isArray(driverData) ? driverData : []);
-        } else {
-          console.error('Failed to fetch drivers:', driverResponse.statusText);
-          setMessage('Error fetching driver list.');
-          setMessageType('error');
-        }
+        const { data: driverData } = await axios.get("/api/driver");
+        setDrivers(Array.isArray(driverData) ? driverData : []);
       } catch (error) {
-        console.error('Network error fetching drivers:', error);
+        console.error("Network error fetching drivers:", error);
         setMessage(`Network error fetching drivers: ${error.message}`);
-        setMessageType('error');
+        setMessageType("error");
       }
 
       // Fetch Vehicles
       try {
-        const vehicleResponse = await fetch('https://backend-hazel-xi.vercel.app/api/vehicle/all');
-        if (vehicleResponse.ok) {
-          const vehicleData = await vehicleResponse.json();
-          setVehicles(Array.isArray(vehicleData.vehicles) ? vehicleData.vehicles : []);
-        } else {
-          console.error('Failed to fetch vehicles:', vehicleResponse.statusText);
-          setMessage('Error fetching vehicle list.');
-          setMessageType('error');
-        }
+        const { data: vehicleData } = await axios.get("/api/vehicle/all");
+        setVehicles(
+          Array.isArray(vehicleData.vehicles) ? vehicleData.vehicles : []
+        );
       } catch (error) {
-        console.error('Network error fetching vehicles:', error);
+        console.error("Network error fetching vehicles:", error);
         setMessage(`Network error fetching vehicles: ${error.message}`);
-        setMessageType('error');
+        setMessageType("error");
       }
     };
     fetchData();
@@ -792,258 +782,302 @@ function CabBookingForm({ onSubmissionSuccess }) {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
-    if (name === 'driverName') {
-      const selectedDriver = drivers.find(driver => driver.driverName === value);
+    if (name === "driverName") {
+      const selectedDriver = drivers.find(
+        (driver) => driver.driverName === value
+      );
       setFormData((prevData) => ({
         ...prevData,
         driverName: value,
-        driverContact: selectedDriver ? selectedDriver.contactNumber : '',
-        driverId: selectedDriver ? selectedDriver._id : '',
-        licenseNumber: selectedDriver ? selectedDriver.licenseNumber : '',
-        licenseExpiry: selectedDriver ? new Date(selectedDriver.licenseExpiry).toISOString().slice(0, 10) : '',
-        driverStatus: selectedDriver ? selectedDriver.status : '',
+        driverContact: selectedDriver ? selectedDriver.contactNumber : "",
+        driverId: selectedDriver ? selectedDriver._id : "",
+        licenseNumber: selectedDriver ? selectedDriver.licenseNumber : "",
+        licenseExpiry: selectedDriver
+          ? new Date(selectedDriver.licenseExpiry).toISOString().slice(0, 10)
+          : "",
+        driverStatus: selectedDriver ? selectedDriver.status : "",
       }));
-    } else if (name === 'vehicleNumber') {
-      const selectedVehicle = vehicles.find(vehicle => vehicle.vehicleNumber === value);
+    } else if (name === "vehicleNumber") {
+      const selectedVehicle = vehicles.find(
+        (vehicle) => vehicle.vehicleNumber === value
+      );
       setFormData((prevData) => ({
         ...prevData,
         vehicleNumber: value,
-        vehicleId: selectedVehicle ? selectedVehicle._id : '',
-        vehicleType: selectedVehicle ? selectedVehicle.type : '',
-        vehicleModel: selectedVehicle ? selectedVehicle.model : '',
-        insuranceValidTill: selectedVehicle ? new Date(selectedVehicle.insuranceValidTill).toISOString().slice(0, 10) : '',
+        vehicleId: selectedVehicle ? selectedVehicle._id : "",
+        vehicleType: selectedVehicle ? selectedVehicle.type : "",
+        vehicleModel: selectedVehicle ? selectedVehicle.model : "",
+        insuranceValidTill: selectedVehicle
+          ? new Date(selectedVehicle.insuranceValidTill)
+              .toISOString()
+              .slice(0, 10)
+          : "",
       }));
     } else {
       setFormData((prevData) => ({
         ...prevData,
-        [name]: type === 'checkbox' ? checked : value,
+        [name]: type === "checkbox" ? checked : value,
       }));
     }
   };
 
   // Handle fetching a booking by ID or GRC No.
   const handleFetchBooking = async () => {
-    setMessage('');
-    setMessageType('');
+    setMessage("");
+    setMessageType("");
     let bookingData = null;
 
     if (!fetchBookingId && !fetchGrcNo) {
-      setMessage('Please enter either a Booking ID or a GRC No. to fetch.');
-      setMessageType('error');
+      setMessage("Please enter either a Booking ID or a GRC No. to fetch.");
+      setMessageType("error");
       return;
     }
 
-    let urlToFetch = '';
-    if (fetchBookingId) {
-      urlToFetch = `https://backend-hazel-xi.vercel.app/api/cab/bookings/${fetchBookingId}`;
-    } else if (fetchGrcNo) {
-      urlToFetch = `https://backend-hazel-xi.vercel.app/api/cab/bookings?grcNo=${fetchGrcNo}`;
-    }
-
     try {
-      const response = await fetch(urlToFetch);
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const errorText = await response.text();
-        console.error('Server did not return JSON. Raw response:', errorText);
-        setMessage(`Error: Expected JSON, but received unexpected response from server. Status: ${response.status}`);
-        setMessageType('error');
-        return;
+      let data;
+      if (fetchBookingId) {
+        const response = await axios.get(`/api/cab/bookings/${fetchBookingId}`);
+        data = response.data;
+      } else if (fetchGrcNo) {
+        const response = await axios.get(
+          `/api/cab/bookings?grcNo=${fetchGrcNo}`
+        );
+        data = response.data;
       }
-
-      if (response.ok) {
-        const data = await response.json();
-        if (fetchGrcNo && Array.isArray(data.bookings) && data.bookings.length > 0) {
-          bookingData = data.bookings[0];
-          setMessage('Booking fetched successfully by GRC No. (first match)!');
-          setMessageType('success');
-        } else if (fetchBookingId && data) {
-          bookingData = data;
-          setMessage('Booking fetched successfully by ID!');
-          setMessageType('success');
-        } else {
-          setMessage('No booking found for the provided ID or GRC No.');
-          setMessageType('error');
-          return;
-        }
+      if (
+        fetchGrcNo &&
+        Array.isArray(data.bookings) &&
+        data.bookings.length > 0
+      ) {
+        bookingData = data.bookings[0];
+        setMessage("Booking fetched successfully by GRC No. (first match)!");
+        setMessageType("success");
+      } else if (fetchBookingId && data) {
+        bookingData = data;
+        setMessage("Booking fetched successfully by ID!");
+        setMessageType("success");
       } else {
-        const errorData = await response.json();
-        setMessage(`Error fetching booking: ${errorData.message || 'Failed to fetch booking.'}`);
-        setMessageType('error');
-        console.error('Error fetching booking:', errorData);
+        setMessage("No booking found for the provided ID or GRC No.");
+        setMessageType("error");
         return;
       }
     } catch (error) {
       setMessage(`Network error or invalid JSON response: ${error.message}`);
-      setMessageType('error');
-      console.error('Fetch error:', error);
+      setMessageType("error");
+      console.error("Fetch error:", error);
       return;
     }
 
     if (bookingData) {
       const formattedPickupTime = bookingData.pickupTime
         ? new Date(bookingData.pickupTime).toISOString().slice(0, 16)
-        : '';
+        : "";
 
-      const driverIdToMatch = typeof bookingData.driverId === 'object' ? bookingData.driverId._id : bookingData.driverId;
-      const vehicleIdToMatch = typeof bookingData.vehicleId === 'object' ? bookingData.vehicleId._id : bookingData.vehicleId;
+      const driverIdToMatch =
+        typeof bookingData.driverId === "object"
+          ? bookingData.driverId._id
+          : bookingData.driverId;
+      const vehicleIdToMatch =
+        typeof bookingData.vehicleId === "object"
+          ? bookingData.vehicleId._id
+          : bookingData.vehicleId;
 
-      const fetchedDriver = drivers.find(d => d._id === driverIdToMatch);
-      const fetchedVehicle = vehicles.find(v => v._id === vehicleIdToMatch);
+      const fetchedDriver = drivers.find((d) => d._id === driverIdToMatch);
+      const fetchedVehicle = vehicles.find((v) => v._id === vehicleIdToMatch);
 
       setFormData({
         ...bookingData,
         _id: bookingData._id,
         pickupTime: formattedPickupTime,
-        estimatedFare: bookingData.estimatedFare ? String(bookingData.estimatedFare) : '',
-        actualFare: bookingData.actualFare ? String(bookingData.actualFare) : '',
-        distanceInKm: bookingData.distanceInKm ? String(bookingData.distanceInKm) : '',
-        driverName: fetchedDriver ? fetchedDriver.driverName : (bookingData.driverName || ''),
-        driverContact: fetchedDriver ? fetchedDriver.contactNumber : (bookingData.driverContact || ''),
-        licenseNumber: fetchedDriver ? fetchedDriver.licenseNumber : (bookingData.licenseNumber || ''),
-        licenseExpiry: fetchedDriver && fetchedDriver.licenseExpiry ? new Date(fetchedDriver.licenseExpiry).toISOString().slice(0, 10) : (bookingData.licenseExpiry ? new Date(bookingData.licenseExpiry).toISOString().slice(0, 10) : ''),
-        driverStatus: fetchedDriver ? fetchedDriver.status : (bookingData.driverStatus || ''),
-        vehicleNumber: fetchedVehicle ? fetchedVehicle.vehicleNumber : (bookingData.vehicleNumber || ''),
-        vehicleType: fetchedVehicle ? fetchedVehicle.type : (bookingData.vehicleType || ''),
-        vehicleModel: fetchedVehicle ? fetchedVehicle.model : (bookingData.vehicleModel || ''),
-        insuranceValidTill: fetchedVehicle && fetchedVehicle.insuranceValidTill ? new Date(fetchedVehicle.insuranceValidTill).toISOString().slice(0, 10) : (bookingData.insuranceValidTill ? new Date(bookingData.insuranceValidTill).toISOString().slice(0, 10) : ''),
-        vehicleId: fetchedVehicle ? fetchedVehicle._id : (bookingData.vehicleId && typeof bookingData.vehicleId === 'string' ? bookingData.vehicleId : ''),
-        driverId: fetchedDriver ? fetchedDriver._id : (bookingData.driverId && typeof bookingData.driverId === 'string' ? bookingData.driverId : ''),
+        estimatedFare: bookingData.estimatedFare
+          ? String(bookingData.estimatedFare)
+          : "",
+        actualFare: bookingData.actualFare
+          ? String(bookingData.actualFare)
+          : "",
+        distanceInKm: bookingData.distanceInKm
+          ? String(bookingData.distanceInKm)
+          : "",
+        driverName: fetchedDriver
+          ? fetchedDriver.driverName
+          : bookingData.driverName || "",
+        driverContact: fetchedDriver
+          ? fetchedDriver.contactNumber
+          : bookingData.driverContact || "",
+        licenseNumber: fetchedDriver
+          ? fetchedDriver.licenseNumber
+          : bookingData.licenseNumber || "",
+        licenseExpiry:
+          fetchedDriver && fetchedDriver.licenseExpiry
+            ? new Date(fetchedDriver.licenseExpiry).toISOString().slice(0, 10)
+            : bookingData.licenseExpiry
+            ? new Date(bookingData.licenseExpiry).toISOString().slice(0, 10)
+            : "",
+        driverStatus: fetchedDriver
+          ? fetchedDriver.status
+          : bookingData.driverStatus || "",
+        vehicleNumber: fetchedVehicle
+          ? fetchedVehicle.vehicleNumber
+          : bookingData.vehicleNumber || "",
+        vehicleType: fetchedVehicle
+          ? fetchedVehicle.type
+          : bookingData.vehicleType || "",
+        vehicleModel: fetchedVehicle
+          ? fetchedVehicle.model
+          : bookingData.vehicleModel || "",
+        insuranceValidTill:
+          fetchedVehicle && fetchedVehicle.insuranceValidTill
+            ? new Date(fetchedVehicle.insuranceValidTill)
+                .toISOString()
+                .slice(0, 10)
+            : bookingData.insuranceValidTill
+            ? new Date(bookingData.insuranceValidTill)
+                .toISOString()
+                .slice(0, 10)
+            : "",
+        vehicleId: fetchedVehicle
+          ? fetchedVehicle._id
+          : bookingData.vehicleId && typeof bookingData.vehicleId === "string"
+          ? bookingData.vehicleId
+          : "",
+        driverId: fetchedDriver
+          ? fetchedDriver._id
+          : bookingData.driverId && typeof bookingData.driverId === "string"
+          ? bookingData.driverId
+          : "",
       });
-      setFetchBookingId(bookingData._id || '');
-      setFetchGrcNo(bookingData.grcNo || '');
+      setFetchBookingId(bookingData._id || "");
+      setFetchGrcNo(bookingData.grcNo || "");
     }
   };
 
   // Handle form submission (Create or Update)
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage('');
-    setMessageType('');
+    setMessage("");
+    setMessageType("");
 
     const isUpdate = !!formData._id;
-    const method = isUpdate ? 'PUT' : 'POST';
-    const url = isUpdate
-      ? `https://backend-hazel-xi.vercel.app/api/cab/bookings/${formData._id}`
-      : 'https://backend-hazel-xi.vercel.app/api/cab/bookings';
 
     const dataToSend = {
       ...formData,
-      estimatedFare: formData.estimatedFare ? parseFloat(formData.estimatedFare) : undefined,
-      actualFare: formData.actualFare ? parseFloat(formData.actualFare) : undefined,
-      distanceInKm: formData.distanceInKm ? parseFloat(formData.distanceInKm) : undefined,
-      pickupTime: formData.pickupTime ? new Date(formData.pickupTime).toISOString() : undefined,
-      licenseExpiry: formData.licenseExpiry ? new Date(formData.licenseExpiry).toISOString() : undefined,
-      insuranceValidTill: formData.insuranceValidTill ? new Date(formData.insuranceValidTill).toISOString() : undefined,
-      createdBy: '60d5ec49f8c7e20015f8e2e1',
+      estimatedFare: formData.estimatedFare
+        ? parseFloat(formData.estimatedFare)
+        : undefined,
+      actualFare: formData.actualFare
+        ? parseFloat(formData.actualFare)
+        : undefined,
+      distanceInKm: formData.distanceInKm
+        ? parseFloat(formData.distanceInKm)
+        : undefined,
+      pickupTime: formData.pickupTime
+        ? new Date(formData.pickupTime).toISOString()
+        : undefined,
+      licenseExpiry: formData.licenseExpiry
+        ? new Date(formData.licenseExpiry).toISOString()
+        : undefined,
+      insuranceValidTill: formData.insuranceValidTill
+        ? new Date(formData.insuranceValidTill).toISOString()
+        : undefined,
+      createdBy: "60d5ec49f8c7e20015f8e2e1",
     };
 
-    Object.keys(dataToSend).forEach(key => {
-      if (dataToSend[key] === '' || dataToSend[key] === undefined || dataToSend[key] === null) {
+    Object.keys(dataToSend).forEach((key) => {
+      if (
+        dataToSend[key] === "" ||
+        dataToSend[key] === undefined ||
+        dataToSend[key] === null
+      ) {
         delete dataToSend[key];
       }
     });
 
     try {
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(dataToSend),
-      });
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const errorText = await response.text();
-        console.error('Server did not return JSON on submission. Raw response:', errorText);
-        setMessage(`Error: Expected JSON, but received unexpected response from server after submission. Status: ${response.status}`);
-        setMessageType('error');
-        return;
-      }
-
-      if (response.ok) {
-        const result = await response.json();
-        setMessage(`Cab booking successfully ${isUpdate ? 'updated' : 'created'}!`);
-        setMessageType('success');
-        console.log('Success:', result);
-        // Call the callback to switch view on success
-        if (onSubmissionSuccess) {
-          onSubmissionSuccess();
-        }
-        handleClearForm(); // Clear form after successful submission
-      } else {
-        const errorData = await response.json();
-        setMessage(
-          `Error: ${errorData.message || `Failed to ${isUpdate ? 'update' : 'create'} cab booking.`}`
+      let result;
+      if (isUpdate) {
+        result = await axios.put(
+          `/api/cab/bookings/${formData._id}`,
+          dataToSend
         );
-        setMessageType('error');
-        console.error('Error:', errorData);
+      } else {
+        result = await axios.post("/api/cab/bookings", dataToSend);
       }
+      setMessage(
+        `Cab booking successfully ${isUpdate ? "updated" : "created"}!`
+      );
+      setMessageType("success");
+      console.log("Success:", result.data);
+      // Call the callback to switch view on success
+      if (onSubmissionSuccess) {
+        onSubmissionSuccess();
+      }
+      handleClearForm(); // Clear form after successful submission
     } catch (error) {
       setMessage(`Network error or invalid JSON response: ${error.message}`);
-      setMessageType('error');
-      console.error('Network error:', error);
+      setMessageType("error");
+      console.error("Network error:", error);
     }
   };
 
   // Function to clear the form
   const handleClearForm = () => {
     setFormData({
-      _id: '',
-      purpose: 'guest_transport',
-      guestName: '',
-      roomNumber: '',
-      grcNo: '',
-      guestType: 'inhouse',
-      pickupLocation: '',
-      destination: '',
-      pickupTime: '',
-      cabType: 'standard',
-      specialInstructions: '',
+      _id: "",
+      purpose: "guest_transport",
+      guestName: "",
+      roomNumber: "",
+      grcNo: "",
+      guestType: "inhouse",
+      pickupLocation: "",
+      destination: "",
+      pickupTime: "",
+      cabType: "standard",
+      specialInstructions: "",
       scheduled: false,
-      estimatedFare: '',
-      actualFare: '',
-      distanceInKm: '',
-      paymentStatus: 'unpaid',
-      vehicleId: '',
-      vehicleNumber: '',
-      vehicleType: '',
-      vehicleModel: '',
-      insuranceValidTill: '',
-      driverId: '',
-      driverName: '',
-      driverContact: '',
-      licenseNumber: '',
-      licenseExpiry: '',
-      driverStatus: '',
-      status: 'pending',
-      cancellationReason: '',
+      estimatedFare: "",
+      actualFare: "",
+      distanceInKm: "",
+      paymentStatus: "unpaid",
+      vehicleId: "",
+      vehicleNumber: "",
+      vehicleType: "",
+      vehicleModel: "",
+      insuranceValidTill: "",
+      driverId: "",
+      driverName: "",
+      driverContact: "",
+      licenseNumber: "",
+      licenseExpiry: "",
+      driverStatus: "",
+      status: "pending",
+      cancellationReason: "",
     });
-    setFetchBookingId('');
-    setFetchGrcNo('');
-    setMessage('');
-    setMessageType('');
+    setFetchBookingId("");
+    setFetchGrcNo("");
+    setMessage("");
+    setMessageType("");
   };
 
   // Determine if guest-related fields should be shown
-  const showGuestInfo = formData.purpose === 'guest_transport' || formData.purpose === 'sightseeing';
+  const showGuestInfo =
+    formData.purpose === "guest_transport" ||
+    formData.purpose === "sightseeing";
   // Determine if cancellation reason should be shown
-  const showCancellationReason = formData.status === 'cancelled';
+  const showCancellationReason = formData.status === "cancelled";
 
   return (
     <div className="w-full bg-white p-8 rounded-xl shadow-2xl border border-gray-200">
-      <h2 className="text-3xl font-extrabold text-gray-900 mb-8 text-center">Cab Booking Request</h2>
+      <h2 className="text-3xl font-extrabold text-gray-900 mb-8 text-center">
+        Cab Booking Request
+      </h2>
       <form onSubmit={handleSubmit} className="space-y-6">
-
         {/* Message Display */}
         {message && (
           <div
             className={`p-3 rounded-md text-center ${
-              messageType === 'success'
-                ? 'bg-green-100 text-green-800'
-                : 'bg-red-100 text-red-800'
+              messageType === "success"
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-800"
             }`}
           >
             {message}
@@ -1083,7 +1117,12 @@ function CabBookingForm({ onSubmissionSuccess }) {
 
         {/* Purpose Section */}
         <div>
-          <label htmlFor="purpose" className="block text-sm font-medium text-gray-700 mb-1">Purpose</label>
+          <label
+            htmlFor="purpose"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Purpose
+          </label>
           <select
             id="purpose"
             name="purpose"
@@ -1102,9 +1141,16 @@ function CabBookingForm({ onSubmissionSuccess }) {
         {/* Guest or Room Info (Conditional Rendering) */}
         {showGuestInfo && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-blue-50 rounded-lg border border-blue-200">
-            <h3 className="col-span-full text-lg font-semibold text-blue-800 mb-2">Guest Information</h3>
+            <h3 className="col-span-full text-lg font-semibold text-blue-800 mb-2">
+              Guest Information
+            </h3>
             <div>
-              <label htmlFor="guestName" className="block text-sm font-medium text-gray-700 mb-1">Guest Name</label>
+              <label
+                htmlFor="guestName"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Guest Name
+              </label>
               <input
                 type="text"
                 id="guestName"
@@ -1115,7 +1161,12 @@ function CabBookingForm({ onSubmissionSuccess }) {
               />
             </div>
             <div>
-              <label htmlFor="roomNumber" className="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
+              <label
+                htmlFor="roomNumber"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Room Number
+              </label>
               <input
                 type="text"
                 id="roomNumber"
@@ -1126,7 +1177,12 @@ function CabBookingForm({ onSubmissionSuccess }) {
               />
             </div>
             <div>
-              <label htmlFor="grcNo" className="block text-sm font-medium text-gray-700 mb-1">GRC No. (Optional)</label>
+              <label
+                htmlFor="grcNo"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                GRC No. (Optional)
+              </label>
               <input
                 type="text"
                 id="grcNo"
@@ -1137,7 +1193,12 @@ function CabBookingForm({ onSubmissionSuccess }) {
               />
             </div>
             <div className="col-span-full">
-              <label htmlFor="guestType" className="block text-sm font-medium text-gray-700 mb-1">Guest Type</label>
+              <label
+                htmlFor="guestType"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Guest Type
+              </label>
               <select
                 id="guestType"
                 name="guestType"
@@ -1154,9 +1215,16 @@ function CabBookingForm({ onSubmissionSuccess }) {
 
         {/* Ride Details Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
-          <h3 className="col-span-full text-lg font-semibold text-gray-800 mb-2">Ride Details</h3>
+          <h3 className="col-span-full text-lg font-semibold text-gray-800 mb-2">
+            Ride Details
+          </h3>
           <div>
-            <label htmlFor="pickupLocation" className="block text-sm font-medium text-gray-700 mb-1">Pickup Location <span className="text-red-500">*</span></label>
+            <label
+              htmlFor="pickupLocation"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Pickup Location <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               id="pickupLocation"
@@ -1168,7 +1236,12 @@ function CabBookingForm({ onSubmissionSuccess }) {
             />
           </div>
           <div>
-            <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-1">Destination <span className="text-red-500">*</span></label>
+            <label
+              htmlFor="destination"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Destination <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               id="destination"
@@ -1180,7 +1253,12 @@ function CabBookingForm({ onSubmissionSuccess }) {
             />
           </div>
           <div className="md:col-span-2">
-            <label htmlFor="pickupTime" className="block text-sm font-medium text-gray-700 mb-1">Pickup Time <span className="text-red-500">*</span></label>
+            <label
+              htmlFor="pickupTime"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Pickup Time <span className="text-red-500">*</span>
+            </label>
             <input
               type="datetime-local"
               id="pickupTime"
@@ -1192,7 +1270,12 @@ function CabBookingForm({ onSubmissionSuccess }) {
             />
           </div>
           <div>
-            <label htmlFor="cabType" className="block text-sm font-medium text-gray-700 mb-1">Cab Type</label>
+            <label
+              htmlFor="cabType"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Cab Type
+            </label>
             <select
               id="cabType"
               name="cabType"
@@ -1206,7 +1289,12 @@ function CabBookingForm({ onSubmissionSuccess }) {
             </select>
           </div>
           <div className="md:col-span-2">
-            <label htmlFor="specialInstructions" className="block text-sm font-medium text-gray-700 mb-1">Special Instructions</label>
+            <label
+              htmlFor="specialInstructions"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Special Instructions
+            </label>
             <textarea
               id="specialInstructions"
               name="specialInstructions"
@@ -1225,13 +1313,21 @@ function CabBookingForm({ onSubmissionSuccess }) {
               onChange={handleChange}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <label htmlFor="scheduled" className="ml-2 block text-sm font-medium text-gray-700">Scheduled Ride</label>
+            <label
+              htmlFor="scheduled"
+              className="ml-2 block text-sm font-medium text-gray-700"
+            >
+              Scheduled Ride
+            </label>
           </div>
         </div>
 
         {/* Fare and Distance Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
-          <h3 className="col-span-full text-lg font-semibold text-gray-800 mb-2"> Distance</h3>
+          <h3 className="col-span-full text-lg font-semibold text-gray-800 mb-2">
+            {" "}
+            Distance
+          </h3>
           {/* <div>
             <label htmlFor="estimatedFare" className="block text-sm font-medium text-gray-700 mb-1">Estimated Fare</label>
             <input
@@ -1255,7 +1351,12 @@ function CabBookingForm({ onSubmissionSuccess }) {
             />
           </div> */}
           <div>
-            <label htmlFor="distanceInKm" className="block text-sm font-medium text-gray-700 mb-1">Distance</label>
+            <label
+              htmlFor="distanceInKm"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Distance
+            </label>
             <input
               type="string"
               id="distanceInKm"
@@ -1266,7 +1367,12 @@ function CabBookingForm({ onSubmissionSuccess }) {
             />
           </div>
           <div className="col-span-full">
-            <label htmlFor="paymentStatus" className="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
+            <label
+              htmlFor="paymentStatus"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Payment Status
+            </label>
             <select
               id="paymentStatus"
               name="paymentStatus"
@@ -1283,9 +1389,16 @@ function CabBookingForm({ onSubmissionSuccess }) {
 
         {/* Cab Vehicle & Driver Info Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
-          <h3 className="col-span-full text-lg font-semibold text-gray-800 mb-2">Cab & Driver Info</h3>
+          <h3 className="col-span-full text-lg font-semibold text-gray-800 mb-2">
+            Cab & Driver Info
+          </h3>
           <div>
-            <label htmlFor="vehicleNumber" className="block text-sm font-medium text-gray-700 mb-1">Vehicle Number</label>
+            <label
+              htmlFor="vehicleNumber"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Vehicle Number
+            </label>
             <select
               id="vehicleNumber"
               name="vehicleNumber"
@@ -1294,15 +1407,21 @@ function CabBookingForm({ onSubmissionSuccess }) {
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out"
             >
               <option value="">Select a Vehicle</option>
-              {Array.isArray(vehicles) && vehicles.map((vehicle) => (
-                <option key={vehicle._id} value={vehicle.vehicleNumber}>
-                  {vehicle.vehicleNumber}
-                </option>
-              ))}
+              {Array.isArray(vehicles) &&
+                vehicles.map((vehicle) => (
+                  <option key={vehicle._id} value={vehicle.vehicleNumber}>
+                    {vehicle.vehicleNumber}
+                  </option>
+                ))}
             </select>
           </div>
           <div>
-            <label htmlFor="vehicleType" className="block text-sm font-medium text-gray-700 mb-1">Vehicle Type</label>
+            <label
+              htmlFor="vehicleType"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Vehicle Type
+            </label>
             <input
               type="text"
               id="vehicleType"
@@ -1313,7 +1432,12 @@ function CabBookingForm({ onSubmissionSuccess }) {
             />
           </div>
           <div>
-            <label htmlFor="vehicleModel" className="block text-sm font-medium text-gray-700 mb-1">Vehicle Model</label>
+            <label
+              htmlFor="vehicleModel"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Vehicle Model
+            </label>
             <input
               type="text"
               id="vehicleModel"
@@ -1324,7 +1448,12 @@ function CabBookingForm({ onSubmissionSuccess }) {
             />
           </div>
           <div className="md:col-span-full">
-            <label htmlFor="insuranceValidTill" className="block text-sm font-medium text-gray-700 mb-1">Insurance Valid Till</label>
+            <label
+              htmlFor="insuranceValidTill"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Insurance Valid Till
+            </label>
             <input
               type="date"
               id="insuranceValidTill"
@@ -1336,7 +1465,12 @@ function CabBookingForm({ onSubmissionSuccess }) {
           </div>
 
           <div>
-            <label htmlFor="driverName" className="block text-sm font-medium text-gray-700 mb-1">Driver Name</label>
+            <label
+              htmlFor="driverName"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Driver Name
+            </label>
             <select
               id="driverName"
               name="driverName"
@@ -1345,15 +1479,21 @@ function CabBookingForm({ onSubmissionSuccess }) {
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out"
             >
               <option value="">Select a Driver</option>
-              {Array.isArray(drivers) && drivers.map((driver) => (
-                <option key={driver._id} value={driver.driverName}>
-                  {driver.driverName}
-                </option>
-              ))}
+              {Array.isArray(drivers) &&
+                drivers.map((driver) => (
+                  <option key={driver._id} value={driver.driverName}>
+                    {driver.driverName}
+                  </option>
+                ))}
             </select>
           </div>
           <div>
-            <label htmlFor="driverContact" className="block text-sm font-medium text-gray-700 mb-1">Driver Contact</label>
+            <label
+              htmlFor="driverContact"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Driver Contact
+            </label>
             <input
               type="text"
               id="driverContact"
@@ -1364,7 +1504,12 @@ function CabBookingForm({ onSubmissionSuccess }) {
             />
           </div>
           <div>
-            <label htmlFor="licenseNumber" className="block text-sm font-medium text-gray-700 mb-1">License Number</label>
+            <label
+              htmlFor="licenseNumber"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              License Number
+            </label>
             <input
               type="text"
               id="licenseNumber"
@@ -1375,7 +1520,12 @@ function CabBookingForm({ onSubmissionSuccess }) {
             />
           </div>
           <div>
-            <label htmlFor="licenseExpiry" className="block text-sm font-medium text-gray-700 mb-1">License Expiry</label>
+            <label
+              htmlFor="licenseExpiry"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              License Expiry
+            </label>
             <input
               type="date"
               id="licenseExpiry"
@@ -1386,7 +1536,12 @@ function CabBookingForm({ onSubmissionSuccess }) {
             />
           </div>
           <div>
-            <label htmlFor="driverStatus" className="block text-sm font-medium text-gray-700 mb-1">Driver Status</label>
+            <label
+              htmlFor="driverStatus"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Driver Status
+            </label>
             <input
               type="text"
               id="driverStatus"
@@ -1400,9 +1555,16 @@ function CabBookingForm({ onSubmissionSuccess }) {
 
         {/* Status Tracking Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
-          <h3 className="col-span-full text-lg font-semibold text-gray-800 mb-2">Status Tracking</h3>
+          <h3 className="col-span-full text-lg font-semibold text-gray-800 mb-2">
+            Status Tracking
+          </h3>
           <div>
-            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <label
+              htmlFor="status"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Status
+            </label>
             <select
               id="status"
               name="status"
@@ -1419,7 +1581,12 @@ function CabBookingForm({ onSubmissionSuccess }) {
           </div>
           {showCancellationReason && (
             <div>
-              <label htmlFor="cancellationReason" className="block text-sm font-medium text-gray-700 mb-1">Cancellation Reason</label>
+              <label
+                htmlFor="cancellationReason"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Cancellation Reason
+              </label>
               <textarea
                 id="cancellationReason"
                 name="cancellationReason"
@@ -1437,7 +1604,7 @@ function CabBookingForm({ onSubmissionSuccess }) {
             type="submit"
             className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105"
           >
-            {formData._id ? 'Update Cab Request' : 'Submit Cab Request'}
+            {formData._id ? "Update Cab Request" : "Submit Cab Request"}
           </button>
           <button
             type="button"
@@ -1456,8 +1623,12 @@ function CabBookingForm({ onSubmissionSuccess }) {
 function CabList({ onGoBack }) {
   return (
     <div className="w-full bg-white p-8 rounded-xl shadow-2xl border border-gray-200 text-center">
-      <h2 className="text-3xl font-extrabold text-gray-900 mb-8">Cab Booking List</h2>
-      <p className="text-gray-700 mb-6">This is where the list of cab bookings would be displayed.</p>
+      <h2 className="text-3xl font-extrabold text-gray-900 mb-8">
+        Cab Booking List
+      </h2>
+      <p className="text-gray-700 mb-6">
+        This is where the list of cab bookings would be displayed.
+      </p>
       <button
         onClick={onGoBack}
         className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105"
