@@ -10,10 +10,11 @@ import {
   BedDouble,
   ChevronDown,
 } from "lucide-react";
-import axios from "axios";
+import { useAppContext } from "../../context/AppContext";
 import RoomForm from "./RoomForm";
 
 const RoomList = () => {
+  const { axios } = useAppContext();
   const [rooms, setRooms] = useState([]);
   const [categories, setCategories] = useState({});
   const [loading, setLoading] = useState(true);
@@ -76,15 +77,15 @@ const RoomList = () => {
       setLoading(true);
 
       // Build query parameters (in a real implementation, you'd use these with your API)
-      let url = "http://localhost:5000/api/rooms/all";
+      let url = "/api/rooms/all";
 
-      const response = await axios.get(url, {
+      const { data } = await axios.get(url, {
         headers: {
           Authorization: `Bearer ${getAuthToken()}`,
         },
       });
 
-      let filteredRooms = response.data;
+      let filteredRooms = data;
 
       // Client-side filtering (replace with server-side filtering when API supports it)
       if (statusFilter !== "all") {
@@ -141,11 +142,11 @@ const RoomList = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get(
-        "http://localhost:5000/api/categories/all"
+      const { data } = await axios.get(
+        "/api/categories/all"
       );
       const categoryMap = {};
-      response.data.forEach((category) => {
+      data.forEach((category) => {
         categoryMap[category._id] = category.name;
       });
       setCategories(categoryMap);
@@ -200,7 +201,7 @@ const RoomList = () => {
         };
 
         await axios.delete(
-          `http://localhost:5000/api/rooms/delete/${id}`,
+          `/api/rooms/delete/${id}`,
           config
         );
         setRooms(rooms.filter((room) => room._id !== id));
@@ -233,24 +234,24 @@ const RoomList = () => {
       };
 
       if (editMode) {
-        const response = await axios.put(
-          `http://localhost:5000/api/rooms/update/${currentRoom._id}`,
+        const { data } = await axios.put(
+          `/api/rooms/update/${currentRoom._id}`,
           roomData,
           config
         );
 
         setRooms(
           rooms.map((room) =>
-            room._id === currentRoom._id ? response.data : room
+            room._id === currentRoom._id ? data : room
           )
         );
       } else {
-        const response = await axios.post(
-          "http://localhost:5000/api/rooms/add",
+        const { data } = await axios.post(
+          "/api/rooms/add",
           roomData,
           config
         );
-        setRooms([...rooms, response.data.room]);
+        setRooms([...rooms, data.room]);
       }
 
       setShowModal(false);

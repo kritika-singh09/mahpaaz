@@ -1,6 +1,6 @@
 // src/components/StaffWorkTask.jsx
 import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import { useAppContext } from "../context/AppContext";
 import Webcam from "react-webcam";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "../firebase";
@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 const StaffWorkTask = () => {
+  const { axios } = useAppContext();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -44,13 +45,13 @@ const StaffWorkTask = () => {
       const token = localStorage.getItem("token");
       const currentUserId = localStorage.getItem("userId");
 
-      const response = await axios.get(
-        "http://localhost:5000/api/housekeeping/tasks",
+      const { data } = await axios.get(
+        "/api/housekeeping/tasks",
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      if (response.data.success && Array.isArray(response.data.tasks)) {
-        const userTasks = response.data.tasks.filter(
+      if (data.success && Array.isArray(data.tasks)) {
+        const userTasks = data.tasks.filter(
           (task) => task.assignedTo && task.assignedTo._id === currentUserId
         );
         setTasks(userTasks);
@@ -67,7 +68,7 @@ const StaffWorkTask = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.patch(
-        `http://localhost:5000/api/housekeeping/tasks/${taskId}/status`,
+        `/api/housekeeping/tasks/${taskId}/status`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -139,7 +140,7 @@ const StaffWorkTask = () => {
   const updateTaskImage = async (taskId, type, imageUrl) => {
     const token = localStorage.getItem("token");
     await axios.post(
-      `http://localhost:5000/api/housekeeping/tasks/${taskId}/images/${type}`,
+      `/api/housekeeping/tasks/${taskId}/images/${type}`,
       { imageUrls: [imageUrl] },
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -162,7 +163,7 @@ const StaffWorkTask = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        `http://localhost:5000/api/housekeeping/tasks/${currentTaskId}/issues`,
+        `/api/housekeeping/tasks/${currentTaskId}/issues`,
         { issue: issueText },
         { headers: { Authorization: `Bearer ${token}` } }
       );

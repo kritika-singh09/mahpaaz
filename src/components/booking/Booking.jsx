@@ -1,4 +1,3 @@
-
 // // import React, { useState, useEffect } from "react";
 // // import { Edit, Trash2 } from "lucide-react";
 // // import { Link, useNavigate } from "react-router-dom";
@@ -99,7 +98,7 @@
 // //     <div className="p-6 bg-[#fff9e6] min-h-screen relative">
 // //       <div className="flex justify-between items-center mb-4">
 // //   <h2 className="text-2xl font-semibold">Bookings</h2>
-  
+
 // //   <div className="flex gap-2 ml-auto">
 // //     <Link
 // //       to="/bookingform"
@@ -107,11 +106,9 @@
 // //     >
 // //       Add Booking
 // //     </Link>
-    
+
 // //   </div>
 // // </div>
-
-    
 
 // //       <div className="mb-4">
 // //         <input
@@ -340,7 +337,7 @@
 // //     <div className="p-6 bg-[#fff9e6] min-h-screen relative">
 // //       <div className="flex justify-between items-center mb-4">
 // //         <h2 className="text-2xl font-semibold">Bookings</h2>
-        
+
 // //         <div className="flex gap-2 ml-auto">
 // //           <Link
 // //             to="/bookingform"
@@ -403,10 +400,10 @@
 // //                   <td className="px-6 py-4">{room.checkOut}</td>
 // //                   <td className="px-6 py-4">
 // //                     <span className={`px-2 py-1 rounded-full text-xs ${
-// //                       room._raw.status === 'Booked' 
-// //                         ? 'bg-green-100 text-green-800' 
-// //                         : room._raw.status === 'Cancelled' 
-// //                           ? 'bg-red-100 text-red-800' 
+// //                       room._raw.status === 'Booked'
+// //                         ? 'bg-green-100 text-green-800'
+// //                         : room._raw.status === 'Cancelled'
+// //                           ? 'bg-red-100 text-red-800'
 // //                           : 'bg-gray-100 text-gray-800'
 // //                     }`}>
 // //                       {room._raw.status || 'N/A'}
@@ -516,15 +513,15 @@
 // //       const res = await fetch("https://backend-hazel-xi.vercel.app/api/bookings/all", {
 // //         headers: { Authorization: `Bearer ${token}` },
 // //       });
-      
+
 // //       if (!res.ok) {
 // //         const errorData = await res.json();
 // //         throw new Error(errorData.message || "Failed to fetch bookings.");
 // //       }
-      
+
 // //       const data = await res.json();
 // //       const bookingsArray = Array.isArray(data) ? data : data.bookings || [];
-      
+
 // //       const mappedBookings = bookingsArray.map((b) => ({
 // //         id: b._id || "N/A",
 // //         name: b.guestDetails?.name || "N/A",
@@ -539,7 +536,7 @@
 // //         status: b.status || "N/A",
 // //         _raw: b,
 // //       }));
-      
+
 // //       setBookings(mappedBookings);
 // //     } catch (err) {
 // //       setError(err.message);
@@ -606,16 +603,16 @@
 // //       }
 
 // //       // Update local state
-// //       setBookings(prev => prev.map(b => 
-// //         b.id === bookingId 
-// //           ? { 
-// //               ...b, 
-// //               status: newStatus, 
-// //               _raw: { 
-// //                 ...b._raw, 
-// //                 status: newStatus 
-// //               } 
-// //             } 
+// //       setBookings(prev => prev.map(b =>
+// //         b.id === bookingId
+// //           ? {
+// //               ...b,
+// //               status: newStatus,
+// //               _raw: {
+// //                 ...b._raw,
+// //                 status: newStatus
+// //               }
+// //             }
 // //           : b
 // //       ));
 
@@ -641,10 +638,10 @@
 // //         },
 // //         body: JSON.stringify(updatedData)
 // //       });
-      
+
 // //       const data = await res.json();
 // //       if (!res.ok) throw new Error(data.message || "Update failed");
-      
+
 // //       setError(null);
 // //       fetchBookings();
 // //       setEditId(null);
@@ -705,10 +702,10 @@
 // //                 <td className="px-6 py-4">{room.checkOut}</td>
 // //                 <td className="px-6 py-4">
 // //                   <span className={`px-2 py-1 rounded-full text-xs ${
-// //                     room.status === 'Booked' 
-// //                       ? 'bg-green-100 text-green-800' 
-// //                       : room.status === 'Cancelled' 
-// //                         ? 'bg-red-100 text-red-800' 
+// //                     room.status === 'Booked'
+// //                       ? 'bg-green-100 text-green-800'
+// //                       : room.status === 'Cancelled'
+// //                         ? 'bg-red-100 text-red-800'
 // //                         : 'bg-gray-100 text-gray-800'
 // //                   }`}>
 // //                     {room.status}
@@ -727,8 +724,8 @@
 // //                       onClick={() => toggleBookingStatus(room.id)}
 // //                       title={room.status === 'Booked' ? 'Cancel Booking' : 'Re-Book'}
 // //                       className={`p-1 rounded-full ${
-// //                         room.status === 'Booked' 
-// //                           ? 'text-yellow-600 hover:bg-yellow-50' 
+// //                         room.status === 'Booked'
+// //                           ? 'text-yellow-600 hover:bg-yellow-50'
 // //                           : 'text-green-600 hover:bg-green-50'
 // //                       }`}
 // //                     >
@@ -884,7 +881,6 @@
 //   );
 // };
 
-
 // const BookingPage = () => {
 //   const [bookings, setBookings] = useState([]);
 //   const [loading, setLoading] = useState(true);
@@ -902,19 +898,19 @@
 
 //     try {
 //       if (!token) throw new Error("Authentication token not found. Please log in.");
-      
+
 //       const res = await fetch("https://backend-hazel-xi.vercel.app/api/bookings/all", {
 //         headers: { Authorization: `Bearer ${token}` },
 //       });
-      
+
 //       if (!res.ok) {
 //         const errorData = await res.json();
 //         throw new Error(errorData.message || "Failed to fetch bookings.");
 //       }
-      
+
 //       const data = await res.json();
 //       const bookingsArray = Array.isArray(data) ? data : data.bookings || [];
-      
+
 //       // Map the API response to a flat object that matches the Mongoose schema
 //       const mappedBookings = bookingsArray.map((b) => ({
 //         id: b._id || "N/A",
@@ -932,7 +928,7 @@
 //         vip: b.vip || false,
 //         _raw: b, // Keep the raw data for editing
 //       }));
-      
+
 //       setBookings(mappedBookings);
 //     } catch (err) {
 //       setError(err.message);
@@ -987,16 +983,16 @@
 //       }
 
 //       // Update local state with the new status directly
-//       setBookings(prev => prev.map(b => 
-//         b.id === bookingId 
-//           ? { 
-//               ...b, 
-//               status: newStatus, 
-//               _raw: { 
-//                 ...b._raw, 
-//                 status: newStatus 
-//               } 
-//             } 
+//       setBookings(prev => prev.map(b =>
+//         b.id === bookingId
+//           ? {
+//               ...b,
+//               status: newStatus,
+//               _raw: {
+//                 ...b._raw,
+//                 status: newStatus
+//               }
+//             }
 //           : b
 //       ));
 
@@ -1023,13 +1019,13 @@
 //         },
 //         body: JSON.stringify(updatedData)
 //       });
-      
+
 //       const responseData = await res.json();
 //       if (!res.ok) throw new Error(responseData.message || "Update failed");
-      
+
 //       setError(null);
 //       // Update local state with the new data from the response
-//       setBookings(prev => prev.map(b => 
+//       setBookings(prev => prev.map(b =>
 //         b.id === bookingId
 //           ? {
 //               ...b,
@@ -1120,8 +1116,8 @@
 //                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{room.checkOut}</td>
 //                   <td className="px-6 py-4 whitespace-nowrap">
 //                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-//                       room.status === 'Booked' 
-//                         ? 'bg-green-100 text-green-800' 
+//                       room.status === 'Booked'
+//                         ? 'bg-green-100 text-green-800'
 //                         : 'bg-red-100 text-red-800'
 //                     }`}>
 //                       {room.status}
@@ -1140,8 +1136,8 @@
 //                         onClick={() => toggleBookingStatus(room.id)}
 //                         title={room.status === 'Booked' ? 'Cancel Booking' : 'Re-Book'}
 //                         className={`p-2 rounded-full transition duration-300 ${
-//                           room.status === 'Booked' 
-//                             ? 'text-red-600 hover:bg-red-50' 
+//                           room.status === 'Booked'
+//                             ? 'text-red-600 hover:bg-red-50'
 //                             : 'text-green-600 hover:bg-green-50'
 //                         }`}
 //                       >
@@ -1173,8 +1169,12 @@
 
 // export default BookingPage;
 
-
 import React, { useState, useEffect } from "react";
+import { Edit, Trash2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAppContext } from "../../context/AppContext";
+import BookingView from "./BookingView";
+import BookingEdit from "./BookingEdit";
 import { useNavigate } from "react-router-dom";
 import { Edit, XCircle, CheckCircle, Search, X } from "lucide-react";
 
@@ -1211,9 +1211,14 @@ const BookingEdit = ({ booking, onSave, onCancel }) => {
       <h3 className="text-2xl font-bold mb-4 text-center">
         Edit Booking: {booking?.name}
       </h3>
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <form
+        onSubmit={handleSubmit}
+        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+      >
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">Guest Name</label>
+          <label className="block text-gray-700 font-semibold mb-2">
+            Guest Name
+          </label>
           <input
             type="text"
             name="name"
@@ -1223,7 +1228,9 @@ const BookingEdit = ({ booking, onSave, onCancel }) => {
           />
         </div>
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">Mobile Number</label>
+          <label className="block text-gray-700 font-semibold mb-2">
+            Mobile Number
+          </label>
           <input
             type="text"
             name="mobileNo"
@@ -1233,7 +1240,9 @@ const BookingEdit = ({ booking, onSave, onCancel }) => {
           />
         </div>
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">Check-in Date</label>
+          <label className="block text-gray-700 font-semibold mb-2">
+            Check-in Date
+          </label>
           <input
             type="date"
             name="checkInDate"
@@ -1243,7 +1252,9 @@ const BookingEdit = ({ booking, onSave, onCancel }) => {
           />
         </div>
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">Check-out Date</label>
+          <label className="block text-gray-700 font-semibold mb-2">
+            Check-out Date
+          </label>
           <input
             type="date"
             name="checkOutDate"
@@ -1253,7 +1264,9 @@ const BookingEdit = ({ booking, onSave, onCancel }) => {
           />
         </div>
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">Room Number</label>
+          <label className="block text-gray-700 font-semibold mb-2">
+            Room Number
+          </label>
           <input
             type="text"
             name="roomNumber"
@@ -1300,6 +1313,7 @@ const BookingPage = () => {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [editId, setEditId] = useState(null);
+  const { axios } = useAppContext();
 
   const getAuthToken = () => localStorage.getItem("token");
 
@@ -1309,18 +1323,11 @@ const BookingPage = () => {
     const token = getAuthToken();
 
     try {
-      if (!token) throw new Error("Authentication token not found. Please log in.");
-
-      const res = await fetch("https://backend-hazel-xi.vercel.app/api/bookings/all", {
+      if (!token) throw new Error("Authentication token not found.");
+      const { data } = await axios.get("/api/bookings/all", {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to fetch bookings.");
-      }
-
-      const data = await res.json();
+      console.log("Raw bookings API response:", data);
       const bookingsArray = Array.isArray(data) ? data : data.bookings || [];
 
       const mappedBookings = bookingsArray.map((b) => ({
@@ -1343,7 +1350,7 @@ const BookingPage = () => {
       setBookings(mappedBookings);
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching bookings:', err);
+      console.error("Error fetching bookings:", err);
     } finally {
       setLoading(false);
     }
@@ -1353,10 +1360,11 @@ const BookingPage = () => {
     fetchBookings();
   }, []);
 
-  const filteredBookings = bookings.filter((b) =>
-    b.name.toLowerCase().includes(search.toLowerCase()) ||
-    b.roomNumber.toString().includes(search.toString()) ||
-    b.grcNo.toLowerCase().includes(search.toLowerCase())
+  const filteredBookings = bookings.filter(
+    (b) =>
+      b.name.toLowerCase().includes(search.toLowerCase()) ||
+      b.roomNumber.toString().includes(search.toString()) ||
+      b.grcNo.toLowerCase().includes(search.toLowerCase())
   );
 
   const toggleBookingStatus = async (bookingId) => {
@@ -1367,48 +1375,55 @@ const BookingPage = () => {
     }
 
     try {
-      const booking = bookings.find(b => b.id === bookingId);
+      const booking = bookings.find((b) => b.id === bookingId);
       if (!booking) throw new Error("Booking not found");
 
-      const newStatus = booking.status === 'Booked' ? 'Cancelled' : 'Booked';
+      const newStatus = booking.status === "Booked" ? "Cancelled" : "Booked";
 
       const updateData = {
         ...booking._raw,
         status: newStatus,
       };
 
-      const res = await fetch(`https://backend-hazel-xi.vercel.app/api/bookings/update/${bookingId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(updateData)
-      });
+      const res = await fetch(
+        `https://backend-hazel-xi.vercel.app/api/bookings/update/${bookingId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(updateData),
+        }
+      );
 
       const responseData = await res.json();
 
       if (!res.ok) {
-        throw new Error(responseData.message || "Failed to update booking status");
+        throw new Error(
+          responseData.message || "Failed to update booking status"
+        );
       }
 
-      setBookings(prev => prev.map(b => 
-        b.id === bookingId 
-          ? { 
-              ...b, 
-              status: newStatus, 
-              _raw: { 
-                ...b._raw, 
-                status: newStatus 
-              } 
-            } 
-          : b
-      ));
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === bookingId
+            ? {
+                ...b,
+                status: newStatus,
+                _raw: {
+                  ...b._raw,
+                  status: newStatus,
+                },
+              }
+            : b
+        )
+      );
 
       setError(null);
     } catch (err) {
       setError(err.message);
-      console.error('Error toggling booking status:', err);
+      console.error("Error toggling booking status:", err);
     }
   };
 
@@ -1420,39 +1435,57 @@ const BookingPage = () => {
     }
 
     try {
-      const res = await fetch(`https://backend-hazel-xi.vercel.app/api/bookings/update/${bookingId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(updatedData)
-      });
+      const { data } = await axios.put(
+        `/api/bookings/update/${bookingId}`,
+        updatedData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       const responseData = await res.json();
       if (!res.ok) throw new Error(responseData.message || "Update failed");
 
       setError(null);
-      setBookings(prev => prev.map(b => 
-        b.id === bookingId
-          ? {
-              ...b,
-              grcNo: responseData.grcNo,
-              name: responseData.name,
-              mobileNo: responseData.mobileNo,
-              roomNumber: responseData.roomNumber,
-              checkIn: new Date(responseData.checkInDate).toLocaleDateString(),
-              checkOut: new Date(responseData.checkOutDate).toLocaleDateString(),
-              status: responseData.status,
-              vip: responseData.vip,
-              _raw: responseData,
-            }
-          : b
-      ));
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === bookingId
+            ? {
+                ...b,
+                grcNo: responseData.grcNo,
+                name: responseData.name,
+                mobileNo: responseData.mobileNo,
+                roomNumber: responseData.roomNumber,
+                checkIn: new Date(
+                  responseData.checkInDate
+                ).toLocaleDateString(),
+                checkOut: new Date(
+                  responseData.checkOutDate
+                ).toLocaleDateString(),
+                status: responseData.status,
+                vip: responseData.vip,
+                _raw: responseData,
+              }
+            : b
+        )
+      );
       setEditId(null);
+      if (data && data.success) {
+        setError(null);
+        fetchBookings(); // Refresh bookings list
+        setEditId(null); // Close the edit modal
+      } else {
+        setError(
+          `Update failed: ${
+            typeof data.error === "string" ? data.error : JSON.stringify(data)
+          }`
+        );
+      }
     } catch (error) {
       setError(`Error: ${error.message}`);
-      console.error('Update error:', error);
+      console.error("Update error:", error);
     }
   };
 
@@ -1484,42 +1517,76 @@ const BookingPage = () => {
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-4 flex items-center justify-between shadow-sm">
           <span>{error}</span>
-          <button onClick={() => setError(null)} className="text-red-700 hover:text-red-900 transition duration-300">
+          <button
+            onClick={() => setError(null)}
+            className="text-red-700 hover:text-red-900 transition duration-300"
+          >
             <X size={20} />
           </button>
         </div>
       )}
 
       {loading ? (
-        <div className="text-center py-10 text-gray-600">Loading bookings...</div>
+        <div className="text-center py-10 text-gray-600">
+          Loading bookings...
+        </div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
           <table className="min-w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">GRC No</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Room</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Check In</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Check Out</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  GRC No
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Room
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Check In
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Check Out
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {filteredBookings.map((room) => (
-                <tr key={room.id} className="hover:bg-gray-50 transition-colors duration-200">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{room.grcNo}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{room.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{room.roomNumber}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{room.checkIn}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{room.checkOut}</td>
+                <tr
+                  key={room.id}
+                  className="hover:bg-gray-50 transition-colors duration-200"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                    {room.grcNo}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                    {room.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                    {room.roomNumber}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                    {room.checkIn}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                    {room.checkOut}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      room.status === 'Booked' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        room.status === "Booked"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
                       {room.status}
                     </span>
                   </td>
@@ -1534,14 +1601,22 @@ const BookingPage = () => {
                       </button>
                       <button
                         onClick={() => toggleBookingStatus(room.id)}
-                        title={room.status === 'Booked' ? 'Cancel Booking' : 'Re-Book'}
+                        title={
+                          room.status === "Booked"
+                            ? "Cancel Booking"
+                            : "Re-Book"
+                        }
                         className={`p-2 rounded-full transition duration-300 ${
-                          room.status === 'Booked' 
-                            ? 'text-red-600 hover:bg-red-50' 
-                            : 'text-green-600 hover:bg-green-50'
+                          room.status === "Booked"
+                            ? "text-red-600 hover:bg-red-50"
+                            : "text-green-600 hover:bg-green-50"
                         }`}
                       >
-                        {room.status === 'Booked' ? <XCircle size={18} /> : <CheckCircle size={18} />}
+                        {room.status === "Booked" ? (
+                          <XCircle size={18} />
+                        ) : (
+                          <CheckCircle size={18} />
+                        )}
                       </button>
                     </div>
                   </td>

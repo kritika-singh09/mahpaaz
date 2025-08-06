@@ -227,11 +227,57 @@ import {
 import logoImage from "../assets/buddhaavenuelogo.png";
 
 const Sidebar = () => {
-  const { isSidebarOpen } = useAppContext();
+  const [openDropdown, setOpenDropdown] = useState(null);
+
+  const { isSidebarOpen, closeSidebar, axios } = useAppContext();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [openDropdown, setOpenDropdown] = useState(null);
+  const [isLaundaryDropdownOpen, setIsLaundaryDropdownOpen] = useState(false);
+
+  const [userRole, setUserRole] = useState("");
+  const [taskCount, setTaskCount] = useState(0);
+
+  useEffect(() => {
+    const role = localStorage.getItem("role");
+    setUserRole(role ? role.toUpperCase() : "");
+  }, []);
+
+  useEffect(() => {
+    const role = localStorage.getItem("role");
+    setUserRole(role ? role.toUpperCase() : "");
+
+    if (role === "staff") {
+      fetchTaskCount();
+      const interval = setInterval(fetchTaskCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, []);
+
+  const fetchTaskCount = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const userId = localStorage.getItem("userId");
+
+      if (!token || !userId) return;
+
+      const { data } = await axios.get("/api/housekeeping/tasks", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (data.success && Array.isArray(data.tasks)) {
+        const userPendingTasks = response.data.tasks.filter(
+          (task) =>
+            task.assignedTo &&
+            task.assignedTo._id === userId &&
+            task.status === "pending"
+        );
+        setTaskCount(userPendingTasks.length);
+      }
+    } catch (err) {
+      console.error("Error fetching task count:", err);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.clear();
@@ -242,48 +288,55 @@ const Sidebar = () => {
     setOpenDropdown((prev) => (prev === label ? null : label));
   };
   const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-  { icon: UserCheck, label: "Task Assigned", path: "/tasks" },
-  { icon: ChartBarStacked, label: "Category", path: "/category" },
-  { icon: BedDouble, label: "Room", path: "/room" },
-  { icon: FileText, label: "Booking", path: "/booking" },
-  { icon: FileText, label: "Reservation", path: "/reservation" },
-  { icon: UserRound, label: "Staff", path: "/staff" },
-  {
-    icon: UserRound,
-    label: "Laundary",
-    path: "/laundry",
-    isDropdown: true,
-    children: [
-      { label: "Order Management", path: "/laundry/ordermanagement", icon: ListChecks },
-      { label: "Inventory Management", path: "/laundry/inventorymanagement", icon: Package },
-    ],
-  },
-  {
-    icon: UserRound,
-    label: "Pantry",
-    path: "/pantry",
-    isDropdown: true,
-    children: [
-      { label: "Item", path: "/pantry/item", icon: ListChecks },
-      { label: "Orders", path: "/pantry/orders", icon: Package },
-    ],
-  },
-  {
-    icon: UserRound,
-    label: "Cab",
-    path: "/cab",
-    isDropdown: true,
-    children: [
-      { label: "Driver Management", path: "/cab/driver", icon: ListChecks },
-      { label: "Vehicle Management", path: "/cab/vehicle", icon: Package },
-    ],
-  },
-  { icon: UserRound, label: "Resturant", path: "/resturant" },
-  { icon: ShoppingCart, label: "Orders", path: "/orders" },
-  { icon: Users, label: "Customers", path: "/customers" },
-];
-
+    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+    { icon: UserCheck, label: "Task Assigned", path: "/tasks" },
+    { icon: ChartBarStacked, label: "Category", path: "/category" },
+    { icon: BedDouble, label: "Room", path: "/room" },
+    { icon: FileText, label: "Booking", path: "/booking" },
+    { icon: FileText, label: "Reservation", path: "/reservation" },
+    { icon: UserRound, label: "Staff", path: "/staff" },
+    {
+      icon: UserRound,
+      label: "Laundary",
+      path: "/laundry",
+      isDropdown: true,
+      children: [
+        {
+          label: "Order Management",
+          path: "/laundry/ordermanagement",
+          icon: ListChecks,
+        },
+        {
+          label: "Inventory Management",
+          path: "/laundry/inventorymanagement",
+          icon: Package,
+        },
+      ],
+    },
+    {
+      icon: UserRound,
+      label: "Pantry",
+      path: "/pantry",
+      isDropdown: true,
+      children: [
+        { label: "Item", path: "/pantry/item", icon: ListChecks },
+        { label: "Orders", path: "/pantry/orders", icon: Package },
+      ],
+    },
+    {
+      icon: UserRound,
+      label: "Cab",
+      path: "/cab",
+      isDropdown: true,
+      children: [
+        { label: "Driver Management", path: "/cab/driver", icon: ListChecks },
+        { label: "Vehicle Management", path: "/cab/vehicle", icon: Package },
+      ],
+    },
+    { icon: UserRound, label: "Resturant", path: "/resturant" },
+    { icon: ShoppingCart, label: "Orders", path: "/orders" },
+    { icon: Users, label: "Customers", path: "/customers" },
+  ];
 
   const bottomNavItems = [
     { icon: HelpCircle, label: "Help & Support", path: "/help" },
@@ -310,7 +363,9 @@ const Sidebar = () => {
                   className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors duration-200 focus:outline-none
                     ${
                       location.pathname.startsWith(item.path) ||
-                      item.children.some(child => location.pathname === child.path)
+                      item.children.some(
+                        (child) => location.pathname === child.path
+                      )
                         ? "bg-[#c2ab65] text-[#1f2937] font-semibold"
                         : "hover:bg-secondary hover:text-[#1f2937]"
                     }`}
@@ -338,7 +393,9 @@ const Sidebar = () => {
                               : "hover:bg-secondary hover:text-[#1f2937]"
                           }`}
                       >
-                        {subItem.icon && <subItem.icon className="w-4 h-4 mr-2" />}
+                        {subItem.icon && (
+                          <subItem.icon className="w-4 h-4 mr-2" />
+                        )}
                         {subItem.label}
                       </Link>
                     ))}
