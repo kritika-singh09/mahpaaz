@@ -154,11 +154,6 @@ const BookingPage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = res.data;
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to fetch bookings.");
-      }
       const bookingsArray = Array.isArray(data) ? data : data.bookings || [];
 
       const mappedBookings = bookingsArray.map((b) => ({
