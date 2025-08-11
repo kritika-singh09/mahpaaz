@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef, createContext, useContext, useMemo } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import {
   FaUser,
   FaPhone,
@@ -128,7 +129,7 @@ const Checkbox = ({ id, checked, onChange, className = "" }) => (
     id={id}
     checked={checked}
     onChange={onChange}
-    className={`peer h-4 w-4 shrink-0 rounded-sm border border-black shadow focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-black data-[state=checked]:text-primary-foreground ${className}`}
+    className={`h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 ${className}`}
   />
 );
 
@@ -237,6 +238,7 @@ export const AppProvider = ({ children }) => {
   const [allRooms, setAllRooms] = useState([]);
   const [selectedRooms, setSelectedRooms] = useState([]);
   const [hasCheckedAvailability, setHasCheckedAvailability] = useState(false);
+  const [showCompanyDetails, setShowCompanyDetails] = useState(false);
   const [formData, setFormData] = useState({
     grcNo: '',
     reservationId: '',
@@ -306,11 +308,27 @@ export const AppProvider = ({ children }) => {
 
   // Memoized available rooms for the currently selected category
   const roomsForSelectedCategory = useMemo(() => {
-    if (!hasCheckedAvailability) {
+    if (!formData.categoryId) {
       return [];
     }
-    return allRooms.filter(room => room.category && room.category._id === formData.categoryId);
-  }, [allRooms, formData.categoryId, hasCheckedAvailability]);
+    
+    const filtered = allRooms.filter(room => {
+      // Get the room's category ID from various possible fields
+      const roomCategoryId = room.category?._id || room.category || room.categoryId;
+      
+      // Match with selected category
+      const categoryMatch = roomCategoryId === formData.categoryId;
+      
+      // Additional safety check for room status
+      const isAvailable = ['available', 'clean'].includes(room.status) || !room.status;
+      const notReserved = !room.is_reserved;
+      
+      return categoryMatch && isAvailable && notReserved;
+    });
+    
+    console.log(`Rooms for category ${formData.categoryId}:`, filtered);
+    return filtered;
+  }, [allRooms, formData.categoryId]);
 
   // --- Message Handling Logic ---
   const showMessage = (msg, msgType = 'info') => {
@@ -322,53 +340,10 @@ export const AppProvider = ({ children }) => {
   };
 
   // --- Data Fetching Functions ---
-  const fetchNewGRCNo = async () => {
-    try {
-      // Generate a simple GRC number locally as fallback
-      const generateLocalGRC = () => {
-        const timestamp = Date.now().toString().slice(-6);
-        const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-        return `GRC${timestamp}${random}`;
-      };
-
-      // Try multiple endpoints
-      const endpoints = [
-        `${BASE_URL}/api/bookings/new-grc`,
-        `${BASE_URL}/api/bookings/generate-grc`,
-        `${BASE_URL}/api/bookings/grc/new`
-      ];
-
-      let grcFetched = false;
-      
-      for (const endpoint of endpoints) {
-        try {
-          const response = await axios.get(endpoint);
-          if (response.data && (response.data.grcNo || response.data.grc)) {
-            const grcNumber = response.data.grcNo || response.data.grc;
-            setFormData(prev => ({ ...prev, grcNo: grcNumber }));
-            grcFetched = true;
-            break;
-          }
-        } catch (err) {
-          console.log(`Failed to fetch from ${endpoint}:`, err.message);
-          continue;
-        }
-      }
-
-      if (!grcFetched) {
-        // Use local generation as final fallback
-        const localGRC = generateLocalGRC();
-        setFormData(prev => ({ ...prev, grcNo: localGRC }));
-        showMessage("GRC number generated locally (server unavailable).", 'info');
-      }
-    } catch (error) {
-      // Final fallback - generate locally
-      const timestamp = Date.now().toString().slice(-6);
-      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-      const fallbackGRC = `GRC${timestamp}${random}`;
-      setFormData(prev => ({ ...prev, grcNo: fallbackGRC }));
-      showMessage("GRC number generated locally.", 'info');
-    }
+  const fetchNewGRCNo = () => {
+    const random = Math.floor(Math.random() * 9000) + 1000;
+    const grcNo = `GRC-${random}`;
+    setFormData(prev => ({ ...prev, grcNo }));
   };
 
   const fetchAllData = async () => {
@@ -378,6 +353,9 @@ export const AppProvider = ({ children }) => {
         axios.get(`${BASE_URL}/api/rooms/all`),
       ]);
 
+      console.log('Categories response:', catRes.data);
+      console.log('Rooms response:', roomRes.data);
+
       const categories = Array.isArray(catRes.data) ? catRes.data : [];
       const rooms = Array.isArray(roomRes.data) ? roomRes.data : [];
 
@@ -385,12 +363,18 @@ export const AppProvider = ({ children }) => {
       
       const categoriesWithCounts = categories.map(category => ({
         ...category,
-        totalRooms: rooms.filter(room => room.category && room.category._id === category._id).length,
+        totalRooms: rooms.filter(room => {
+          if (!room.category) return false;
+          return room.category._id === category._id || 
+                 room.category === category._id || 
+                 room.categoryId === category._id;
+        }).length,
         availableRoomsCount: 0,
       }));
       setAllCategories(categoriesWithCounts);
 
     } catch (error) {
+      console.error('Error fetching data:', error);
       showMessage(`Failed to fetch initial data: ${error.message}. Ensure your server is running.`, 'error');
     }
   };
@@ -450,6 +434,8 @@ export const AppProvider = ({ children }) => {
     fetchNewGRCNo,
     fetchAllData,
     resetForm,
+    showCompanyDetails,
+    setShowCompanyDetails,
   };
   useEffect(() => {
     fetchNewGRCNo();
@@ -469,10 +455,13 @@ const App = () => {
   // Use the custom hook to access all state and functions
   const {
     BASE_URL, loading, setLoading, message, messageType, showMessage,
-    isCameraOpen, setIsCameraOpen, capturedPhoto, setCapturedPho   , searchGRC, setSearchGRC, allCategories, setAllCategories, allRooms, setAllRooms,
+    isCameraOpen, setIsCameraOpen, capturedPhoto, setCapturedPhoto, searchGRC, setSearchGRC, allCategories, setAllCategories, allRooms, setAllRooms,
     selectedRooms, setSelectedRooms, hasCheckedAvailability, setHasCheckedAvailability,
-    formData, setFormData, roomsForSelectedCategory, resetForm,
+    formData, setFormData, roomsForSelectedCategory, resetForm, showCompanyDetails, setShowCompanyDetails,
   } = useAppContext();
+
+  // Navigation hook
+  const navigate = useNavigate();
 
   // Refs for video and canvas elements to access them in the DOM
   const videoRef = useRef(null);
@@ -594,7 +583,7 @@ const App = () => {
 
       // Check if response has data
       if (response.data && response.status === 200) {
-        const fetchedData = response.data;
+        const fetchedData = response.data.booking;
         
         // Helper function to safely format dates
         const formatDate = (dateString) => {
@@ -607,26 +596,23 @@ const App = () => {
           }
         };
         
-        // Merge fetched data with existing form data
-        setFormData(prevFormData => ({
-          ...prevFormData,
+        // Directly set the fetched data
+        setFormData({
           ...fetchedData,
-          // Ensure dates are formatted correctly for input fields
+          categoryId: fetchedData.categoryId?._id || fetchedData.categoryId || '',
           bookingDate: formatDate(fetchedData.bookingDate),
           checkInDate: formatDate(fetchedData.checkInDate),
           checkOutDate: formatDate(fetchedData.checkOutDate),
           birthDate: formatDate(fetchedData.birthDate),
           anniversary: formatDate(fetchedData.anniversary),
-          // Handle category ID if it's an object
-          categoryId: fetchedData.categoryId?._id || fetchedData.categoryId || '',
-          // Ensure numeric fields are properly handled
+          age: fetchedData.age ? String(fetchedData.age) : '',
           numberOfRooms: Number(fetchedData.numberOfRooms) || 1,
           noOfAdults: Number(fetchedData.noOfAdults) || 1,
           noOfChildren: Number(fetchedData.noOfChildren) || 0,
           rate: Number(fetchedData.rate) || 0,
           discountPercent: Number(fetchedData.discountPercent) || 0,
-          age: fetchedData.age ? String(fetchedData.age) : '',
-        }));
+          days: Number(fetchedData.days) || 0,
+        });
         
         // Handle room selection - check if roomNumber is a string of comma-separated values or an array
         if (fetchedData.roomNumber) {
@@ -640,6 +626,11 @@ const App = () => {
           } else if (Array.isArray(fetchedData.roomNumber)) {
             setSelectedRooms(fetchedData.roomNumber);
           }
+        }
+
+        // Set photo if available
+        if (fetchedData.photoUrl) {
+          setCapturedPhoto(fetchedData.photoUrl);
         }
 
         // Set category if available and trigger availability check
@@ -686,28 +677,66 @@ const App = () => {
     setLoading(true);
     setHasCheckedAvailability(true);
     try {
-      const response = await axios.get(`${BASE_URL}/api/rooms/available?checkInDate=${formData.checkInDate}&checkOutDate=${formData.checkOutDate}`);
-      const availableCategoriesData = response.data.availableRooms || [];
+      // Get all rooms first to check their actual status
+      const [availabilityResponse, allRoomsResponse] = await Promise.all([
+        axios.get(`${BASE_URL}/api/rooms/available?checkInDate=${formData.checkInDate}&checkOutDate=${formData.checkOutDate}`),
+        axios.get(`${BASE_URL}/api/rooms/all`)
+      ]);
+      
+      const availableCategoriesData = availabilityResponse.data.availableRooms || [];
+      const allRoomsData = allRoomsResponse.data || [];
 
-      const updatedCategories = allCategories.map(cat => {
-        const availableInfo = availableCategoriesData.find(ac => ac.category === cat._id);
-        return {
-          ...cat,
-          availableRoomsCount: availableInfo ? availableInfo.availableRooms : 0,
-        };
+      // Create a map of available room IDs from the availability check
+      const availableRoomIds = new Set();
+      availableCategoriesData.forEach(cat => {
+        if (cat.rooms) {
+          cat.rooms.forEach(room => availableRoomIds.add(room._id));
+        }
       });
+
+      // Filter rooms that are truly available (in availability response AND have correct status)
+      const trulyAvailableRooms = allRoomsData.filter(room => {
+        const isInAvailabilityList = availableRoomIds.has(room._id);
+        const hasValidStatus = ['available', 'clean'].includes(room.status) || !room.status;
+        const notReserved = !room.is_reserved;
+        
+        return isInAvailabilityList && hasValidStatus && notReserved;
+      });
+
+      // Group available rooms by category
+      const categoryRoomCounts = {};
+      trulyAvailableRooms.forEach(room => {
+        const categoryId = room.category?._id || room.category || room.categoryId;
+        if (categoryId) {
+          categoryRoomCounts[categoryId] = (categoryRoomCounts[categoryId] || 0) + 1;
+        }
+      });
+
+      // Update categories with correct available room counts
+      const updatedCategories = allCategories.map(cat => ({
+        ...cat,
+        availableRoomsCount: categoryRoomCounts[cat._id] || 0
+      }));
       setAllCategories(updatedCategories);
 
-      const availableRoomsList = availableCategoriesData.flatMap(cat => cat.rooms || []);
-      setAllRooms(availableRoomsList);
+      // Set the truly available rooms with proper category info
+      const roomsWithCategoryInfo = trulyAvailableRooms.map(room => ({
+        ...room,
+        category: room.category || { _id: room.categoryId },
+        categoryId: room.category?._id || room.category || room.categoryId
+      }));
+      
+      setAllRooms(roomsWithCategoryInfo);
+      console.log('Truly available rooms:', roomsWithCategoryInfo);
 
-      if (availableRoomsList.length === 0) {
+      if (roomsWithCategoryInfo.length === 0) {
         showMessage("No rooms available for the selected dates.", 'error');
       } else {
-        showMessage(`Found ${availableRoomsList.length} available rooms.`, 'info');
+        showMessage(`Found ${roomsWithCategoryInfo.length} available rooms.`, 'info');
       }
 
     } catch (error) {
+      console.error('Availability check error:', error);
       showMessage(`Failed to check availability: ${error.message}`, 'error');
       setAllRooms([]);
       const resetCategories = allCategories.map(cat => ({ ...cat, availableRoomsCount: 0 }));
@@ -735,17 +764,88 @@ const App = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Basic form validation
+    if (!formData.name.trim()) {
+      showMessage('Guest name is required', 'error');
+      return;
+    }
+    
+    if (!formData.checkInDate || !formData.checkOutDate) {
+      showMessage('Check-in and check-out dates are required', 'error');
+      return;
+    }
+    
+    if (selectedRooms.length === 0) {
+      showMessage('Please select at least one room', 'error');
+      return;
+    }
+    
+    if (!formData.categoryId) {
+      showMessage('Please select a room category', 'error');
+      return;
+    }
+    
     setLoading(true);
-    const finalFormData = {
+    
+    // Clean the form data to remove any invalid fields
+    const cleanFormData = {
       ...formData,
-      photoUrl: capturedPhoto,
+      photoUrl: capturedPhoto || '',
+      roomNumber: selectedRooms.map(r => r.room_number).join(','),
+      numberOfRooms: selectedRooms.length,
     };
+    
+    // Remove any MongoDB-specific fields that might cause issues
+    delete cleanFormData._id;
+    delete cleanFormData.__v;
+    delete cleanFormData.createdAt;
+    delete cleanFormData.updatedAt;
+    
+    // Ensure numeric fields are properly formatted
+    cleanFormData.age = cleanFormData.age ? Number(cleanFormData.age) : 0;
+    cleanFormData.noOfAdults = Number(cleanFormData.noOfAdults) || 1;
+    cleanFormData.noOfChildren = Number(cleanFormData.noOfChildren) || 0;
+    cleanFormData.rate = Number(cleanFormData.rate) || 0;
+    cleanFormData.discountPercent = Number(cleanFormData.discountPercent) || 0;
+    cleanFormData.days = Number(cleanFormData.days) || 0;
+    
+    console.log('Submitting booking data:', cleanFormData);
+    
     try {
-      await axios.post(`${BASE_URL}/api/bookings/book`, finalFormData);
+      const response = await axios.post(`${BASE_URL}/api/bookings/book`, cleanFormData, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('Booking response:', response.data);
       showMessage("Booking submitted successfully!", 'success');
+      alert("🎉 Booking submitted successfully! You will be redirected to the booking page.");
       resetForm();
-    } catch (e) {
-      showMessage(`An unexpected error occurred while submitting the booking: ${e.message}`, 'error');
+      // Navigate to booking page after successful submission
+      setTimeout(() => {
+        navigate('/booking');
+      }, 1500);
+    } catch (error) {
+      console.error('Booking submission error:', error);
+      if (error.response) {
+        console.error('Error response data:', error.response.data);
+        const errorMsg = error.response.data?.error || error.response.data?.message || `Server error (${error.response.status})`;
+        
+        // Handle specific room availability error
+        if (errorMsg.includes('Not enough available rooms') || errorMsg.includes('available rooms')) {
+          showMessage(`${errorMsg}. Please check room availability again and select different rooms.`, 'error');
+          // Clear selected rooms and suggest re-checking availability
+          setSelectedRooms([]);
+          setHasCheckedAvailability(false);
+        } else {
+          showMessage(`Failed to submit booking: ${errorMsg}`, 'error');
+        }
+      } else if (error.request) {
+        showMessage('Network error. Please check your connection and try again.', 'error');
+      } else {
+        showMessage(`An unexpected error occurred: ${error.message}`, 'error');
+      }
     } finally {
       setLoading(false);
     }
@@ -762,7 +862,7 @@ const App = () => {
   // Helper function to get a category name by ID
   const getCategoryName = (categoryId) => {
     const category = allCategories.find(cat => cat._id === categoryId);
-    return category ? category.name : 'Unknown Category';
+    return category && category.name ? category.name : 'Unknown Category';
   };
 
   const isCheckAvailabilityDisabled =
@@ -912,20 +1012,28 @@ const App = () => {
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {allCategories.map(cat => (
-                        <tr key={cat._id} className={`${formData.categoryId === cat._id ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
-                          <td className="py-4 px-6 text-sm font-medium text-gray-900">{cat.name}</td>
+                        <tr key={cat._id} className={`${formData.categoryId === cat._id ? 'bg-blue-50' : 'hover:bg-gray-50'} ${cat.availableRoomsCount === 0 ? 'opacity-50' : ''}`}>
+                          <td className="py-4 px-6 text-sm font-medium text-gray-900">
+                            {cat.name || 'Unknown'}
+                            {cat.availableRoomsCount === 0 && <span className="text-red-500 text-xs ml-2">(No available rooms)</span>}
+                          </td>
                           <td className="py-4 px-6 text-sm text-gray-500">
-                            {`${cat.availableRoomsCount} of ${cat.totalRooms} available`}
+                            {`${cat.availableRoomsCount || 0} of ${cat.totalRooms || 0} available`}
                           </td>
                           <td className="py-4 px-6 text-sm">
                             <button
                               type="button"
                               onClick={() => handleCategoryCardClick(cat._id)}
+                              disabled={cat.availableRoomsCount === 0}
                               className={`px-3 py-1 rounded-md text-white transition-colors ${
-                                formData.categoryId === cat._id ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'
+                                cat.availableRoomsCount === 0 
+                                  ? 'bg-gray-400 cursor-not-allowed' 
+                                  : formData.categoryId === cat._id 
+                                    ? 'bg-blue-600 hover:bg-blue-700' 
+                                    : 'bg-blue-500 hover:bg-blue-600'
                               }`}
                             >
-                              {formData.categoryId === cat._id ? 'Selected' : 'Select'}
+                              {cat.availableRoomsCount === 0 ? 'Unavailable' : formData.categoryId === cat._id ? 'Selected' : 'Select'}
                             </button>
                           </td>
                         </tr>
@@ -934,48 +1042,53 @@ const App = () => {
                   </table>
                 </div>
               ) : (
-                <p className="text-gray-500 col-span-full">No categories available for the selected dates.</p>
+                <p className="text-gray-500 col-span-full">No categories found. Please check availability first.</p>
               )}
             </div>
           )}
 
-          {formData.categoryId && roomsForSelectedCategory.length > 0 && (
+          {formData.categoryId && (
             <div className="mt-6">
               <h3 className="text-lg font-medium mb-2 text-gray-700">Select Rooms ({getCategoryName(formData.categoryId)})</h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full bg-white border border-gray-200 rounded-xl shadow-sm">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="py-3 px-6 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Action</th>
-                      <th className="py-3 px-6 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Room Number</th>
-                      <th className="py-3 px-6 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Room Name</th>
-                      <th className="py-3 px-6 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Capacity</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {roomsForSelectedCategory.map(room => (
-                      <tr key={room._id} className={`${selectedRooms.some(r => r._id === room._id) ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
-                        <td className="py-4 px-6 text-sm">
-                          <button
-                            type="button"
-                            onClick={() => handleRoomSelection(room)}
-                            className={`px-3 py-1 rounded-md text-white transition-colors ${
-                              selectedRooms.some(r => r._id === room._id)
-                                ? 'bg-green-500 hover:bg-green-600'
-                                : 'bg-red-500 hover:bg-red-600'
-                            }`}
-                          >
-                            {selectedRooms.some(r => r._id === room._id) ? 'Unselect' : 'Select'}
-                          </button>
-                        </td>
-                        <td className="py-4 px-6 text-sm font-medium text-gray-900">{room.room_number}</td>
-                        <td className="py-4 px-6 text-sm text-gray-500">{room.title}</td>
-                        <td className="py-4 px-6 text-sm text-gray-500">{room.capacity}</td>
+              <p className="text-sm text-gray-500 mb-2">Available rooms: {roomsForSelectedCategory.length}</p>
+              {roomsForSelectedCategory.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full bg-white border border-gray-200 rounded-xl shadow-sm">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="py-3 px-6 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Action</th>
+                        <th className="py-3 px-6 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Room Number</th>
+                        <th className="py-3 px-6 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Room Name</th>
+                        <th className="py-3 px-6 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Capacity</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {roomsForSelectedCategory.map(room => (
+                        <tr key={room._id} className={`${selectedRooms.some(r => r._id === room._id) ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
+                          <td className="py-4 px-6 text-sm">
+                            <button
+                              type="button"
+                              onClick={() => handleRoomSelection(room)}
+                              className={`px-3 py-1 rounded-md text-white transition-colors ${
+                                selectedRooms.some(r => r._id === room._id)
+                                  ? 'bg-green-500 hover:bg-green-600'
+                                  : 'bg-red-500 hover:bg-red-600'
+                              }`}
+                            >
+                              {selectedRooms.some(r => r._id === room._id) ? 'Unselect' : 'Select'}
+                            </button>
+                          </td>
+                          <td className="py-4 px-6 text-sm font-medium text-gray-900">{room.room_number || 'N/A'}</td>
+                          <td className="py-4 px-6 text-sm text-gray-500">{room.title || 'N/A'}</td>
+                          <td className="py-4 px-6 text-sm text-gray-500">{room.capacity || 'N/A'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-gray-500">No rooms available for this category.</p>
+              )}
             </div>
           )}
         </section>
@@ -1048,7 +1161,7 @@ const App = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phoneNo">Phone No</Label>
+              <Label htmlFor="phoneNo">Whatsapp No</Label>
               <Input
                 id="phoneNo"
                 name="phoneNo"
@@ -1115,31 +1228,78 @@ const App = () => {
                     onChange={handleDateChange}
                 />
             </div>
-            <div className="space-y-2 md:col-span-3">
-              <Label htmlFor="companyName">Company Name</Label>
-              <Input
-                id="companyName"
-                name="companyName"
-                value={formData.companyName}
-                onChange={handleChange}
+            <div className="space-y-2 flex items-center gap-2 md:col-span-3">
+              <Checkbox
+                id="showCompanyDetails"
+                checked={showCompanyDetails}
+                onChange={(e) => setShowCompanyDetails(e.target.checked)}
               />
+              <Label htmlFor="showCompanyDetails">Company Details</Label>
             </div>
-            <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="companyGSTIN">Company GSTIN</Label>
-                <Input
-                  id="companyGSTIN"
-                  name="companyGSTIN"
-                  value={formData.companyGSTIN}
-                  onChange={handleChange}
-                />
-            </div>
+            {showCompanyDetails && (
+              <>
+                <div className="space-y-2 md:col-span-3">
+                  <Label htmlFor="companyName">Company Name</Label>
+                  <Input
+                    id="companyName"
+                    name="companyName"
+                    value={formData.companyName}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="companyGSTIN">Company GSTIN</Label>
+                    <Input
+                      id="companyGSTIN"
+                      name="companyGSTIN"
+                      value={formData.companyGSTIN}
+                      onChange={handleChange}
+                    />
+                </div>
+              </>
+            )}
             <div className="space-y-2">
               <Label htmlFor="idProofType">ID Proof Type</Label>
-              <Input id="idProofType" name="idProofType" value={formData.idProofType} onChange={handleChange} />
+              <Select
+                id="idProofType"
+                name="idProofType"
+                value={formData.idProofType}
+                onChange={handleChange}
+              >
+                <option value="">Select ID Proof Type</option>
+                <option value="Aadhaar">Aadhaar</option>
+                <option value="PAN">PAN</option>
+                <option value="Voter ID">Voter ID</option>
+                <option value="Passport">Passport</option>
+                <option value="Driving License">Driving License</option>
+                <option value="Other">Other</option>
+              </Select>
             </div>
             <div className="space-y-2">
-                <Label htmlFor="idProofNumber">ID Proof Number</Label>
-                <Input id="idProofNumber" name="idProofNumber" value={formData.idProofNumber} onChange={handleChange} />
+                <Label htmlFor="idProofNumber">
+                  {formData.idProofType === 'Aadhaar' ? 'Aadhaar Number' :
+                   formData.idProofType === 'PAN' ? 'PAN Number' :
+                   formData.idProofType === 'Voter ID' ? 'Voter ID Number' :
+                   formData.idProofType === 'Passport' ? 'Passport Number' :
+                   formData.idProofType === 'Driving License' ? 'Driving License Number' :
+                   formData.idProofType === 'Other' ? 'ID Proof Number' :
+                   'ID Proof Number'}
+                </Label>
+                <Input 
+                  id="idProofNumber" 
+                  name="idProofNumber" 
+                  value={formData.idProofNumber} 
+                  onChange={handleChange}
+                  placeholder={
+                    formData.idProofType === 'Aadhaar' ? 'Enter 12-digit Aadhaar number' :
+                    formData.idProofType === 'PAN' ? 'Enter 10-character PAN number' :
+                    formData.idProofType === 'Voter ID' ? 'Enter Voter ID number' :
+                    formData.idProofType === 'Passport' ? 'Enter Passport number' :
+                    formData.idProofType === 'Driving License' ? 'Enter Driving License number' :
+                    formData.idProofType === 'Other' ? 'Enter ID proof number' :
+                    'Select ID proof type first'
+                  }
+                />
             </div>
             <div className="space-y-2">
                 <Label htmlFor="idProofImageUrl">ID Proof Image 1</Label>
@@ -1152,9 +1312,8 @@ const App = () => {
             <div className="space-y-2 flex items-center gap-2">
               <Checkbox
                 id="vip"
-                name="vip"
                 checked={formData.vip}
-                onChange={handleChange}
+                onChange={(e) => setFormData(prev => ({ ...prev, vip: e.target.checked }))}
               />
               <Label htmlFor="vip">VIP Guest</Label>
             </div>
@@ -1171,9 +1330,16 @@ const App = () => {
                     Open Camera
                 </Button>
                 <Button
-                    onClick={() => setIsCameraOpen(false)}
+                    type="button"
+                    onClick={() => {
+                        if (videoRef.current && videoRef.current.srcObject) {
+                            videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+                            videoRef.current.srcObject = null;
+                        }
+                        setIsCameraOpen(false);
+                    }}
                     disabled={!isCameraOpen}
-                    className="w-full sm:w-auto bg-red-500 text-black hover:bg-red-600 disabled:bg-red-300"
+                    className="w-full sm:w-auto bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300"
                 >
                     Close Camera
                 </Button>
@@ -1364,6 +1530,20 @@ const App = () => {
                 value={formData.discountPercent}
                 onChange={handleChange}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="paymentStatus">Payment Status</Label>
+              <Select
+                id="paymentStatus"
+                name="paymentStatus"
+                value={formData.paymentStatus}
+                onChange={handleChange}
+              >
+                <option value="Pending">Pending</option>
+                <option value="Paid">Paid</option>
+                <option value="Failed">Failed</option>
+                <option value="Partial">Partial</option>
+              </Select>
             </div>
 
             {/* Show payment details based on payment mode */}

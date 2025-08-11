@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Edit, XCircle, CheckCircle, Search, X } from "lucide-react";
+import { Edit, XCircle, CheckCircle, Search, X, FileText, Trash2 } from "lucide-react";
 import { useAppContext } from "../../context/AppContext";
 
 const BookingEdit = ({ booking, onSave, onCancel }) => {
@@ -138,22 +138,23 @@ const BookingPage = () => {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [editId, setEditId] = useState(null);
+  const [showInvoice, setShowInvoice] = useState(false);
+  const [currentInvoice, setCurrentInvoice] = useState(null);
 
   const getAuthToken = () => localStorage.getItem("token");
 
   const fetchBookings = async () => {
     setLoading(true);
     setError(null);
-    const token = getAuthToken();
 
     try {
-      if (!token)
-        throw new Error("Authentication token not found. Please log in.");
-
+      const token = getAuthToken();
       const res = await axios.get("/api/bookings/all", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }
       });
       const data = res.data;
+      
+      console.log('Raw booking data:', data);
       const bookingsArray = Array.isArray(data) ? data : data.bookings || [];
 
       const mappedBookings = bookingsArray.map((b) => ({
@@ -169,10 +170,12 @@ const BookingPage = () => {
           ? new Date(b.checkOutDate).toLocaleDateString()
           : "N/A",
         status: b.status || "N/A",
+        paymentStatus: b.paymentStatus || "Pending",
         vip: b.vip || false,
         _raw: b,
       }));
 
+      console.log('Mapped bookings:', mappedBookings);
       setBookings(mappedBookings);
     } catch (err) {
       setError(err.message);
@@ -194,12 +197,6 @@ const BookingPage = () => {
   );
 
   const toggleBookingStatus = async (bookingId) => {
-    const token = getAuthToken();
-    if (!token) {
-      setError("Authentication required. Please log in.");
-      return;
-    }
-
     try {
       const booking = bookings.find((b) => b.id === bookingId);
       if (!booking) throw new Error("Booking not found");
@@ -207,29 +204,13 @@ const BookingPage = () => {
       const newStatus = booking.status === "Booked" ? "Cancelled" : "Booked";
 
       const updateData = {
-        ...booking._raw,
         status: newStatus,
       };
 
-      const res = await fetch(
-        `https://backend-hazel-xi.vercel.app/api/bookings/update/${bookingId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(updateData),
-        }
-      );
-
-      const responseData = await res.json();
-
-      if (!res.ok) {
-        throw new Error(
-          responseData.message || "Failed to update booking status"
-        );
-      }
+      const token = getAuthToken();
+      const res = await axios.put(`/api/bookings/update/${bookingId}`, updateData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
       setBookings((prev) =>
         prev.map((b) =>
@@ -253,24 +234,124 @@ const BookingPage = () => {
     }
   };
 
-  const updateBooking = async (bookingId, updatedData) => {
-    const token = getAuthToken();
-    if (!token) {
-      setError("Authentication required. Please log in.");
-      return;
-    }
-
+  const updateRoomStatus = async (roomNumber, status) => {
     try {
-      const res = await axios.put(
-        `/api/bookings/update/${bookingId}`,
-        updatedData,
+      const roomRes = await axios.get("/api/rooms/all");
+      const rooms = roomRes.data;
+      const room = rooms.find(r => r.room_number === roomNumber);
+      
+      if (room) {
+        await axios.put(`/api/rooms/update/${room._id}`, { status });
+      }
+    } catch (err) {
+      console.error("Error updating room status:", err);
+    }
+  };
+
+  const updatePaymentStatus = async (bookingId, newPaymentStatus) => {
+    try {
+      const booking = bookings.find((b) => b.id === bookingId);
+      if (!booking) throw new Error("Booking not found");
+
+      const token = getAuthToken();
+      const res = await axios.put(`/api/bookings/update/${bookingId}`, {
+        paymentStatus: newPaymentStatus,
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === bookingId
+            ? {
+                ...b,
+                paymentStatus: newPaymentStatus,
+                _raw: {
+                  ...b._raw,
+                  paymentStatus: newPaymentStatus,
+                },
+              }
+            : b
+        )
+      );
+
+      setError(null);
+    } catch (err) {
+      console.error("Error updating payment status:", err);
+      setError(err.response?.data?.message || err.message || "Failed to update payment status");
+    }
+  };
+
+  const generateInvoice = async (bookingId) => {
+    try {
+      const booking = bookings.find((b) => b.id === bookingId);
+      if (!booking) throw new Error("Booking not found");
+
+      const invoiceData = {
+        serviceType: "Booking",
+        serviceRefId: bookingId,
+        bookingId: bookingId,
+        invoiceNumber: `INV-${Date.now()}`,
+        items: [
+          {
+            description: `Room ${booking.roomNumber} - ${booking.name}`,
+            amount: 1000
+          }
+        ],
+        subTotal: 1000,
+        tax: 100,
+        discount: 0,
+        totalAmount: 1100,
+        balanceAmount: 0,
+        paymentMode: "Cash",
+        status: "Paid"
+      };
+
+      const token = getAuthToken();
+      const res = await axios.post("/api/invoices/create", invoiceData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (res.data) {
+        setCurrentInvoice({ ...invoiceData, ...res.data, booking });
+        setShowInvoice(true);
+      }
+    } catch (err) {
+      console.error("Error generating invoice:", err);
+      setError(err.response?.data?.message || err.message || "Failed to generate invoice");
+    }
+  };
+
+  const deleteBooking = async (bookingId) => {
+    if (!window.confirm("Are you sure you want to delete this booking?")) return;
+    
+    try {
+      const token = getAuthToken();
+      await axios.delete(`/api/bookings/delete/${bookingId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setBookings(prev => prev.filter(b => b.id !== bookingId));
+      setError(null);
+    } catch (err) {
+      console.error("Error deleting booking:", err);
+      setError(err.response?.data?.message || err.message || "Failed to delete booking");
+    }
+  };
+
+  const updateBooking = async (bookingId, updatedData) => {
+    try {
+      const res = await fetch(
+        `https://backend-hazel-xi.vercel.app/api/bookings/update/${bookingId}`,
         {
+          method: "PUT",
           headers: {
-            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
+          body: JSON.stringify(updatedData),
         }
       );
-      const responseData = res.data;
+      
+      const responseData = await res.json();
 
       if (!res.ok) throw new Error(responseData.message || "Update failed");
 
@@ -280,18 +361,14 @@ const BookingPage = () => {
           b.id === bookingId
             ? {
                 ...b,
-                grcNo: responseData.grcNo,
-                name: responseData.name,
-                mobileNo: responseData.mobileNo,
-                roomNumber: responseData.roomNumber,
-                checkIn: new Date(
-                  responseData.checkInDate
-                ).toLocaleDateString(),
-                checkOut: new Date(
-                  responseData.checkOutDate
-                ).toLocaleDateString(),
-                status: responseData.status,
-                vip: responseData.vip,
+                grcNo: responseData.grcNo || b.grcNo,
+                name: responseData.name || b.name,
+                mobileNo: responseData.mobileNo || b.mobileNo,
+                roomNumber: responseData.roomNumber || b.roomNumber,
+                checkIn: responseData.checkInDate ? new Date(responseData.checkInDate).toLocaleDateString() : b.checkIn,
+                checkOut: responseData.checkOutDate ? new Date(responseData.checkOutDate).toLocaleDateString() : b.checkOut,
+                status: responseData.status || b.status,
+                vip: responseData.vip !== undefined ? responseData.vip : b.vip,
                 _raw: responseData,
               }
             : b
@@ -305,7 +382,7 @@ const BookingPage = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen font-sans">
+    <div className="p-6 bg-background min-h-screen font-sans">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h2 className="text-3xl font-bold text-gray-800">Bookings</h2>
         <div className="flex gap-2">
@@ -368,70 +445,105 @@ const BookingPage = () => {
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Payment Status
+                </th>
                 <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
-              {filteredBookings.map((room) => (
+              {filteredBookings.map((booking) => (
                 <tr
-                  key={room.id}
+                  key={booking.id}
                   className="hover:bg-gray-50 transition-colors duration-200"
                 >
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                    {room.grcNo}
+                    {booking.grcNo}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                    {room.name}
+                    {booking.name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                    {room.roomNumber}
+                    {booking.roomNumber}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                    {room.checkIn}
+                    {booking.checkIn}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                    {room.checkOut}
+                    {booking.checkOut}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        room.status === "Booked"
+                        booking.status === "Booked"
                           ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
+                          : booking.status === "Cancelled"
+                          ? "bg-red-100 text-red-800"
+                          : booking.status === "Checked In"
+                          ? "bg-blue-100 text-blue-800"
+                          : "bg-yellow-100 text-yellow-800"
                       }`}
                     >
-                      {room.status}
+                      {booking.status}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <select
+                      value={booking.paymentStatus}
+                      onChange={(e) => updatePaymentStatus(booking.id, e.target.value)}
+                      className="px-2 py-1 rounded border border-gray-300 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Paid">Paid</option>
+                      <option value="Failed">Failed</option>
+                      <option value="Partial">Partial</option>
+                    </select>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <div className="flex space-x-2 justify-center items-center">
                       <button
-                        onClick={() => setEditId(room.id)}
+                        onClick={() => setEditId(booking.id)}
                         title="Edit Booking"
                         className="p-2 rounded-full text-blue-600 hover:bg-blue-50 transition duration-300"
                       >
                         <Edit size={18} />
                       </button>
                       <button
-                        onClick={() => toggleBookingStatus(room.id)}
+                        onClick={() => toggleBookingStatus(booking.id)}
                         title={
-                          room.status === "Booked"
+                          booking.status === "Booked"
                             ? "Cancel Booking"
                             : "Re-Book"
                         }
                         className={`p-2 rounded-full transition duration-300 ${
-                          room.status === "Booked"
+                          booking.status === "Booked"
                             ? "text-red-600 hover:bg-red-50"
                             : "text-green-600 hover:bg-green-50"
                         }`}
                       >
-                        {room.status === "Booked" ? (
+                        {booking.status === "Booked" ? (
                           <XCircle size={18} />
                         ) : (
                           <CheckCircle size={18} />
                         )}
+                      </button>
+                      {booking.paymentStatus === "Paid" && (
+                        <button
+                          onClick={() => generateInvoice(booking.id)}
+                          title="Generate Bill"
+                          className="p-2 rounded-full text-green-600 hover:bg-green-50 transition duration-300"
+                        >
+                          <FileText size={18} />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => deleteBooking(booking.id)}
+                        title="Delete Booking"
+                        className="p-2 rounded-full text-red-600 hover:bg-red-50 transition duration-300"
+                      >
+                        <Trash2 size={18} />
                       </button>
                     </div>
                   </td>
@@ -451,6 +563,76 @@ const BookingPage = () => {
             }}
             onCancel={() => setEditId(null)}
           />
+        </div>
+      )}
+
+      {showInvoice && currentInvoice && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-center items-center p-4">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-2xl font-bold">Invoice</h3>
+              <button
+                onClick={() => setShowInvoice(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="font-semibold">Invoice Number:</p>
+                  <p>{currentInvoice.invoiceNumber}</p>
+                </div>
+                <div>
+                  <p className="font-semibold">Date:</p>
+                  <p>{new Date(currentInvoice.issueDate || Date.now()).toLocaleDateString()}</p>
+                </div>
+              </div>
+              <div>
+                <p className="font-semibold">Guest Details:</p>
+                <p>{currentInvoice.booking?.name}</p>
+                <p>Room: {currentInvoice.booking?.roomNumber}</p>
+              </div>
+              <div>
+                <p className="font-semibold">Items:</p>
+                {currentInvoice.items?.map((item, index) => (
+                  <div key={index} className="flex justify-between">
+                    <span>{item.description}</span>
+                    <span>₹{item.amount}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="border-t pt-4">
+                <div className="flex justify-between">
+                  <span>Subtotal:</span>
+                  <span>₹{currentInvoice.subTotal}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Tax:</span>
+                  <span>₹{currentInvoice.tax}</span>
+                </div>
+                <div className="flex justify-between font-bold text-lg">
+                  <span>Total:</span>
+                  <span>₹{currentInvoice.totalAmount}</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-4 mt-6">
+              <button
+                onClick={() => window.print()}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                Print
+              </button>
+              <button
+                onClick={() => setShowInvoice(false)}
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

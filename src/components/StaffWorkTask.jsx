@@ -43,7 +43,7 @@ const StaffWorkTask = () => {
   const fetchUserTasks = async () => {
     try {
       const token = localStorage.getItem("token");
-      const currentUserId = localStorage.getItem("userId");
+      const currentUsername = localStorage.getItem("username");
 
       const { data } = await axios.get(
         "/api/housekeeping/tasks",
@@ -52,11 +52,12 @@ const StaffWorkTask = () => {
 
       if (data.success && Array.isArray(data.tasks)) {
         const userTasks = data.tasks.filter(
-          (task) => task.assignedTo && task.assignedTo._id === currentUserId
+          (task) => task.assignedTo && task.assignedTo.username === currentUsername
         );
         setTasks(userTasks);
       }
     } catch (err) {
+      console.error('Fetch error:', err);
       setError("Failed to load your tasks");
     } finally {
       setLoading(false);
@@ -138,23 +139,30 @@ const StaffWorkTask = () => {
   };
 
   const updateTaskImage = async (taskId, type, imageUrl) => {
-    const token = localStorage.getItem("token");
-    await axios.post(
-      `/api/housekeeping/tasks/${taskId}/images/${type}`,
-      { imageUrls: [imageUrl] },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        `/api/housekeeping/tasks/${taskId}/images/${type}`,
+        { imageUrls: [imageUrl] },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    setTasks((prev) =>
-      prev.map((task) =>
-        task._id === taskId
-          ? {
-              ...task,
-              images: { ...task.images, [type]: [imageUrl] },
-            }
-          : task
-      )
-    );
+      console.log('Image upload response:', response.data);
+      
+      setTasks((prev) =>
+        prev.map((task) =>
+          task._id === taskId
+            ? {
+                ...task,
+                images: { ...task.images, [type]: [imageUrl] },
+              }
+            : task
+        )
+      );
+    } catch (err) {
+      console.error('Image upload error:', err);
+      setError(err.response?.data?.message || 'Failed to upload image');
+    }
   };
 
   const addIssue = async () => {
@@ -162,12 +170,14 @@ const StaffWorkTask = () => {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.post(
+      const response = await axios.post(
         `/api/housekeeping/tasks/${currentTaskId}/issues`,
         { issue: issueText },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      console.log('Add issue response:', response.data);
+      
       setTasks((prev) =>
         prev.map((task) =>
           task._id === currentTaskId
@@ -186,6 +196,7 @@ const StaffWorkTask = () => {
       setShowIssueModal(false);
     } catch (err) {
       console.error("Failed to add issue", err);
+      setError(err.response?.data?.message || 'Failed to add issue');
     }
   };
 
