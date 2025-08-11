@@ -324,13 +324,50 @@ export const AppProvider = ({ children }) => {
   // --- Data Fetching Functions ---
   const fetchNewGRCNo = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/api/bookings/all`); 
-      setFormData(prev => ({ ...prev, grcNo: response.data.grcNo }));
-      // showMessage("New GRC number fetched.", 'info');
-      showMessage("New GRC number fetched.", 'success');
+      // Generate a simple GRC number locally as fallback
+      const generateLocalGRC = () => {
+        const timestamp = Date.now().toString().slice(-6);
+        const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+        return `GRC${timestamp}${random}`;
+      };
 
+      // Try multiple endpoints
+      const endpoints = [
+        `${BASE_URL}/api/bookings/new-grc`,
+        `${BASE_URL}/api/bookings/generate-grc`,
+        `${BASE_URL}/api/bookings/grc/new`
+      ];
+
+      let grcFetched = false;
+      
+      for (const endpoint of endpoints) {
+        try {
+          const response = await axios.get(endpoint);
+          if (response.data && (response.data.grcNo || response.data.grc)) {
+            const grcNumber = response.data.grcNo || response.data.grc;
+            setFormData(prev => ({ ...prev, grcNo: grcNumber }));
+            grcFetched = true;
+            break;
+          }
+        } catch (err) {
+          console.log(`Failed to fetch from ${endpoint}:`, err.message);
+          continue;
+        }
+      }
+
+      if (!grcFetched) {
+        // Use local generation as final fallback
+        const localGRC = generateLocalGRC();
+        setFormData(prev => ({ ...prev, grcNo: localGRC }));
+        showMessage("GRC number generated locally (server unavailable).", 'info');
+      }
     } catch (error) {
-      showMessage(`Failed to fetch new GRC number: ${error.message}. Please check your backend server.`, 'error');
+      // Final fallback - generate locally
+      const timestamp = Date.now().toString().slice(-6);
+      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      const fallbackGRC = `GRC${timestamp}${random}`;
+      setFormData(prev => ({ ...prev, grcNo: fallbackGRC }));
+      showMessage("GRC number generated locally.", 'info');
     }
   };
 
@@ -471,11 +508,27 @@ const App = () => {
   }, [isCameraOpen, showMessage, videoRef]);
 
   useEffect(() => {
-    setFormData(prev => ({
-      ...prev,
-      roomNumber: selectedRooms.map(r => r.room_number).join(','),
-      numberOfRooms: selectedRooms.length > 0 ? selectedRooms.length : 0,
-    }));
+    const checkIn = new Date(formData.checkInDate);
+    const checkOut = new Date(formData.checkOutDate);
+
+    if (!isNaN(checkIn.getTime()) && !isNaN(checkOut.getTime()) && checkOut > checkIn) {
+      const diffTime = Math.abs(checkOut - checkIn);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      setFormData(prev => ({ ...prev, days: diffDays }));
+    } else {
+      setFormData(prev => ({ ...prev, days: 0 }));
+    }
+  }, [formData.checkInDate, formData.checkOutDate, setFormData]);
+
+
+  useEffect(() => {
+    if (Array.isArray(selectedRooms)) {
+      setFormData(prev => ({
+        ...prev,
+        roomNumber: selectedRooms.map(r => r.room_number).join(','),
+        numberOfRooms: selectedRooms.length > 0 ? selectedRooms.length : 1,
+      }));
+    }
   }, [selectedRooms, setFormData]);
 
   const handleCapturePhoto = () => {
@@ -529,31 +582,97 @@ const App = () => {
   };
 
   const handleFetchBooking = async () => {
-    if (!searchGRC) {
+    if (!searchGRC.trim()) {
       showMessage("Please enter a GRC number to search.", 'error');
       return;
     }
     setLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}/api/bookings/grc/${searchGRC}`);
-      if (response.data) {
-        const fetchedData = response.data;
-        const newFormData = { ...formData };
+      const response = await axios.get(`${BASE_URL}/api/bookings/grc/${searchGRC.trim()}`);
+      console.log("API Response:", response);
+      console.log("Fetched booking data:", response.data); 
 
-        for (const key in newFormData) {
-          if (Object.prototype.hasOwnProperty.call(fetchedData, key)) {
-            const value = fetchedData[key];
-            newFormData[key] = (value === null || value === undefined) ? '' : value;
+      // Check if response has data
+      if (response.data && response.status === 200) {
+        const fetchedData = response.data;
+        
+        // Helper function to safely format dates
+        const formatDate = (dateString) => {
+          if (!dateString) return '';
+          try {
+            const date = new Date(dateString);
+            return isNaN(date.getTime()) ? '' : date.toISOString().split('T')[0];
+          } catch {
+            return '';
+          }
+        };
+        
+        // Merge fetched data with existing form data
+        setFormData(prevFormData => ({
+          ...prevFormData,
+          ...fetchedData,
+          // Ensure dates are formatted correctly for input fields
+          bookingDate: formatDate(fetchedData.bookingDate),
+          checkInDate: formatDate(fetchedData.checkInDate),
+          checkOutDate: formatDate(fetchedData.checkOutDate),
+          birthDate: formatDate(fetchedData.birthDate),
+          anniversary: formatDate(fetchedData.anniversary),
+          // Handle category ID if it's an object
+          categoryId: fetchedData.categoryId?._id || fetchedData.categoryId || '',
+          // Ensure numeric fields are properly handled
+          numberOfRooms: Number(fetchedData.numberOfRooms) || 1,
+          noOfAdults: Number(fetchedData.noOfAdults) || 1,
+          noOfChildren: Number(fetchedData.noOfChildren) || 0,
+          rate: Number(fetchedData.rate) || 0,
+          discountPercent: Number(fetchedData.discountPercent) || 0,
+          age: fetchedData.age ? String(fetchedData.age) : '',
+        }));
+        
+        // Handle room selection - check if roomNumber is a string of comma-separated values or an array
+        if (fetchedData.roomNumber) {
+          if (typeof fetchedData.roomNumber === 'string') {
+            // If it's a comma-separated string, we need to find the actual room objects
+            const roomNumbers = fetchedData.roomNumber.split(',').map(num => num.trim());
+            const matchingRooms = allRooms.filter(room => 
+              roomNumbers.includes(room.room_number)
+            );
+            setSelectedRooms(matchingRooms);
+          } else if (Array.isArray(fetchedData.roomNumber)) {
+            setSelectedRooms(fetchedData.roomNumber);
           }
         }
-        
-        setFormData(newFormData);
-        showMessage("Booking found and form populated.", 'success');
+
+        // Set category if available and trigger availability check
+        if (fetchedData.categoryId && fetchedData.checkInDate && fetchedData.checkOutDate) {
+          setHasCheckedAvailability(true);
+          // Automatically check availability for the fetched dates
+          setTimeout(() => {
+            handleCheckAvailability();
+          }, 500);
+        }
+
+        showMessage("Booking found and form populated successfully!", 'success');
       } else {
         showMessage("No booking found with that GRC number.", 'error');
       }
-    } catch (e) {
-      showMessage(`An unexpected error occurred while fetching the booking: ${e.message}`, 'error');
+    } catch (error) {
+      console.error("Error fetching booking:", error);
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        const message = error.response.data?.message || error.response.data?.error || 'Unknown server error';
+        if (status === 404) {
+          showMessage("No booking found with that GRC number.", 'error');
+        } else {
+          showMessage(`Server error (${status}): ${message}`, 'error');
+        }
+      } else if (error.request) {
+        // Network error
+        showMessage("Network error. Please check your internet connection and try again.", 'error');
+      } else {
+        // Other error
+        showMessage(`Error: ${error.message}`, 'error');
+      }
     } finally {
       setLoading(false);
     }
@@ -708,15 +827,32 @@ const App = () => {
                 value={searchGRC}
                 onChange={(e) => setSearchGRC(e.target.value)}
                 placeholder="Enter GRC number to load booking"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleFetchBooking();
+                  }
+                }}
               />
             </div>
-            <div className="flex items-end">
+            <div className="flex items-end gap-2">
               <Button
                 onClick={handleFetchBooking}
-                disabled={loading}
-                className="w-full"
+                disabled={loading || !searchGRC.trim()}
+                className="flex-1"
               >
                 {loading ? "Searching..." : "Search Booking"}
+              </Button>
+              <Button
+                onClick={() => {
+                  setSearchGRC('');
+                  resetForm();
+                }}
+                disabled={loading}
+                variant="outline"
+                className="px-3"
+              >
+                Clear
               </Button>
             </div>
           </div>

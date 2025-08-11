@@ -1,9 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useAppContext } from '../../context/AppContext';
+
 
 function App() {
-  const { axios } = useAppContext();
 
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(false);
