@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../../context/AppContext";
 import {
   FaUser,
@@ -88,22 +89,11 @@ const InputWithIcon = ({
   </div>
 );
 
-// Fetch a new, sequential GRC number from backend
-const fetchNewGRCNo = async (setFormData, axios) => {
-  try {
-    const token = localStorage.getItem("token");
-    const res = await axios.get('/api/bookings/grc', {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-    
-    if (res.data && res.data.grcNo) {
-      setFormData((prev) => ({ ...prev, grcNo: res.data.grcNo }));
-    } else {
-      setFormData((prev) => ({ ...prev, grcNo: "" }));
-    }
-  } catch (err) {
-    setFormData((prev) => ({ ...prev, grcNo: "" }));
-  }
+// Generate a new local GRC number for reservations
+const fetchNewGRCNo = (setFormData) => {
+  const random = Math.floor(Math.random() * 9000) + 1000;
+  const grcNo = `GRC-${random}`;
+  setFormData((prev) => ({ ...prev, grcNo }));
 };
 
 // Shadcn-like components (for a self-contained example)
@@ -180,13 +170,14 @@ const Select = ({
   </select>
 );
 
-const Checkbox = ({ id, checked, onChange, className = "" }) => (
+const Checkbox = ({ id, checked, onChange, className = "", name }) => (
   <input
     type="checkbox"
     id={id}
+    name={name}
     checked={checked}
     onChange={onChange}
-    className={`peer h-4 w-4 shrink-0 rounded-sm border border-black shadow focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-black data-[state=checked]:text-primary-foreground ${className}`}
+    className={`peer h-4 w-4 shrink-0 rounded-sm border border-black shadow focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
   />
 );
 
@@ -455,6 +446,7 @@ const DatePicker = ({ value, onChange, label }) => {
 };
 
 const App = () => {
+  const navigate = useNavigate();
   const { axios } = useAppContext();
   const [formData, setFormData] = useState({
     grcNo: "",
@@ -528,6 +520,7 @@ const App = () => {
   const [error, setError] = useState(null);
   const [message, setMessage] = useState({ type: "", text: "" });
   const [selectedRooms, setSelectedRooms] = useState([]); // New state for selected rooms
+  const [searchGRC, setSearchGRC] = useState('');
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -551,6 +544,36 @@ const App = () => {
       });
       return;
     }
+    
+    // Auto-fill vehicle details when vehicle type is selected
+    if (name === "vehicleDetails.vehicleType") {
+      const selectedVehicle = allVehicles.find(v => v.type === value);
+      setFormData((prev) => ({
+        ...prev,
+        vehicleDetails: {
+          ...prev.vehicleDetails,
+          vehicleType: value,
+          vehicleNumber: selectedVehicle?.vehicleNumber || "",
+          vehicleModel: selectedVehicle?.model || "",
+        },
+      }));
+      return;
+    }
+    
+    // Auto-fill driver mobile when driver name is selected
+    if (name === "vehicleDetails.driverName") {
+      const selectedDriver = allDrivers.find(d => d.driverName === value);
+      setFormData((prev) => ({
+        ...prev,
+        vehicleDetails: {
+          ...prev.vehicleDetails,
+          driverName: value,
+          driverMobile: selectedDriver?.contactNumber || "",
+        },
+      }));
+      return;
+    }
+    
     if (name.includes(".")) {
       const [parent, child] = name.split(".");
       setFormData((prev) => ({
@@ -587,7 +610,7 @@ const App = () => {
     // Update formData.roomAssigned whenever selectedRooms changes
     setFormData((prev) => ({
       ...prev,
-      roomAssigned: selectedRooms.map((r) => r.room_number),
+      roomAssigned: selectedRooms.map((r) => r._id),
     }));
     setFormData((prev) => ({
       ...prev,
@@ -599,10 +622,12 @@ const App = () => {
     setLoading(true);
     setError(null);
     try {
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
       const [roomsRes, vehiclesRes, driversRes] = await Promise.all([
-        axios.get('/api/rooms/all'),
-        axios.get('/api/vehicle/all'),
-        axios.get('/api/driver'),
+        axios.get('/api/rooms/all', config),
+        axios.get('/api/vehicle/all', config),
+        axios.get('/api/driver', config),
       ]);
 
       const roomsData = roomsRes.data;
@@ -622,28 +647,7 @@ const App = () => {
       }
       setAllDrivers(drivers);
 
-      // Set default values from fetched data if available
-      if (
-        Array.isArray(vehiclesData.vehicles) &&
-        vehiclesData.vehicles.length > 0
-      ) {
-        setFormData((prev) => ({
-          ...prev,
-          vehicleDetails: {
-            ...prev.vehicleDetails,
-            vehicleType: vehiclesData.vehicles[0].type,
-          },
-        }));
-      }
-      if (Array.isArray(drivers) && drivers.length > 0) {
-        setFormData((prev) => ({
-          ...prev,
-          vehicleDetails: {
-            ...prev.vehicleDetails,
-            driverName: drivers[0].driverName,
-          },
-        }));
-      }
+      // Don't set default values to allow user selection
     } catch (err) {
       console.error(err);
       setError(
@@ -673,7 +677,10 @@ const App = () => {
     setError(null);
     setSelectedRooms([]); // Reset selected rooms on new availability check
     try {
-      const response = await axios.get(`/api/rooms/available?checkInDate=${checkInDate}&checkOutDate=${checkOutDate}`);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`/api/rooms/available?checkInDate=${checkInDate}&checkOutDate=${checkOutDate}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const data = response.data;
 
       const availableRoomsList = data.availableRooms || [];
@@ -720,9 +727,73 @@ const App = () => {
     }
   };
 
+  const handleFetchReservation = async () => {
+    if (!searchGRC.trim()) {
+      showMessage('error', 'Please enter a GRC number to search.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`/api/bookings/grc/${searchGRC.trim()}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data && response.status === 200) {
+        const fetchedData = response.data.booking;
+        
+        // Format dates
+        const formatDate = (dateString) => {
+          if (!dateString) return '';
+          try {
+            const date = new Date(dateString);
+            return isNaN(date.getTime()) ? '' : date.toISOString().split('T')[0];
+          } catch {
+            return '';
+          }
+        };
+        
+        // Map booking data to reservation form fields
+        setFormData({
+          ...formData,
+          grcNo: fetchedData.grcNo || '',
+          guestName: fetchedData.name || '',
+          nationality: fetchedData.nationality || '',
+          city: fetchedData.city || '',
+          address: fetchedData.address || '',
+          phoneNo: fetchedData.phoneNo || '',
+          mobileNo: fetchedData.mobileNo || '',
+          email: fetchedData.email || '',
+          companyName: fetchedData.companyName || '',
+          companyGSTIN: fetchedData.companyGSTIN || '',
+          checkInDate: formatDate(fetchedData.checkInDate),
+          checkOutDate: formatDate(fetchedData.checkOutDate),
+          noOfAdults: fetchedData.noOfAdults || 1,
+          noOfChildren: fetchedData.noOfChildren || 0,
+          rate: fetchedData.rate || 0,
+          discountPercent: fetchedData.discountPercent || 0,
+          paymentMode: fetchedData.paymentMode || '',
+          vip: fetchedData.vip || false,
+        });
+        
+        showMessage('success', 'Booking found and form populated successfully!');
+      } else {
+        showMessage('error', 'No booking found with that GRC number.');
+      }
+    } catch (error) {
+      console.error('Error fetching booking:', error);
+      if (error.response?.status === 404) {
+        showMessage('error', 'No booking found with that GRC number.');
+      } else {
+        showMessage('error', `Error: ${error.message}`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchAllData();
-    fetchNewGRCNo(setFormData, axios);
+    fetchNewGRCNo(setFormData);
   }, []);
 
   const showMessage = (type, text) => {
@@ -730,13 +801,102 @@ const App = () => {
     setTimeout(() => setMessage({ type: "", text: "" }), 5000);
   };
 
-  const handleSubmit = (e) => {
+  const resetForm = () => {
+    setFormData({
+      grcNo: "",
+      bookingRefNo: "",
+      reservationType: "Online",
+      modeOfReservation: "",
+      category: "",
+      status: "Confirmed",
+      salutation: "Mr.",
+      guestName: "",
+      nationality: "",
+      city: "",
+      address: "",
+      phoneNo: "",
+      mobileNo: "",
+      email: "",
+      companyName: "",
+      gstApplicable: true,
+      companyGSTIN: "",
+      roomHoldStatus: "Pending",
+      roomAssigned: [],
+      roomHoldUntil: "",
+      checkInDate: "",
+      checkOutDate: "",
+      checkInTime: "14:00",
+      checkOutTime: "12:00",
+      noOfRooms: 1,
+      noOfAdults: 1,
+      noOfChildren: 0,
+      planPackage: "EP",
+      rate: 0,
+      arrivalFrom: "",
+      purposeOfVisit: "Leisure",
+      roomPreferences: {
+        smoking: false,
+        bedType: "King",
+      },
+      specialRequests: "",
+      remarks: "",
+      billingInstruction: "",
+      paymentMode: "",
+      refBy: "",
+      advancePaid: 0,
+      isAdvancePaid: false,
+      transactionId: "",
+      discountPercent: 0,
+      vehicleDetails: {
+        vehicleNumber: "",
+        vehicleType: "",
+        vehicleModel: "",
+        driverName: "",
+        driverMobile: "",
+      },
+      vip: false,
+      isForeignGuest: false,
+      cancellationReason: "",
+      cancelledBy: "",
+      isNoShow: false,
+    });
+    setSearchGRC('');
+    setSelectedRooms([]);
+    setAvailableCategories([]);
+    setAvailableRoomsByCat({});
+    setHasCheckedAvailability(false);
+    fetchNewGRCNo(setFormData);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Final Reservation Object:", formData);
-    showMessage(
-      "success",
-      "Reservation data logged to console. Please check the developer tools."
-    );
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showMessage('error', 'No authentication token found. Please log in again.');
+        return;
+      }
+      
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      };
+      
+      await axios.post('/api/reservations', formData, config);
+      
+      alert("🎉 Reservation submitted successfully! Redirecting to reservations page...");
+      setTimeout(() => {
+        navigate('/reservation');
+      }, 1000);
+    } catch (error) {
+      console.error('Error submitting reservation:', error);
+      showMessage('error', `Error: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCategoryCardClick = (category) => {
@@ -752,7 +912,7 @@ const App = () => {
     new Date(formData.checkInDate) >= new Date(formData.checkOutDate);
 
   return (
-    <div className="w-full max-w-full p-6 rounded-2xl shadow-md border border-[color:var(--color-border)] text-[color:var(--color-text)] overflow-x-hidden">
+    <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 rounded-2xl shadow-md border border-[color:var(--color-border)] text-[color:var(--color-text)] overflow-x-auto">
       <h2 className="text-3xl font-extrabold text-center mb-8 text-[color:var(--color-text)] flex items-center justify-center gap-3">
         Reservation Form
       </h2>
@@ -801,6 +961,38 @@ const App = () => {
                 readOnly={true}
                 inputClassName="bg-gray-100 border border-secondary rounded-lg cursor-not-allowed"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="searchGRC">Search by GRC</Label>
+              <InputWithIcon
+                icon={<FaRegAddressCard />}
+                type="text"
+                name="searchGRC"
+                placeholder="Enter GRC number to load reservation"
+                value={searchGRC}
+                onChange={(e) => setSearchGRC(e.target.value)}
+                inputClassName="bg-white border border-secondary rounded-lg"
+              />
+            </div>
+            <div className="flex items-end gap-2">
+              <Button
+                onClick={handleFetchReservation}
+                disabled={loading || !searchGRC.trim()}
+                className="flex-1"
+              >
+                {loading ? "Searching..." : "Search Reservation"}
+              </Button>
+              <Button
+                onClick={() => {
+                  setSearchGRC('');
+                  fetchNewGRCNo(setFormData);
+                }}
+                disabled={loading}
+                variant="outline"
+                className="px-3"
+              >
+                Clear
+              </Button>
             </div>
             <div className="space-y-2">
               <Label htmlFor="bookingRefNo">Booking Reference No</Label>
@@ -993,29 +1185,20 @@ const App = () => {
                 </div>
 
                 {formData.category && roomsForSelectedCategory.length > 0 && (
-                  <div className="mt-6 rounded-lg border border-gray-200 overflow-x-auto sm:overflow-x-visible">
-                    <table className="min-w-full w-full text-sm text-left text-gray-500 table-auto">
+                  <div className="mt-6 rounded-lg border border-gray-200 overflow-x-auto">
+                    <table className="min-w-full text-sm text-left text-gray-500">
                       <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                         <tr>
                           <th scope="col" className="p-4">
                             <span className="sr-only">Select</span>
                           </th>
-                          <th
-                            scope="col"
-                            className="px-2 py-3 break-words max-w-[120px]"
-                          >
+                          <th scope="col" className="px-4 py-3 whitespace-nowrap">
                             Room Number
                           </th>
-                          <th
-                            scope="col"
-                            className="px-2 py-3 break-words max-w-[180px]"
-                          >
+                          <th scope="col" className="px-4 py-3 whitespace-nowrap">
                             Room Name
                           </th>
-                          <th
-                            scope="col"
-                            className="px-2 py-3 break-words max-w-[100px]"
-                          >
+                          <th scope="col" className="px-4 py-3 whitespace-nowrap">
                             Capacity
                           </th>
                         </tr>
@@ -1046,13 +1229,13 @@ const App = () => {
                                   : "Select"}
                               </Button>
                             </td>
-                            <td className="px-2 py-4 font-medium text-black break-words max-w-[120px] whitespace-normal">
+                            <td className="px-4 py-4 font-medium text-black whitespace-nowrap">
                               {room.room_number}
                             </td>
-                            <td className="px-2 py-4 break-words max-w-[180px] whitespace-normal">
+                            <td className="px-4 py-4 whitespace-nowrap">
                               {room.title}
                             </td>
-                            <td className="px-2 py-4 break-words max-w-[100px] whitespace-normal">
+                            <td className="px-4 py-4 whitespace-nowrap">
                               {room.capacity}
                             </td>
                           </tr>
@@ -1651,6 +1834,7 @@ const App = () => {
         <div className="mt-8 flex justify-center gap-4">
           <Button
             type="button"
+            onClick={resetForm}
             className="px-8 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
           >
             Reset

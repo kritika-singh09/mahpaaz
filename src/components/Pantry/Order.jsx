@@ -259,7 +259,14 @@ function App() {
   const [successMessage, setSuccessMessage] = useState('');
 
   // Helper function to get auth token from local storage
-  const getAuthToken = () => localStorage.getItem("token");
+  const getAuthToken = () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("Authentication token not found. Please log in again.");
+      return null;
+    }
+    return token;
+  };
 
   // Function to fetch all pantry items from the backend
   const fetchPantryItems = useCallback(async () => {
@@ -269,16 +276,17 @@ function App() {
 
     try {
       if (!token) {
-        throw new Error("Authentication token not found.");
+        return;
       }
 
       const { data } = await axios.get('/api/pantry/items', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setPantryItems(data.items);
+      setPantryItems(data.items || []);
     } catch (err) {
       console.error("Error fetching pantry items:", err);
-      setError(`Failed to load pantry items: ${err.message}`);
+      const errorMessage = err.response?.data?.message || err.message;
+      setError(`Failed to load pantry items: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -292,16 +300,17 @@ function App() {
 
     try {
       if (!token) {
-        throw new Error("Authentication token not found.");
+        return;
       }
 
       const { data } = await axios.get('/api/pantry/orders', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setOrders(data.orders);
+      setOrders(data.orders || []);
     } catch (err) {
       console.error("Error fetching orders:", err);
-      setError(`Failed to load orders: ${err.message}`);
+      const errorMessage = err.response?.data?.message || err.message;
+      setError(`Failed to load orders: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -342,7 +351,8 @@ function App() {
       fetchOrders();
     } catch (err) {
       console.error("Error saving order:", err);
-      setError(`Failed to save order: ${err.message}`);
+      const errorMessage = err.response?.data?.message || err.message;
+      setError(`Failed to save order: ${errorMessage}`);
     } finally {
       setLoading(false);
       setTimeout(() => setError(null), 3000);
@@ -374,7 +384,8 @@ function App() {
         fetchOrders();
       } catch (err) {
         console.error("Error deleting order:", err);
-        setError(`Failed to delete order: ${err.message}`);
+        const errorMessage = err.response?.data?.message || err.message;
+        setError(`Failed to delete order: ${errorMessage}`);
       } finally {
         setLoading(false);
         setTimeout(() => setError(null), 3000);
@@ -397,7 +408,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8 font-sans">
+    <div className="min-h-screen p-4 sm:p-6 lg:p-8 font-sans" style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}>
       <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6">
         <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">Pantry Orders Management</h1>
 

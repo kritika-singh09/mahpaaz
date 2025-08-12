@@ -188,7 +188,7 @@ const ReservationPage = () => {
     "bg-white border border-secondary rounded-lg pl-4 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary";
 
   return (
-    <div className="w-full p-6 text-[color:var(--color-text)]">
+    <div className="w-full p-6 text-[color:var(--color-text)]" style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-[color:var(--color-text)]">
           Reservation Page
@@ -231,19 +231,31 @@ const ReservationPage = () => {
           <table className="min-w-full text-sm text-[color:var(--color-text)] border border-[color:var(--color-border)]">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Guest Name
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   GRC No
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Check In
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Check Out
                 </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Mobile
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Rooms
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Rate
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -252,19 +264,40 @@ const ReservationPage = () => {
               {filtered.length > 0 ? (
                 filtered.map((b) => (
                   <tr key={b._id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                       {b.guestName}
+                      {b.vip && <span className="ml-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">VIP</span>}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                       {b.grcNo || "N/A"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {b.checkInDate}
+                    <td className="px-4 py-4 whitespace-nowrap text-sm">
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        b.status === 'Confirmed' ? 'bg-green-100 text-green-800' :
+                        b.status === 'Tentative' ? 'bg-yellow-100 text-yellow-800' :
+                        b.status === 'Waiting' ? 'bg-blue-100 text-blue-800' :
+                        b.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {b.status || 'N/A'}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {b.checkOutDate}
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {b.checkInDate ? new Date(b.checkInDate).toLocaleDateString() : 'N/A'}
                     </td>
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {b.checkOutDate ? new Date(b.checkOutDate).toLocaleDateString() : 'N/A'}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {b.mobileNo || b.phoneNo || 'N/A'}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {b.noOfRooms || 1}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                      ₹{b.rate || 0}
+                    </td>
+                    <td className="px-4 py-4 text-center">
                       <div className="flex space-x-2">
                         <button
                           onClick={() => handleEditModal(b)}
@@ -287,7 +320,7 @@ const ReservationPage = () => {
               ) : (
                 <tr>
                   <td
-                    colSpan="5"
+                    colSpan="9"
                     className="px-6 py-4 text-center text-gray-500"
                   >
                     No reservations found.
