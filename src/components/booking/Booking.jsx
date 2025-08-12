@@ -388,7 +388,7 @@ const BookingPage = () => {
         <div className="flex gap-2">
           <button
             onClick={() => navigate("/bookingform")}
-            className="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-blue-700 transition duration-300"
+            className="bg-[color:var(--color-primary)] text-[color:var(--color-text)] font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-[color:var(--color-primary)] transition duration-300"
           >
             Add Booking
           </button>
@@ -401,7 +401,7 @@ const BookingPage = () => {
           placeholder="Search by name, room number, or GRC No..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full max-w-md shadow-sm transition duration-300"
+          className="bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[color:var(--color-primary)] w-full max-w-md shadow-sm transition duration-300"
         />
         <Search className="absolute left-3 text-gray-400" size={20} />
       </div>

@@ -188,7 +188,7 @@ const ReservationPage = () => {
     "bg-white border border-secondary rounded-lg pl-4 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary";
 
   return (
-    <div className="w-full p-6 text-[color:var(--color-text)]">
+    <div className="w-full p-6 text-[color:var(--color-text)]" style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-[color:var(--color-text)]">
           Reservation Page

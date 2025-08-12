@@ -170,13 +170,14 @@ const Select = ({
   </select>
 );
 
-const Checkbox = ({ id, checked, onChange, className = "" }) => (
+const Checkbox = ({ id, checked, onChange, className = "", name }) => (
   <input
     type="checkbox"
     id={id}
+    name={name}
     checked={checked}
     onChange={onChange}
-    className={`peer h-4 w-4 shrink-0 rounded-sm border border-black shadow focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-black data-[state=checked]:text-primary-foreground ${className}`}
+    className={`peer h-4 w-4 shrink-0 rounded-sm border border-black shadow focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
   />
 );
 
