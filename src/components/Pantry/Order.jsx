@@ -129,7 +129,7 @@ function OrderForm({ initialData, pantryItems, onSubmit, onCancel }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label htmlFor="pantryItem" className="block text-sm font-medium text-gray-700">Pantry Item</label>
+        <label htmlFor="pantryItem" className="block text-sm font-medium" style={{ color: 'hsl(45, 100%, 20%)' }}>Pantry Item</label>
         <select
           id="pantryItem"
           name="pantryItem"
@@ -221,13 +221,15 @@ function OrderForm({ initialData, pantryItems, onSubmit, onCancel }) {
         <button
           type="button"
           onClick={onCancel}
-          className="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition duration-150 ease-in-out"
+          className="px-5 py-2 border rounded-lg transition duration-150 ease-in-out"
+          style={{ borderColor: 'hsl(45, 100%, 85%)', color: 'hsl(45, 100%, 20%)' }}
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+          className="px-5 py-2 font-bold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+          style={{ backgroundColor: 'hsl(45, 43%, 58%)', color: 'hsl(45, 100%, 20%)' }}
         >
           {initialData ? 'Update Order' : 'Place Order'}
         </button>
@@ -425,7 +427,8 @@ function App() {
         <div className="flex justify-end mb-6">
           <button
             onClick={() => setIsOrderFormOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+            className="font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+            style={{ backgroundColor: 'hsl(45, 43%, 58%)', color: 'hsl(45, 100%, 20%)' }}
           >
             Place New Order
           </button>

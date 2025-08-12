@@ -179,7 +179,8 @@ function Item() {
         <div className="flex justify-end mb-6">
           <button 
             onClick={() => setShowForm(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+            className="font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+            style={{ backgroundColor: 'hsl(45, 43%, 58%)', color: 'hsl(45, 100%, 20%)' }}
           >
             Add New Item
           </button>
@@ -201,7 +202,7 @@ function Item() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Name</label>
+                    <label className="block text-sm font-medium" style={{ color: 'hsl(45, 100%, 20%)' }}>Name</label>
                     <input
                       name="name"
                       value={formData.name}
@@ -286,13 +287,15 @@ function Item() {
                   <button
                     type="button"
                     onClick={resetForm}
-                    className="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition duration-150 ease-in-out"
+                    className="px-5 py-2 border rounded-lg transition duration-150 ease-in-out"
+                    style={{ borderColor: 'hsl(45, 100%, 85%)', color: 'hsl(45, 100%, 20%)' }}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+                    className="px-5 py-2 font-bold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+                    style={{ backgroundColor: 'hsl(45, 43%, 58%)', color: 'hsl(45, 100%, 20%)' }}
                   >
                     {editingItem ? 'Update Item' : 'Add Item'}
                   </button>
@@ -304,8 +307,8 @@ function Item() {
 
         {!loading && (
           <div className="mt-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">All Items</h2>
-            <div className="overflow-x-auto rounded-lg shadow-md border border-gray-200">
+            <h2 className="text-2xl font-bold mb-4" style={{ color: 'hsl(45, 100%, 20%)' }}>All Items</h2>
+            <div className="overflow-x-auto rounded-lg shadow-md border" style={{ borderColor: 'hsl(45, 100%, 85%)' }}>
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>

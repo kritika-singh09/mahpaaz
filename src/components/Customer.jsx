@@ -235,7 +235,7 @@ function Customer() {
   return (
     <div className="min-h-screen p-4 sm:p-6 lg:p-8 font-sans" style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}>
       <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">Customer Management</h1>
+        <h1 className="text-3xl font-bold text-center mb-6" style={{ color: 'hsl(45, 100%, 20%)' }}>Customer Management</h1>
         
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
@@ -246,7 +246,8 @@ function Customer() {
         <div className="flex justify-end mb-6">
           <button 
             onClick={() => setShowForm(true)}
-            className="bg-[color:var(--color-primary)] text-[color:var(--color-text)] font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+            className="font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+            style={{ backgroundColor: 'hsl(45, 43%, 58%)', color: 'hsl(45, 100%, 20%)' }}
           >
             Add New Customer
           </button>
@@ -262,7 +263,7 @@ function Customer() {
         {showForm && (
           <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+              <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: 'hsl(45, 100%, 20%)' }}>
                 {editingCustomer ? 'Edit Customer' : 'Add New Customer'}
               </h2>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -409,7 +410,7 @@ function Customer() {
 
         {!loading && (
           <div className="mt-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">All Customers</h2>
+            <h2 className="text-2xl font-bold mb-4" style={{ color: 'hsl(45, 100%, 20%)' }}>All Customers</h2>
             <div className="overflow-x-auto rounded-lg shadow-md border border-gray-200">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
