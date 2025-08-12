@@ -28,7 +28,7 @@ import PantryOrders from "./components/Pantry/Order.jsx";
 import Resturant from "./components/Resturant/Resturant.jsx";
 import StaffWorkTask from "./components/StaffWorkTask";
 import Orders from "./components/orders/Orders.jsx";
-import RestaurantBooking from "./components/Resturant/Booking.jsx";
+import RestaurantBooking from "./components/Resturant/RestaurantBooking.jsx";
 import Category from "./components/Resturant/Category.jsx"
 import { ToastContainer } from "react-toastify";
 import Customer from "./components/Customer.jsx";

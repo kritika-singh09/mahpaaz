@@ -382,13 +382,13 @@ const BookingPage = () => {
   };
 
   return (
-    <div className="p-6 bg-background min-h-screen font-sans">
+    <div className="p-4 sm:p-6 bg-background min-h-screen font-sans">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h2 className="text-3xl font-bold text-gray-800">Bookings</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">Bookings</h2>
         <div className="flex gap-2">
           <button
             onClick={() => navigate("/bookingform")}
-            className="bg-[color:var(--color-primary)] text-[color:var(--color-text)] font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-[color:var(--color-primary)] transition duration-300"
+            className="bg-[color:var(--color-primary)] text-[color:var(--color-text)] font-semibold py-2 px-4 sm:px-6 rounded-lg shadow-md hover:bg-[color:var(--color-primary)] transition duration-300 text-sm sm:text-base"
           >
             Add Booking
           </button>
@@ -401,7 +401,7 @@ const BookingPage = () => {
           placeholder="Search by name, room number, or GRC No..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[color:var(--color-primary)] w-full max-w-md shadow-sm transition duration-300"
+          className="bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[color:var(--color-primary)] w-full sm:max-w-md shadow-sm transition duration-300"
         />
         <Search className="absolute left-3 text-gray-400" size={20} />
       </div>
@@ -423,135 +423,239 @@ const BookingPage = () => {
           Loading bookings...
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
-          <table className="min-w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  GRC No
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Room
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Check In
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Check Out
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Payment Status
-                </th>
-                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
-              {filteredBookings.map((booking) => (
-                <tr
-                  key={booking.id}
-                  className="hover:bg-gray-50 transition-colors duration-200"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                    {booking.grcNo}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                    {booking.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                    {booking.roomNumber}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                    {booking.checkIn}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                    {booking.checkOut}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        booking.status === "Booked"
-                          ? "bg-green-100 text-green-800"
-                          : booking.status === "Cancelled"
-                          ? "bg-red-100 text-red-800"
-                          : booking.status === "Checked In"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {booking.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <select
-                      value={booking.paymentStatus}
-                      onChange={(e) => updatePaymentStatus(booking.id, e.target.value)}
-                      className="px-2 py-1 rounded border border-gray-300 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="Paid">Paid</option>
-                      <option value="Failed">Failed</option>
-                      <option value="Partial">Partial</option>
-                    </select>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                    <div className="flex space-x-2 justify-center items-center">
-                      <button
-                        onClick={() => setEditId(booking.id)}
-                        title="Edit Booking"
-                        className="p-2 rounded-full text-blue-600 hover:bg-blue-50 transition duration-300"
-                      >
-                        <Edit size={18} />
-                      </button>
-                      <button
-                        onClick={() => toggleBookingStatus(booking.id)}
-                        title={
+        <>
+          {/* Desktop Table View */}
+          <div className="hidden lg:block bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    GRC No
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Room
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Check In
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Check Out
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Payment
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-100">
+                {filteredBookings.map((booking) => (
+                  <tr
+                    key={booking.id}
+                    className="hover:bg-gray-50 transition-colors duration-200"
+                  >
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
+                      {booking.grcNo}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
+                      {booking.name}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
+                      {booking.roomNumber}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
+                      {booking.checkIn}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
+                      {booking.checkOut}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
                           booking.status === "Booked"
-                            ? "Cancel Booking"
-                            : "Re-Book"
-                        }
-                        className={`p-2 rounded-full transition duration-300 ${
-                          booking.status === "Booked"
-                            ? "text-red-600 hover:bg-red-50"
-                            : "text-green-600 hover:bg-green-50"
+                            ? "bg-green-100 text-green-800"
+                            : booking.status === "Cancelled"
+                            ? "bg-red-100 text-red-800"
+                            : booking.status === "Checked In"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-yellow-100 text-yellow-800"
                         }`}
                       >
-                        {booking.status === "Booked" ? (
-                          <XCircle size={18} />
-                        ) : (
-                          <CheckCircle size={18} />
-                        )}
-                      </button>
-                      {booking.paymentStatus === "Paid" && (
-                        <button
-                          onClick={() => generateInvoice(booking.id)}
-                          title="Generate Bill"
-                          className="p-2 rounded-full text-green-600 hover:bg-green-50 transition duration-300"
-                        >
-                          <FileText size={18} />
-                        </button>
-                      )}
-                      <button
-                        onClick={() => deleteBooking(booking.id)}
-                        title="Delete Booking"
-                        className="p-2 rounded-full text-red-600 hover:bg-red-50 transition duration-300"
+                        {booking.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <select
+                        value={booking.paymentStatus}
+                        onChange={(e) => updatePaymentStatus(booking.id, e.target.value)}
+                        className="px-2 py-1 rounded border border-gray-300 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 w-full"
                       >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        <option value="Pending">Pending</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Failed">Failed</option>
+                        <option value="Partial">Partial</option>
+                      </select>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-center">
+                      <div className="flex space-x-1 justify-center items-center">
+                        <button
+                          onClick={() => setEditId(booking.id)}
+                          title="Edit Booking"
+                          className="p-1.5 rounded-full text-blue-600 hover:bg-blue-50 transition duration-300"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          onClick={() => toggleBookingStatus(booking.id)}
+                          title={
+                            booking.status === "Booked"
+                              ? "Cancel Booking"
+                              : "Re-Book"
+                          }
+                          className={`p-1.5 rounded-full transition duration-300 ${
+                            booking.status === "Booked"
+                              ? "text-red-600 hover:bg-red-50"
+                              : "text-green-600 hover:bg-green-50"
+                          }`}
+                        >
+                          {booking.status === "Booked" ? (
+                            <XCircle size={16} />
+                          ) : (
+                            <CheckCircle size={16} />
+                          )}
+                        </button>
+                        {booking.paymentStatus === "Paid" && (
+                          <button
+                            onClick={() => generateInvoice(booking.id)}
+                            title="Generate Bill"
+                            className="p-1.5 rounded-full text-green-600 hover:bg-green-50 transition duration-300"
+                          >
+                            <FileText size={16} />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deleteBooking(booking.id)}
+                          title="Delete Booking"
+                          className="p-1.5 rounded-full text-red-600 hover:bg-red-50 transition duration-300"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
+
+        {/* Mobile Card View */}
+        <div className="lg:hidden space-y-4">
+          {filteredBookings.map((booking) => (
+            <div
+              key={booking.id}
+              className="bg-white border border-gray-200 rounded-lg shadow-md p-4"
+            >
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <h3 className="font-semibold text-lg text-gray-800">{booking.name}</h3>
+                  <p className="text-sm text-gray-600">GRC: {booking.grcNo}</p>
+                </div>
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    booking.status === "Booked"
+                      ? "bg-green-100 text-green-800"
+                      : booking.status === "Cancelled"
+                      ? "bg-red-100 text-red-800"
+                      : booking.status === "Checked In"
+                      ? "bg-blue-100 text-blue-800"
+                      : "bg-yellow-100 text-yellow-800"
+                  }`}
+                >
+                  {booking.status}
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
+                <div>
+                  <span className="text-gray-500">Room:</span>
+                  <span className="ml-1 font-medium">{booking.roomNumber}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Check In:</span>
+                  <span className="ml-1 font-medium">{booking.checkIn}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Check Out:</span>
+                  <span className="ml-1 font-medium">{booking.checkOut}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Payment:</span>
+                  <select
+                    value={booking.paymentStatus}
+                    onChange={(e) => updatePaymentStatus(booking.id, e.target.value)}
+                    className="ml-1 px-2 py-1 rounded border border-gray-300 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Failed">Failed</option>
+                    <option value="Partial">Partial</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-2 pt-3 border-t border-gray-100">
+                <button
+                  onClick={() => setEditId(booking.id)}
+                  className="p-2 rounded-full text-blue-600 hover:bg-blue-50 transition duration-300"
+                  title="Edit"
+                >
+                  <Edit size={18} />
+                </button>
+                <button
+                  onClick={() => toggleBookingStatus(booking.id)}
+                  className={`p-2 rounded-full transition duration-300 ${
+                    booking.status === "Booked"
+                      ? "text-red-600 hover:bg-red-50"
+                      : "text-green-600 hover:bg-green-50"
+                  }`}
+                  title={booking.status === "Booked" ? "Cancel" : "Re-Book"}
+                >
+                  {booking.status === "Booked" ? (
+                    <XCircle size={18} />
+                  ) : (
+                    <CheckCircle size={18} />
+                  )}
+                </button>
+                {booking.paymentStatus === "Paid" && (
+                  <button
+                    onClick={() => generateInvoice(booking.id)}
+                    className="p-2 rounded-full text-green-600 hover:bg-green-50 transition duration-300"
+                    title="Invoice"
+                  >
+                    <FileText size={18} />
+                  </button>
+                )}
+                <button
+                  onClick={() => deleteBooking(booking.id)}
+                  className="p-2 rounded-full text-red-600 hover:bg-red-50 transition duration-300"
+                  title="Delete"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            </div>
+          ))}
+          </div>
+        </>
       )}
 
       {editId && (
