@@ -87,10 +87,11 @@ const RestaurantBooking = () => {
   return (
     <div className="p-6" style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold">Restaurant Bookings</h2>
+        <h2 className="text-2xl font-semibold" style={{ color: 'hsl(45, 100%, 20%)' }}>Restaurant Bookings</h2>
         <button
           onClick={() => setShowForm(true)}
-          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+          className="px-4 py-2 rounded-lg transition duration-300"
+          style={{ backgroundColor: 'hsl(45, 43%, 58%)', color: 'hsl(45, 100%, 20%)' }}
         >
           New Booking
         </button>
@@ -98,7 +99,7 @@ const RestaurantBooking = () => {
 
       {showForm && (
         <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-          <h3 className="text-lg font-semibold mb-4">Create New Booking</h3>
+          <h3 className="text-lg font-semibold mb-4" style={{ color: 'hsl(45, 100%, 20%)' }}>Create New Booking</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <input
@@ -107,6 +108,7 @@ const RestaurantBooking = () => {
                 value={formData.customerName}
                 onChange={(e) => setFormData({...formData, customerName: e.target.value})}
                 className="border rounded-lg px-3 py-2"
+                style={{ borderColor: 'hsl(45, 100%, 85%)' }}
                 required
               />
               <input
@@ -115,6 +117,7 @@ const RestaurantBooking = () => {
                 value={formData.phoneNumber}
                 onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
                 className="border rounded-lg px-3 py-2"
+                style={{ borderColor: 'hsl(45, 100%, 85%)' }}
                 required
               />
               <input
@@ -123,12 +126,14 @@ const RestaurantBooking = () => {
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
                 className="border rounded-lg px-3 py-2"
+                style={{ borderColor: 'hsl(45, 100%, 85%)' }}
               />
               <input
                 type="date"
                 value={formData.date}
                 onChange={(e) => setFormData({...formData, date: e.target.value})}
                 className="border rounded-lg px-3 py-2"
+                style={{ borderColor: 'hsl(45, 100%, 85%)' }}
                 required
               />
               <input
@@ -136,6 +141,7 @@ const RestaurantBooking = () => {
                 value={formData.time}
                 onChange={(e) => setFormData({...formData, time: e.target.value})}
                 className="border rounded-lg px-3 py-2"
+                style={{ borderColor: 'hsl(45, 100%, 85%)' }}
                 required
               />
               <input
@@ -144,6 +150,7 @@ const RestaurantBooking = () => {
                 value={formData.guests}
                 onChange={(e) => setFormData({...formData, guests: parseInt(e.target.value)})}
                 className="border rounded-lg px-3 py-2"
+                style={{ borderColor: 'hsl(45, 100%, 85%)' }}
                 min="1"
                 required
               />
@@ -151,6 +158,7 @@ const RestaurantBooking = () => {
                 value={formData.tableType}
                 onChange={(e) => setFormData({...formData, tableType: e.target.value})}
                 className="border rounded-lg px-3 py-2"
+                style={{ borderColor: 'hsl(45, 100%, 85%)' }}
                 required
               >
                 <option value="">Select Table Type</option>
@@ -165,6 +173,7 @@ const RestaurantBooking = () => {
                 value={formData.advanceAmount}
                 onChange={(e) => setFormData({...formData, advanceAmount: parseFloat(e.target.value)})}
                 className="border rounded-lg px-3 py-2"
+                style={{ borderColor: 'hsl(45, 100%, 85%)' }}
               />
             </div>
             <textarea
@@ -172,16 +181,18 @@ const RestaurantBooking = () => {
               value={formData.specialRequests}
               onChange={(e) => setFormData({...formData, specialRequests: e.target.value})}
               className="border rounded-lg px-3 py-2 w-full"
+              style={{ borderColor: 'hsl(45, 100%, 85%)' }}
               rows="3"
             />
             <div className="flex space-x-2">
-              <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg">
+              <button type="submit" className="px-4 py-2 rounded-lg" style={{ backgroundColor: 'hsl(45, 43%, 58%)', color: 'hsl(45, 100%, 20%)' }}>
                 Create Booking
               </button>
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="bg-gray-500 text-white px-4 py-2 rounded-lg"
+                className="px-4 py-2 rounded-lg"
+                style={{ backgroundColor: 'hsl(45, 100%, 85%)', color: 'hsl(45, 100%, 20%)' }}
               >
                 Cancel
               </button>
@@ -194,7 +205,7 @@ const RestaurantBooking = () => {
         {bookings.map((booking) => (
           <div key={booking._id} className="bg-white p-4 rounded-lg shadow-md">
             <div className="flex justify-between items-start mb-2">
-              <h3 className="font-semibold">{booking.customerName}</h3>
+              <h3 className="font-semibold" style={{ color: 'hsl(45, 100%, 20%)' }}>{booking.customerName}</h3>
               <span className={`px-2 py-1 rounded text-sm ${
                 booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
                 booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
@@ -204,17 +215,18 @@ const RestaurantBooking = () => {
                 {booking.status}
               </span>
             </div>
-            <p className="text-gray-600 mb-1">Phone: {booking.phoneNumber}</p>
-            <p className="text-gray-600 mb-1">Date: {new Date(booking.date).toLocaleDateString()}</p>
-            <p className="text-gray-600 mb-1">Time: {booking.time}</p>
-            <p className="text-gray-600 mb-1">Guests: {booking.guests}</p>
-            <p className="text-gray-600 mb-1">Table: {booking.tableType}</p>
-            {booking.advanceAmount > 0 && <p className="text-blue-600 font-semibold mb-2">Advance: ₹{booking.advanceAmount}</p>}
+            <p className="mb-1" style={{ color: 'hsl(45, 100%, 20%)' }}>Phone: {booking.phoneNumber}</p>
+            <p className="mb-1" style={{ color: 'hsl(45, 100%, 20%)' }}>Date: {new Date(booking.date).toLocaleDateString()}</p>
+            <p className="mb-1" style={{ color: 'hsl(45, 100%, 20%)' }}>Time: {booking.time}</p>
+            <p className="mb-1" style={{ color: 'hsl(45, 100%, 20%)' }}>Guests: {booking.guests}</p>
+            <p className="mb-1" style={{ color: 'hsl(45, 100%, 20%)' }}>Table: {booking.tableType}</p>
+            {booking.advanceAmount > 0 && <p className="font-semibold mb-2" style={{ color: 'hsl(45, 43%, 58%)' }}>Advance: ₹{booking.advanceAmount}</p>}
             <div className="flex flex-wrap gap-2">
               <select
                 value={booking.status}
                 onChange={(e) => updateBookingStatus(booking._id, e.target.value)}
                 className="border rounded px-2 py-1 text-sm"
+                style={{ borderColor: 'hsl(45, 100%, 85%)' }}
               >
                 <option value="pending">Pending</option>
                 <option value="confirmed">Confirmed</option>
@@ -223,7 +235,8 @@ const RestaurantBooking = () => {
               </select>
               <button
                 onClick={() => generateInvoice(booking._id)}
-                className="bg-green-500 text-white px-2 py-1 rounded text-sm"
+                className="px-2 py-1 rounded text-sm"
+                style={{ backgroundColor: 'hsl(45, 43%, 58%)', color: 'hsl(45, 100%, 20%)' }}
               >
                 Invoice
               </button>
@@ -234,57 +247,15 @@ const RestaurantBooking = () => {
 
       {showInvoice && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold">Booking Invoice</h3>
-              <button onClick={() => setShowInvoice(null)} className="text-gray-500 hover:text-gray-700 text-xl">
-                ✕
-              </button>
-            </div>
-            <div className="invoice-content">
-              <div className="text-center mb-6">
-                <h2 className="text-xl font-bold">Restaurant Booking Invoice</h2>
-                <p className="text-gray-600">Booking ID: {showInvoice._id}</p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-6 mb-6">
-                <div>
-                  <h4 className="font-semibold mb-2">Customer Details:</h4>
-                  <p>Name: {showInvoice.customerName}</p>
-                  <p>Phone: {showInvoice.phoneNumber}</p>
-                  <p>Email: {showInvoice.email}</p>
-                  <p>Date: {new Date(showInvoice.date).toLocaleDateString()}</p>
-                  <p>Time: {showInvoice.time}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Booking Details:</h4>
-                  <p>Guests: {showInvoice.guests}</p>
-                  <p>Table Type: {showInvoice.tableType}</p>
-                  <p>Status: {showInvoice.status}</p>
-                  <p className="font-semibold">Advance Amount: ₹{showInvoice.advanceAmount}</p>
-                </div>
-              </div>
-              
-              {showInvoice.specialRequests && (
-                <div className="mb-6">
-                  <h4 className="font-semibold mb-2">Special Requests:</h4>
-                  <p className="text-gray-700">{showInvoice.specialRequests}</p>
-                </div>
-              )}
-              
-              <div className="text-center mt-8 pt-4 border-t">
-                <p className="text-gray-600">Thank you for choosing our restaurant!</p>
-              </div>
-            </div>
-            
-            <div className="flex justify-center mt-6">
-              <button
-                onClick={() => window.print()}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-              >
-                Print Invoice
-              </button>
-            </div>
+          <div className="bg-white p-8 rounded-lg max-w-4xl w-full mx-4">
+            <h2 className="text-2xl font-bold mb-4" style={{ color: 'hsl(45, 100%, 20%)' }}>Invoice</h2>
+            <button
+              onClick={() => setShowInvoice(null)}
+              className="px-4 py-2 rounded-lg"
+              style={{ backgroundColor: 'hsl(45, 100%, 85%)', color: 'hsl(45, 100%, 20%)' }}
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
