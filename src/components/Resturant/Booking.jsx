@@ -151,12 +151,12 @@ const Booking = () => {
   };
 
   return (
-    <div className="p-6" style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold">Restaurant Bookings</h2>
+    <div className="p-4 sm:p-6" style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <h2 className="text-xl sm:text-2xl font-semibold">Restaurant Bookings</h2>
         <button
           onClick={() => setShowForm(true)}
-          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm sm:text-base"
         >
           New Booking
         </button>
@@ -166,7 +166,7 @@ const Booking = () => {
         <div className="bg-white p-6 rounded-lg shadow-md mb-6">
           <h3 className="text-lg font-semibold mb-4">Create New Booking</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <input
                 type="text"
                 placeholder="Customer Name"
@@ -257,96 +257,173 @@ const Booking = () => {
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Table</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {bookings.map((booking) => (
-              <tr key={booking._id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {booking.staffName}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {booking.phoneNumber}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {booking.tableNo}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-600">
-                  ₹{booking.amount}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 rounded text-xs ${
-                    booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                    booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {booking.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex space-x-2">
-                    <select
-                      value={booking.status}
-                      onChange={(e) => updateBookingStatus(booking._id, e.target.value)}
-                      className="border rounded px-2 py-1 text-xs"
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="confirmed">Confirmed</option>
-                      <option value="cancelled">Cancelled</option>
-                      <option value="completed">Completed</option>
-                    </select>
-                    {booking.status === 'completed' && (
-                      <button
-                        onClick={() => {
-                          const subtotal = booking.amount || 0;
-                          const discount = booking.discount || 0;
-                          const tax = subtotal * 0.18;
-                          const totalAmount = subtotal - discount + tax;
-                          setBillFormData({
-                            orderId: booking._id,
-                            tableNo: booking.tableNo,
-                            subtotal,
-                            discount,
-                            tax,
-                            totalAmount,
-                            paymentMethod: 'cash',
-                            cardNumber: '',
-                            cardHolderName: '',
-                            upiId: '',
-                            cashReceived: 0,
-                            splitDetails: { cash: 0, card: 0, upi: 0 }
-                          });
-                          setShowBilling(booking);
-                        }}
-                        className="bg-purple-500 text-white px-2 py-1 rounded text-xs"
-                      >
-                        Create Bill
-                      </button>
-                    )}
-                  </div>
-                </td>
+      {/* Desktop Table View */}
+      <div className="hidden lg:block bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff Name</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Table</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {bookings.map((booking) => (
+                <tr key={booking._id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {booking.staffName}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                    {booking.phoneNumber}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                    {booking.tableNo}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-blue-600">
+                    ₹{booking.amount}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className={`px-2 py-1 rounded text-xs ${
+                      booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                      booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {booking.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                    <div className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2">
+                      <select
+                        value={booking.status}
+                        onChange={(e) => updateBookingStatus(booking._id, e.target.value)}
+                        className="border rounded px-2 py-1 text-xs"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="completed">Completed</option>
+                      </select>
+                      {booking.status === 'completed' && (
+                        <button
+                          onClick={() => {
+                            const subtotal = booking.amount || 0;
+                            const discount = booking.discount || 0;
+                            const tax = subtotal * 0.18;
+                            const totalAmount = subtotal - discount + tax;
+                            setBillFormData({
+                              orderId: booking._id,
+                              tableNo: booking.tableNo,
+                              subtotal,
+                              discount,
+                              tax,
+                              totalAmount,
+                              paymentMethod: 'cash',
+                              cardNumber: '',
+                              cardHolderName: '',
+                              upiId: '',
+                              cashReceived: 0,
+                              splitDetails: { cash: 0, card: 0, upi: 0 }
+                            });
+                            setShowBilling(booking);
+                          }}
+                          className="bg-purple-500 text-white px-2 py-1 rounded text-xs"
+                        >
+                          Create Bill
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="lg:hidden space-y-4">
+        {bookings.map((booking) => (
+          <div key={booking._id} className="bg-white rounded-lg shadow-md p-4">
+            <div className="flex justify-between items-start mb-3">
+              <div>
+                <h3 className="font-semibold text-lg text-gray-800">{booking.staffName}</h3>
+                <p className="text-sm text-gray-600">{booking.phoneNumber}</p>
+              </div>
+              <span className={`px-2 py-1 rounded text-xs ${
+                booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {booking.status}
+              </span>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
+              <div>
+                <span className="text-gray-500">Table:</span>
+                <span className="ml-1 font-medium">{booking.tableNo}</span>
+              </div>
+              <div>
+                <span className="text-gray-500">Amount:</span>
+                <span className="ml-1 font-semibold text-blue-600">₹{booking.amount}</span>
+              </div>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-2 pt-3 border-t border-gray-100">
+              <select
+                value={booking.status}
+                onChange={(e) => updateBookingStatus(booking._id, e.target.value)}
+                className="border rounded px-3 py-2 text-sm flex-1"
+              >
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="completed">Completed</option>
+              </select>
+              {booking.status === 'completed' && (
+                <button
+                  onClick={() => {
+                    const subtotal = booking.amount || 0;
+                    const discount = booking.discount || 0;
+                    const tax = subtotal * 0.18;
+                    const totalAmount = subtotal - discount + tax;
+                    setBillFormData({
+                      orderId: booking._id,
+                      tableNo: booking.tableNo,
+                      subtotal,
+                      discount,
+                      tax,
+                      totalAmount,
+                      paymentMethod: 'cash',
+                      cardNumber: '',
+                      cardHolderName: '',
+                      upiId: '',
+                      cashReceived: 0,
+                      splitDetails: { cash: 0, card: 0, upi: 0 }
+                    });
+                    setShowBilling(booking);
+                  }}
+                  className="bg-purple-500 text-white px-4 py-2 rounded text-sm"
+                >
+                  Create Bill
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
 
 
 
       {showBilling && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-4 sm:p-6 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Create Bill</h3>
               <button onClick={() => setShowBilling(null)} className="text-gray-500 hover:text-gray-700">

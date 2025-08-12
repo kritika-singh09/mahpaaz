@@ -237,8 +237,8 @@ function App() {
 
   return (
     <div className="min-h-screen p-4 sm:p-6 lg:p-8 font-sans" style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}>
-      <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">
+      <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6" style={{ borderColor: 'hsl(45, 100%, 85%)' }}>
+        <h1 className="text-3xl font-bold text-center mb-6" style={{ color: 'hsl(45, 100%, 20%)' }}>
           Vehicle Management
         </h1>
 
@@ -262,7 +262,10 @@ function App() {
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 space-y-4 sm:space-y-0 sm:space-x-4">
           <button
             onClick={() => setIsFormOpen(true)}
-            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+            className="w-full sm:w-auto font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+            style={{ backgroundColor: 'hsl(45, 43%, 58%)', color: 'hsl(45, 100%, 20%)' }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = 'hsl(45, 32%, 46%)'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = 'hsl(45, 43%, 58%)'}
           >
             Add New Vehicle
           </button>
@@ -274,7 +277,10 @@ function App() {
             onChange={(e) => {
               setSearchQuery(e.target.value);
             }}
-            className="w-full sm:w-1/2 p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+            className="w-full sm:w-1/2 p-2 border rounded-lg shadow-sm"
+            style={{ borderColor: 'hsl(45, 100%, 85%)', color: 'hsl(45, 100%, 20%)' }}
+            onFocus={(e) => e.target.style.borderColor = 'hsl(45, 43%, 58%)'}
+            onBlur={(e) => e.target.style.borderColor = 'hsl(45, 100%, 85%)'}
           />
 
           <select
@@ -283,7 +289,10 @@ function App() {
               setFilterStatus(e.target.value);
               setSearchQuery("");
             }}
-            className="w-full sm:w-auto p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+            className="w-full sm:w-auto p-2 border rounded-lg shadow-sm"
+            style={{ borderColor: 'hsl(45, 100%, 85%)', color: 'hsl(45, 100%, 20%)' }}
+            onFocus={(e) => e.target.style.borderColor = 'hsl(45, 43%, 58%)'}
+            onBlur={(e) => e.target.style.borderColor = 'hsl(45, 100%, 85%)'}
           >
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
@@ -300,50 +309,55 @@ function App() {
         )}
 
         {!loading && (
-          <div className="overflow-x-auto rounded-lg shadow-md border border-gray-200">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+          <div className="overflow-x-auto rounded-lg shadow-md border" style={{ borderColor: 'hsl(45, 100%, 85%)' }}>
+            <table className="min-w-full divide-y" style={{ borderColor: 'hsl(45, 100%, 85%)' }}>
+              <thead style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}>
                 <tr>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: 'hsl(45, 100%, 20%)' }}
                   >
                     Vehicle No.
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: 'hsl(45, 100%, 20%)' }}
                   >
                     Capacity
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: 'hsl(45, 100%, 20%)' }}
                   >
                     Status
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: 'hsl(45, 100%, 20%)' }}
                   >
                     Insurance Expiry
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider"
+                    style={{ color: 'hsl(45, 100%, 20%)' }}
                   >
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y" style={{ borderColor: 'hsl(45, 100%, 85%)' }}>
                 {vehiclesToDisplay.length > 0 ? (
                   vehiclesToDisplay.map((vehicle) => (
-                    <tr key={vehicle._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-3 text-sm font-medium text-gray-900">
+                    <tr key={vehicle._id} className="hover:bg-gray-50" onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(45, 100%, 95%)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}>
+                      <td className="px-6 py-3 text-sm font-medium" style={{ color: 'hsl(45, 100%, 20%)' }}>
                         {vehicle.vehicleNumber}
                       </td>
-                      <td className="px-6 py-3 text-sm text-gray-500">
+                      <td className="px-6 py-3 text-sm" style={{ color: 'hsl(45, 100%, 20%)' }}>
                         {vehicle.seatingCapacity}
                       </td>
                       <td className="px-6 py-3 text-sm">
@@ -359,13 +373,16 @@ function App() {
                           {vehicle.status.replace("_", " ")}
                         </span>
                       </td>
-                      <td className="px-6 py-3 text-sm text-gray-500">
+                      <td className="px-6 py-3 text-sm" style={{ color: 'hsl(45, 100%, 20%)' }}>
                         {vehicle.insuranceValidTill || "N/A"}
                       </td>
                       <td className="px-6 py-3 text-right text-sm font-medium flex items-center justify-end space-x-2">
                         <button
                           onClick={() => handleEdit(vehicle)}
-                          className="text-indigo-600 hover:text-indigo-900 transition duration-150 ease-in-out"
+                          className="transition duration-150 ease-in-out"
+                          style={{ color: 'hsl(45, 43%, 58%)' }}
+                          onMouseEnter={(e) => e.target.style.color = 'hsl(45, 32%, 46%)'}
+                          onMouseLeave={(e) => e.target.style.color = 'hsl(45, 43%, 58%)'}
                         >
                           Edit
                         </button>
@@ -382,7 +399,8 @@ function App() {
                   <tr>
                     <td
                       colSpan="5"
-                      className="px-6 py-3 text-center text-sm text-gray-500"
+                      className="px-6 py-3 text-center text-sm"
+                      style={{ color: 'hsl(45, 100%, 20%)' }}
                     >
                       {searchQuery.trim() && !loading && !singleVehicleFound
                         ? "No vehicle found with this ID or number."
@@ -415,7 +433,7 @@ function App() {
               `}
             </style>
             <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto transform scale-95 animate-fade-in hide-scrollbar">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+              <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: 'hsl(45, 100%, 20%)' }}>
                 {editingVehicle ? "Edit Vehicle" : "Add New Vehicle"}
               </h2>
               <form
@@ -425,7 +443,8 @@ function App() {
                 <div>
                   <label
                     htmlFor="vehicleNumber"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+                    className="block text-sm font-medium mb-1"
+                    style={{ color: 'hsl(45, 100%, 20%)' }}
                   >
                     Vehicle Number
                   </label>
@@ -436,7 +455,10 @@ function App() {
                     value={formData.vehicleNumber}
                     onChange={handleChange}
                     required
-                    className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full p-2 border rounded-md shadow-sm"
+                    style={{ borderColor: 'hsl(45, 100%, 85%)', color: 'hsl(45, 100%, 20%)' }}
+                    onFocus={(e) => e.target.style.borderColor = 'hsl(45, 43%, 58%)'}
+                    onBlur={(e) => e.target.style.borderColor = 'hsl(45, 100%, 85%)'}
                   />
                 </div>
 
@@ -538,7 +560,10 @@ function App() {
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+                    className="px-5 py-2 font-bold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+                    style={{ backgroundColor: 'hsl(45, 43%, 58%)', color: 'hsl(45, 100%, 20%)' }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = 'hsl(45, 32%, 46%)'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = 'hsl(45, 43%, 58%)'}
                   >
                     {editingVehicle ? "Update Vehicle" : "Add Vehicle"}
                   </button>
