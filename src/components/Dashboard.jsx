@@ -127,7 +127,7 @@ const Dashboard = () => {
     <div className="p-6 overflow-auto h-full bg-background">
       <div className="flex justify-between items-center mb-8 mt-6 ">
         <h1 className="text-3xl font-extrabold text-[#1f2937]">
-          BUDDHA AVENUE DASHBOARD
+          MAPAZ DASHBOARD
         </h1>
         <button
           onClick={handleCalendarClick}
