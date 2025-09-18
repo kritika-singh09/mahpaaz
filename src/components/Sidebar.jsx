@@ -22,7 +22,7 @@ import {
   Package,
   Bell,
 } from "lucide-react";
-import logoImage from "../assets/buddhaavenuelogo.png";
+import logoImage from "../assets/logo.jpg";
 
 const Sidebar = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -179,7 +179,7 @@ const Sidebar = () => {
             />
           </svg>
         </button>
-        <img src={logoImage} alt="Buddha Avenue" className="h-30 mx-auto" />
+        <img src={logoImage} alt="Buddha Avenue" className="h-20 w-20 mx-auto rounded-full object-cover" />
       </div>
       <div className="text-center mt-2 font-bold text-lg">{userRole}</div>
 
