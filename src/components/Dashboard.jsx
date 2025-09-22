@@ -124,21 +124,21 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="p-6 overflow-auto h-full bg-background">
-      <div className="flex justify-between items-center mb-8 mt-6 ">
-        <h1 className="text-3xl font-extrabold text-[#1f2937]">
-          MAPAZ DASHBOARD
+    <div className="p-4 sm:p-6 overflow-auto h-full bg-background">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 mt-4 sm:mt-6 gap-4">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#1f2937]">
+          BUDDHA AVENUE DASHBOARD
         </h1>
         <button
           onClick={handleCalendarClick}
-          className="p-2 rounded-full hover:bg-background transition-colors"
+          className="p-2 rounded-full hover:bg-background transition-colors self-end sm:self-auto"
         >
-          <SlCalender className="w-8 h-8 text-primary hover:bg-primary hover:text-white" />
+          <SlCalender className="w-6 sm:w-8 h-6 sm:h-8 text-primary hover:bg-primary hover:text-white" />
         </button>
       </div>
       {/* Status Summary */}
       <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-        <div className="flex flex-wrap gap-4 items-center">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-start sm:items-center">
           <div className="flex items-center">
             <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
             <span className="text-sm">12 Check-ins Today</span>
@@ -196,9 +196,9 @@ const Dashboard = () => {
       </div>
       {/* Detail Section */}
       {activeCard && (
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6 animate-fadeIn">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-xl font-extrabold text-[#1f2937]">
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6 animate-fadeIn">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
+            <h2 className="text-lg sm:text-xl font-extrabold text-[#1f2937]">
               {dashboardCards.find((c) => c.id === activeCard)?.title} Details
             </h2>
           </div>

@@ -1,4 +1,6 @@
 import React from "react";
+import { showToast } from "../../utils/toaster";
+import { validateRequired, validateEmail, validateMinLength } from "../../utils/validation";
 
 const StaffForm = ({
   showModal,
@@ -39,9 +41,9 @@ const StaffForm = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-        <h2 className="text-2xl font-bold mb-4">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
+        <h2 className="text-xl sm:text-2xl font-bold mb-4">
           {editMode ? "Edit Staff" : "Add Staff"}
         </h2>
         <form onSubmit={handleSubmit}>
@@ -55,6 +57,13 @@ const StaffForm = ({
               }
               className="w-full px-3 py-2 border rounded-md"
               required
+              onBlur={(e) => {
+                if (!validateRequired(e.target.value)) {
+                  showToast.error('Username is required');
+                } else if (!validateMinLength(e.target.value, 3)) {
+                  showToast.error('Username must be at least 3 characters');
+                }
+              }}
             />
           </div>
           <div className="mb-4">
@@ -67,6 +76,11 @@ const StaffForm = ({
               }
               className="w-full px-3 py-2 border rounded-md"
               required
+              onBlur={(e) => {
+                if (!validateEmail(e.target.value)) {
+                  showToast.error('Please enter a valid email address');
+                }
+              }}
             />
           </div>
           <div className="mb-4">
@@ -79,6 +93,11 @@ const StaffForm = ({
               }
               className="w-full px-3 py-2 border rounded-md"
               required={!editMode}
+              onBlur={(e) => {
+                if (e.target.value && !validateMinLength(e.target.value, 6)) {
+                  showToast.error('Password must be at least 6 characters');
+                }
+              }}
             />
             {editMode && (
               <p className="text-xs text-gray-500 mt-1">
@@ -161,17 +180,17 @@ const StaffForm = ({
           )}
           {/*  */}
 
-          <div className="flex justify-end space-x-2">
+          <div className="flex flex-col sm:flex-row justify-end gap-2">
             <button
               type="button"
               onClick={() => setShowModal(false)}
-              className="px-4 py-2 border rounded-md"
+              className="px-4 py-2 border rounded-md w-full sm:w-auto"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-primary text-white rounded-md"
+              className="px-4 py-2 bg-primary text-white rounded-md w-full sm:w-auto"
             >
               {editMode ? "Update" : "Add"}
             </button>

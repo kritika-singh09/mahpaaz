@@ -11,7 +11,9 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useAppContext } from "../../context/AppContext";
+import { showToast } from "../../utils/toaster";
 import RoomForm from "./RoomForm";
+import Pagination from "../common/Pagination";
 
 const RoomList = () => {
   const { axios } = useAppContext();
@@ -205,9 +207,10 @@ const RoomList = () => {
           config
         );
         setRooms(rooms.filter((room) => room._id !== id));
+        showToast.success("Room deleted successfully");
       } catch (err) {
         console.error("Error deleting room:", err);
-        alert("Failed to delete room");
+        showToast.error("Failed to delete room");
       }
     }
   };
@@ -245,6 +248,7 @@ const RoomList = () => {
             room._id === currentRoom._id ? data : room
           )
         );
+        showToast.success("Room updated successfully");
       } else {
         const { data } = await axios.post(
           "/api/rooms/add",
@@ -252,12 +256,13 @@ const RoomList = () => {
           config
         );
         setRooms([...rooms, data.room]);
+        showToast.success("Room added successfully");
       }
 
       setShowModal(false);
     } catch (err) {
       console.error("Error saving room:", err);
-      alert("Failed to save room");
+      showToast.error("Failed to save room");
     }
   };
 
@@ -275,12 +280,12 @@ const RoomList = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 min-h-screen overflow-y-auto bg-[#fff9e6]">
-      <div className="flex items-center justify-between  mt-6 ">
-        <h1 className="text-3xl font-extrabold text-[#1f2937]">Rooms</h1>{" "}
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 min-h-screen overflow-y-auto bg-[#fff9e6]">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-4 sm:mt-6 gap-4">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1f2937]">Rooms</h1>
         <button
           onClick={handleAddRoom}
-          className="bg-secondary text-dark px-4 py-2 cursor-pointer rounded-lg hover:shadow-lg transition-shadow font-medium"
+          className="bg-secondary text-dark px-4 py-2 cursor-pointer rounded-lg hover:shadow-lg transition-shadow font-medium w-full sm:w-auto"
         >
           <Plus className="w-4 h-4 inline mr-2" />
           Add Room
@@ -288,7 +293,7 @@ const RoomList = () => {
       </div>
 
       {/* Search and Filter */}
-      <div className="flex flex-col md:flex-row md:items-center gap-4 ">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         <div className="relative flex-grow">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-dark/50 w-4 h-4" />
           <input
@@ -299,7 +304,7 @@ const RoomList = () => {
               setSearchTerm(e.target.value);
               setPage(1);
             }}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary text-sm sm:text-base"
           />
         </div>
       </div>
@@ -388,7 +393,7 @@ const RoomList = () => {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {rooms.length > 0 ? (
               rooms.map((room) => (
                 <div
@@ -396,7 +401,7 @@ const RoomList = () => {
                   className="bg-primary/50 border border-gray-200 backdrop-blur-sm rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all"
                 >
                   {/* Image Section */}
-                  <div className="h-48 bg-gray-200 relative overflow-hidden">
+                  <div className="h-40 sm:h-48 bg-gray-200 relative overflow-hidden">
                     {room.images &&
                     room.images.length > 0 &&
                     room.images[0].startsWith("data:image/") ? (
@@ -440,21 +445,21 @@ const RoomList = () => {
                   </div>
 
                   {/* Content Section */}
-                  <div className="p-4">
+                  <div className="p-3 sm:p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-lg font-semibold text-dark">
+                      <h3 className="text-base sm:text-lg font-semibold text-dark">
                         Room {room.room_number}
                       </h3>
                     </div>
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-sm text-dark/70">Room title:</span>
-                      <span className="font-semibold text-dark">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
+                      <span className="text-xs sm:text-sm text-dark/70">Room title:</span>
+                      <span className="font-semibold text-dark text-sm sm:text-base truncate ml-2">
                         {room.title}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-sm text-dark/70">Category:</span>
-                      <span className="font-semibold text-dark">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
+                      <span className="text-xs sm:text-sm text-dark/70">Category:</span>
+                      <span className="font-semibold text-dark text-sm sm:text-base truncate ml-2">
                         {room.category &&
                         typeof room.category === "object" &&
                         room.category.name
@@ -465,8 +470,8 @@ const RoomList = () => {
 
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-sm text-dark/70">Price:</span>
-                        <span className="font-semibold text-dark">
+                        <span className="text-xs sm:text-sm text-dark/70">Price:</span>
+                        <span className="font-semibold text-dark text-sm sm:text-base">
                           ₹{room.price}/night
                         </span>
                       </div>
@@ -487,38 +492,13 @@ const RoomList = () => {
             )}
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center mt-6 space-x-2">
-              <button
-                onClick={() => setPage(Math.max(1, page - 1))}
-                disabled={page === 1}
-                className={`p-2 rounded-lg ${
-                  page === 1
-                    ? "text-dark/40 cursor-not-allowed"
-                    : "text-dark hover:bg-secondary/50"
-                }`}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-
-              <span className="text-dark">
-                Page {page} of {totalPages}
-              </span>
-
-              <button
-                onClick={() => setPage(Math.min(totalPages, page + 1))}
-                disabled={page === totalPages}
-                className={`p-2 rounded-lg ${
-                  page === totalPages
-                    ? "text-dark/40 cursor-not-allowed"
-                    : "text-dark hover:bg-secondary/50"
-                }`}
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          )}
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            itemsPerPage={limit}
+            totalItems={total}
+          />
         </>
       )}
 

@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useAppContext } from "../../context/AppContext";
+import { showToast } from "../../utils/toaster";
 
 function App() {
   const { axios } = useAppContext();
@@ -153,9 +154,11 @@ function App() {
       );
       resetForm();
       fetchVehicles();
+      showToast.success(`✅ Vehicle ${editingVehicle ? "updated" : "added"} successfully!`);
     } catch (err) {
       console.error("Error saving vehicle:", err);
       setError(`Failed to save vehicle: ${err.message}`);
+      showToast.error(`Failed to save vehicle: ${err.message}`);
     } finally {
       setLoading(false);
       setTimeout(() => setMessage(""), 3000);
@@ -190,9 +193,11 @@ function App() {
         setMessage("Vehicle deleted successfully!");
 
         fetchVehicles();
+        showToast.success('🗑️ Vehicle deleted successfully!');
       } catch (err) {
         console.error("Error deleting vehicle:", err);
         setError(`Failed to delete vehicle: ${err.message}`);
+        showToast.error(`Failed to delete vehicle: ${err.message}`);
       } finally {
         setLoading(false);
         setTimeout(() => setMessage(""), 3000);

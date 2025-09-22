@@ -2,7 +2,9 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { useAppContext } from "../../context/AppContext";
+import { showToast } from "../../utils/toaster";
 import CategoryForm from "./CategoryForm";
+import Pagination from "../common/Pagination";
 
 const CategoryList = () => {
   const { axios } = useAppContext();
@@ -17,6 +19,8 @@ const CategoryList = () => {
     description: "",
     status: "active",
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   // Fetch all categories
   useEffect(() => {
@@ -66,9 +70,10 @@ const CategoryList = () => {
       try {
         await axios.delete(`/api/categories/delete/${id}`);
         setCategories(categories.filter((category) => category._id !== id));
+        showToast.success("Category deleted successfully");
       } catch (err) {
         console.error("Error deleting category:", err);
-        alert("Failed to delete category");
+        showToast.error("Failed to delete category");
       }
     }
   };
@@ -93,6 +98,7 @@ const CategoryList = () => {
             category._id === currentCategory._id ? data : category
           )
         );
+        showToast.success("Category updated successfully");
       } else {
         // Create new category
         const { data } = await axios.post(
@@ -105,13 +111,22 @@ const CategoryList = () => {
         );
 
         setCategories([...categories, data]);
+        showToast.success("Category added successfully");
       }
 
       setShowModal(false);
     } catch (err) {
       console.error("Error saving category:", err);
-      alert("Failed to save category");
+      showToast.error("Failed to save category");
     }
+  };
+
+  const totalPages = Math.ceil(categories.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedCategories = categories.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
   };
 
   return (
@@ -155,7 +170,7 @@ const CategoryList = () => {
               className="bg-white divide-y divide-gray-200 overflow-auto"
               style={{ scrollbarWidth: "none" }}
             >
-              {categories.map((category) => (
+              {paginatedCategories.map((category) => (
                 <tr key={category._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap font-medium">
                     {category.name}
@@ -191,7 +206,7 @@ const CategoryList = () => {
                   </td>
                 </tr>
               ))}
-              {categories.length === 0 && (
+              {paginatedCategories.length === 0 && (
                 <tr>
                   <td
                     colSpan="4"
@@ -203,6 +218,13 @@ const CategoryList = () => {
               )}
             </tbody>
           </table>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            itemsPerPage={itemsPerPage}
+            totalItems={categories.length}
+          />
         </div>
       )}
 

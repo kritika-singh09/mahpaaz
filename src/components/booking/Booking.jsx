@@ -2,11 +2,17 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Edit, XCircle, CheckCircle, Search, X, FileText, Trash2 } from "lucide-react";
 import { useAppContext } from "../../context/AppContext";
+import Pagination from "../common/Pagination";
 
 const BookingEdit = ({ booking, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
+    grcNo: booking?.grcNo || "",
     name: booking?.name || "",
     mobileNo: booking?.mobileNo || "",
+    email: booking?.email || "",
+    address: booking?.address || "",
+    city: booking?.city || "",
+    nationality: booking?.nationality || "",
     checkInDate: booking?.checkInDate
       ? new Date(booking.checkInDate).toISOString().split("T")[0]
       : "",
@@ -14,8 +20,18 @@ const BookingEdit = ({ booking, onSave, onCancel }) => {
       ? new Date(booking.checkOutDate).toISOString().split("T")[0]
       : "",
     roomNumber: booking?.roomNumber || "",
+    noOfAdults: booking?.noOfAdults || 1,
+    noOfChildren: booking?.noOfChildren || 0,
+    rate: booking?.rate || 0,
+    paymentMode: booking?.paymentMode || "",
+    paymentStatus: booking?.paymentStatus || "Pending",
     vip: booking?.vip || false,
     status: booking?.status || "Booked",
+    remark: booking?.remark || "",
+    idProofType: booking?.idProofType || "",
+    idProofNumber: booking?.idProofNumber || "",
+    age: booking?.age || "",
+    gender: booking?.gender || "",
   });
 
   const handleChange = (e) => {
@@ -32,95 +48,149 @@ const BookingEdit = ({ booking, onSave, onCancel }) => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-4xl">
-      <h3 className="text-2xl font-bold mb-4 text-center">
+    <div className="p-6 rounded-lg shadow-xl w-full max-w-4xl" style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}>
+      <h3 className="text-2xl font-bold mb-4 text-center" style={{ color: 'hsl(45, 100%, 20%)' }}>
         Edit Booking: {booking?.name}
       </h3>
       <form
         onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[70vh] overflow-y-auto"
       >
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">
-            Guest Name
-          </label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <label className="block font-semibold mb-2" style={{ color: 'hsl(45, 100%, 20%)' }}>GRC No</label>
+          <input type="text" name="grcNo" value={formData.grcNo} onChange={handleChange} className="w-full p-2 rounded-lg focus:outline-none focus:ring-2" style={{ border: '1px solid hsl(45, 100%, 85%)', focusRingColor: 'hsl(45, 43%, 58%)' }} />
         </div>
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">
-            Mobile Number
-          </label>
-          <input
-            type="text"
-            name="mobileNo"
-            value={formData.mobileNo}
-            onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <label className="block font-semibold mb-2" style={{ color: 'hsl(45, 100%, 20%)' }}>Guest Name</label>
+          <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full p-2 rounded-lg focus:outline-none focus:ring-2" style={{ border: '1px solid hsl(45, 100%, 85%)', focusRingColor: 'hsl(45, 43%, 58%)' }} />
         </div>
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">
-            Check-in Date
-          </label>
-          <input
-            type="date"
-            name="checkInDate"
-            value={formData.checkInDate}
-            onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <label className="block font-semibold mb-2" style={{ color: 'hsl(45, 100%, 20%)' }}>Mobile Number</label>
+          <input type="text" name="mobileNo" value={formData.mobileNo} onChange={handleChange} className="w-full p-2 rounded-lg focus:outline-none focus:ring-2" style={{ border: '1px solid hsl(45, 100%, 85%)', focusRingColor: 'hsl(45, 43%, 58%)' }} />
         </div>
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">
-            Check-out Date
-          </label>
-          <input
-            type="date"
-            name="checkOutDate"
-            value={formData.checkOutDate}
-            onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <label className="block font-semibold mb-2" style={{ color: 'hsl(45, 100%, 20%)' }}>Email</label>
+          <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full p-2 rounded-lg focus:outline-none focus:ring-2" style={{ border: '1px solid hsl(45, 100%, 85%)', focusRingColor: 'hsl(45, 43%, 58%)' }} />
         </div>
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">
-            Room Number
-          </label>
-          <input
-            type="text"
-            name="roomNumber"
-            value={formData.roomNumber}
-            onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <label className="block font-semibold mb-2" style={{ color: 'hsl(45, 100%, 20%)' }}>Age</label>
+          <input type="number" name="age" value={formData.age} onChange={handleChange} className="w-full p-2 rounded-lg focus:outline-none focus:ring-2" style={{ border: '1px solid hsl(45, 100%, 85%)', focusRingColor: 'hsl(45, 43%, 58%)' }} />
+        </div>
+        <div>
+          <label className="block font-semibold mb-2" style={{ color: 'hsl(45, 100%, 20%)' }}>Gender</label>
+          <select name="gender" value={formData.gender} onChange={handleChange} className="w-full p-2 rounded-lg focus:outline-none focus:ring-2" style={{ border: '1px solid hsl(45, 100%, 85%)', focusRingColor: 'hsl(45, 43%, 58%)' }}>
+            <option value="">Select Gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div>
+          <label className="block font-semibold mb-2" style={{ color: 'hsl(45, 100%, 20%)' }}>Address</label>
+          <input type="text" name="address" value={formData.address} onChange={handleChange} className="w-full p-2 rounded-lg focus:outline-none focus:ring-2" style={{ border: '1px solid hsl(45, 100%, 85%)', focusRingColor: 'hsl(45, 43%, 58%)' }} />
+        </div>
+        <div>
+          <label className="block font-semibold mb-2" style={{ color: 'hsl(45, 100%, 20%)' }}>City</label>
+          <input type="text" name="city" value={formData.city} onChange={handleChange} className="w-full p-2 rounded-lg focus:outline-none focus:ring-2" style={{ border: '1px solid hsl(45, 100%, 85%)', focusRingColor: 'hsl(45, 43%, 58%)' }} />
+        </div>
+        <div>
+          <label className="block font-semibold mb-2" style={{ color: 'hsl(45, 100%, 20%)' }}>Nationality</label>
+          <input type="text" name="nationality" value={formData.nationality} onChange={handleChange} className="w-full p-2 rounded-lg focus:outline-none focus:ring-2" style={{ border: '1px solid hsl(45, 100%, 85%)', focusRingColor: 'hsl(45, 43%, 58%)' }} />
+        </div>
+        <div>
+          <label className="block font-semibold mb-2" style={{ color: 'hsl(45, 100%, 20%)' }}>Check-in Date</label>
+          <input type="date" name="checkInDate" value={formData.checkInDate} onChange={handleChange} className="w-full p-2 rounded-lg focus:outline-none focus:ring-2" style={{ border: '1px solid hsl(45, 100%, 85%)', focusRingColor: 'hsl(45, 43%, 58%)' }} />
+        </div>
+        <div>
+          <label className="block font-semibold mb-2" style={{ color: 'hsl(45, 100%, 20%)' }}>Check-out Date</label>
+          <input type="date" name="checkOutDate" value={formData.checkOutDate} onChange={handleChange} className="w-full p-2 rounded-lg focus:outline-none focus:ring-2" style={{ border: '1px solid hsl(45, 100%, 85%)', focusRingColor: 'hsl(45, 43%, 58%)' }} />
+        </div>
+        <div>
+          <label className="block font-semibold mb-2" style={{ color: 'hsl(45, 100%, 20%)' }}>Room Number</label>
+          <input type="text" name="roomNumber" value={formData.roomNumber} onChange={handleChange} className="w-full p-2 rounded-lg focus:outline-none focus:ring-2" style={{ border: '1px solid hsl(45, 100%, 85%)', focusRingColor: 'hsl(45, 43%, 58%)' }} />
+        </div>
+        <div>
+          <label className="block font-semibold mb-2" style={{ color: 'hsl(45, 100%, 20%)' }}>Adults</label>
+          <input type="number" name="noOfAdults" value={formData.noOfAdults} onChange={handleChange} min="1" className="w-full p-2 rounded-lg focus:outline-none focus:ring-2" style={{ border: '1px solid hsl(45, 100%, 85%)', focusRingColor: 'hsl(45, 43%, 58%)' }} />
+        </div>
+        <div>
+          <label className="block font-semibold mb-2" style={{ color: 'hsl(45, 100%, 20%)' }}>Children</label>
+          <input type="number" name="noOfChildren" value={formData.noOfChildren} onChange={handleChange} min="0" className="w-full p-2 rounded-lg focus:outline-none focus:ring-2" style={{ border: '1px solid hsl(45, 100%, 85%)', focusRingColor: 'hsl(45, 43%, 58%)' }} />
+        </div>
+        <div>
+          <label className="block font-semibold mb-2" style={{ color: 'hsl(45, 100%, 20%)' }}>Rate</label>
+          <input type="number" name="rate" value={formData.rate} onChange={handleChange} className="w-full p-2 rounded-lg focus:outline-none focus:ring-2" style={{ border: '1px solid hsl(45, 100%, 85%)', focusRingColor: 'hsl(45, 43%, 58%)' }} />
+        </div>
+        <div>
+          <label className="block font-semibold mb-2" style={{ color: 'hsl(45, 100%, 20%)' }}>Payment Mode</label>
+          <select name="paymentMode" value={formData.paymentMode} onChange={handleChange} className="w-full p-2 rounded-lg focus:outline-none focus:ring-2" style={{ border: '1px solid hsl(45, 100%, 85%)', focusRingColor: 'hsl(45, 43%, 58%)' }}>
+            <option value="">Select Payment Mode</option>
+            <option value="Cash">Cash</option>
+            <option value="Card">Card</option>
+            <option value="UPI">UPI</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+          </select>
+        </div>
+        <div>
+          <label className="block font-semibold mb-2" style={{ color: 'hsl(45, 100%, 20%)' }}>Payment Status</label>
+          <select name="paymentStatus" value={formData.paymentStatus} onChange={handleChange} className="w-full p-2 rounded-lg focus:outline-none focus:ring-2" style={{ border: '1px solid hsl(45, 100%, 85%)', focusRingColor: 'hsl(45, 43%, 58%)' }}>
+            <option value="Pending">Pending</option>
+            <option value="Paid">Paid</option>
+            <option value="Failed">Failed</option>
+            <option value="Partial">Partial</option>
+          </select>
+        </div>
+        <div>
+          <label className="block font-semibold mb-2" style={{ color: 'hsl(45, 100%, 20%)' }}>Status</label>
+          <select name="status" value={formData.status} onChange={handleChange} className="w-full p-2 rounded-lg focus:outline-none focus:ring-2" style={{ border: '1px solid hsl(45, 100%, 85%)', focusRingColor: 'hsl(45, 43%, 58%)' }}>
+            <option value="Booked">Booked</option>
+            <option value="Checked In">Checked In</option>
+            <option value="Checked Out">Checked Out</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div>
+          <label className="block font-semibold mb-2" style={{ color: 'hsl(45, 100%, 20%)' }}>ID Proof Type</label>
+          <select name="idProofType" value={formData.idProofType} onChange={handleChange} className="w-full p-2 rounded-lg focus:outline-none focus:ring-2" style={{ border: '1px solid hsl(45, 100%, 85%)', focusRingColor: 'hsl(45, 43%, 58%)' }}>
+            <option value="">Select ID Proof Type</option>
+            <option value="Aadhaar">Aadhaar</option>
+            <option value="PAN">PAN</option>
+            <option value="Voter ID">Voter ID</option>
+            <option value="Passport">Passport</option>
+            <option value="Driving License">Driving License</option>
+          </select>
+        </div>
+        <div>
+          <label className="block font-semibold mb-2" style={{ color: 'hsl(45, 100%, 20%)' }}>ID Proof Number</label>
+          <input type="text" name="idProofNumber" value={formData.idProofNumber} onChange={handleChange} className="w-full p-2 rounded-lg focus:outline-none focus:ring-2" style={{ border: '1px solid hsl(45, 100%, 85%)', focusRingColor: 'hsl(45, 43%, 58%)' }} />
         </div>
         <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            name="vip"
-            checked={formData.vip}
-            onChange={handleChange}
-            className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-          />
-          <label className="text-gray-700 font-semibold">VIP</label>
+          <input type="checkbox" name="vip" checked={formData.vip} onChange={handleChange} className="h-5 w-5 rounded" style={{ accentColor: 'hsl(45, 43%, 58%)' }} />
+          <label className="font-semibold" style={{ color: 'hsl(45, 100%, 20%)' }}>VIP</label>
         </div>
-        <div className="md:col-span-2 flex justify-end gap-4 mt-4">
+        <div className="lg:col-span-3">
+          <label className="block font-semibold mb-2" style={{ color: 'hsl(45, 100%, 20%)' }}>Remarks</label>
+          <textarea name="remark" value={formData.remark} onChange={handleChange} rows="3" className="w-full p-2 rounded-lg focus:outline-none focus:ring-2" style={{ border: '1px solid hsl(45, 100%, 85%)', focusRingColor: 'hsl(45, 43%, 58%)' }} />
+        </div>
+        <div className="lg:col-span-3 flex justify-end gap-4 mt-4">
           <button
             type="button"
             onClick={onCancel}
-            className="bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-lg hover:bg-gray-300 transition duration-300"
+            className="font-bold py-3 px-6 rounded-lg transition duration-300"
+            style={{ 
+              backgroundColor: 'hsl(45, 100%, 85%)', 
+              color: 'hsl(45, 100%, 20%)' 
+            }}
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 transition duration-300"
+            className="font-bold py-3 px-6 rounded-lg shadow-md transition duration-300"
+            style={{ 
+              backgroundColor: 'hsl(45, 43%, 58%)', 
+              color: 'white' 
+            }}
           >
             Save Changes
           </button>
@@ -134,60 +204,90 @@ const BookingPage = () => {
   const navigate = useNavigate();
   const { axios } = useAppContext();
   const [bookings, setBookings] = useState([]);
+  const [rooms, setRooms] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [editId, setEditId] = useState(null);
   const [showInvoice, setShowInvoice] = useState(false);
   const [currentInvoice, setCurrentInvoice] = useState(null);
+  const [grcSearchResult, setGrcSearchResult] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   const getAuthToken = () => localStorage.getItem("token");
 
-  const fetchBookings = async () => {
+  const fetchData = async () => {
     setLoading(true);
     setError(null);
 
     try {
       const token = getAuthToken();
-      const res = await axios.get("/api/bookings/all", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = res.data;
+      const [bookingsRes, roomsRes, categoriesRes] = await Promise.all([
+        axios.get("/api/bookings/all", { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get("/api/rooms/all", { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get("/api/categories/all", { headers: { Authorization: `Bearer ${token}` } })
+      ]);
       
-      console.log('Raw booking data:', data);
-      const bookingsArray = Array.isArray(data) ? data : data.bookings || [];
+      const bookingsData = bookingsRes.data;
+      const roomsData = Array.isArray(roomsRes.data) ? roomsRes.data : [];
+      const categoriesData = Array.isArray(categoriesRes.data) ? categoriesRes.data : [];
+      
+      setRooms(roomsData);
+      setCategories(categoriesData);
+      
+      const bookingsArray = Array.isArray(bookingsData) ? bookingsData : bookingsData.bookings || [];
 
-      const mappedBookings = bookingsArray.map((b) => ({
-        id: b._id || "N/A",
-        grcNo: b.grcNo || "N/A",
-        name: b.name || "N/A",
-        mobileNo: b.mobileNo || "N/A",
-        roomNumber: b.roomNumber || "N/A",
-        checkIn: b.checkInDate
-          ? new Date(b.checkInDate).toLocaleDateString()
-          : "N/A",
-        checkOut: b.checkOutDate
-          ? new Date(b.checkOutDate).toLocaleDateString()
-          : "N/A",
-        status: b.status || "N/A",
-        paymentStatus: b.paymentStatus || "Pending",
-        vip: b.vip || false,
-        _raw: b,
-      }));
+      const mappedBookings = bookingsArray.map((b) => {
+        const room = roomsData.find(r => r.room_number == b.roomNumber || r.roomNumber == b.roomNumber);
+        const category = room ? categoriesData.find(c => c._id == room.categoryId || c.id == room.categoryId) : null;
+        
+        return {
+          id: b._id || "N/A",
+          grcNo: b.grcNo || "N/A",
+          name: b.name || "N/A",
+          mobileNo: b.mobileNo || "N/A",
+          roomNumber: b.roomNumber || "N/A",
+          category: category?.name || category?.categoryName || "N/A",
+          checkIn: b.checkInDate
+            ? new Date(b.checkInDate).toLocaleDateString()
+            : "N/A",
+          checkOut: b.checkOutDate
+            ? new Date(b.checkOutDate).toLocaleDateString()
+            : "N/A",
+          status: b.status || "N/A",
+          paymentStatus: b.paymentStatus || "Pending",
+          vip: b.vip || false,
+          _raw: b,
+        };
+      });
 
-      console.log('Mapped bookings:', mappedBookings);
       setBookings(mappedBookings);
     } catch (err) {
       setError(err.message);
-      console.error("Error fetching bookings:", err);
+      console.error("Error fetching data:", err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchBookings();
+    fetchData();
   }, []);
+
+  const fetchBookingByGrc = async (grcNo) => {
+    try {
+      const token = getAuthToken();
+      const res = await axios.get(`/api/bookings/fetch-by-grc/${grcNo}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setGrcSearchResult(res.data);
+    } catch (err) {
+      setError(`No booking found for GRC: ${grcNo}`);
+      setGrcSearchResult(null);
+    }
+  };
 
   const filteredBookings = bookings.filter(
     (b) =>
@@ -196,37 +296,43 @@ const BookingPage = () => {
       b.grcNo.toLowerCase().includes(search.toLowerCase())
   );
 
+  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedBookings = filteredBookings.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
   const toggleBookingStatus = async (bookingId) => {
     try {
       const booking = bookings.find((b) => b.id === bookingId);
       if (!booking) throw new Error("Booking not found");
 
-      const newStatus = booking.status === "Booked" ? "Cancelled" : "Booked";
-
-      const updateData = {
-        status: newStatus,
-      };
-
       const token = getAuthToken();
-      const res = await axios.put(`/api/bookings/update/${bookingId}`, updateData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      
+      if (booking.status === "Booked") {
+        // Unbook the room (set to Cancelled)
+        await axios.put(`/api/bookings/unbook/${bookingId}`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        // Update room status to Available
+        await updateRoomStatus(booking.roomNumber, "Available");
+      } else if (booking.status === "Cancelled" || booking.status !== "Booked") {
+        // Book the room (update status to Booked)
+        await axios.put(`/api/bookings/update/${bookingId}`, {
+          status: "Booked"
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        // Update room status to Booked
+        await updateRoomStatus(booking.roomNumber, "Booked");
+      }
 
-      setBookings((prev) =>
-        prev.map((b) =>
-          b.id === bookingId
-            ? {
-                ...b,
-                status: newStatus,
-                _raw: {
-                  ...b._raw,
-                  status: newStatus,
-                },
-              }
-            : b
-        )
-      );
-
+      // Refresh data to get updated status
+      fetchData();
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -236,12 +342,13 @@ const BookingPage = () => {
 
   const updateRoomStatus = async (roomNumber, status) => {
     try {
-      const roomRes = await axios.get("/api/rooms/all");
-      const rooms = roomRes.data;
-      const room = rooms.find(r => r.room_number === roomNumber);
+      const token = getAuthToken();
+      const room = rooms.find(r => r.room_number == roomNumber || r.roomNumber == roomNumber);
       
       if (room) {
-        await axios.put(`/api/rooms/update/${room._id}`, { status });
+        await axios.put(`/api/rooms/update/${room._id || room.id}`, { status }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
       }
     } catch (err) {
       console.error("Error updating room status:", err);
@@ -283,42 +390,36 @@ const BookingPage = () => {
   };
 
   const generateInvoice = async (bookingId) => {
+    const booking = bookings.find((b) => b.id === bookingId);
+    if (!booking) {
+      setError("Booking not found");
+      return;
+    }
+    
     try {
-      const booking = bookings.find((b) => b.id === bookingId);
-      if (!booking) throw new Error("Booking not found");
-
-      const invoiceData = {
-        serviceType: "Booking",
-        serviceRefId: bookingId,
-        bookingId: bookingId,
-        invoiceNumber: `INV-${Date.now()}`,
-        items: [
-          {
-            description: `Room ${booking.roomNumber} - ${booking.name}`,
-            amount: 1000
-          }
-        ],
-        subTotal: 1000,
-        tax: 100,
-        discount: 0,
-        totalAmount: 1100,
-        balanceAmount: 0,
-        paymentMode: "Cash",
-        status: "Paid"
-      };
-
       const token = getAuthToken();
-      const res = await axios.post("/api/invoices/create", invoiceData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
       
-      if (res.data) {
-        setCurrentInvoice({ ...invoiceData, ...res.data, booking });
-        setShowInvoice(true);
-      }
-    } catch (err) {
-      console.error("Error generating invoice:", err);
-      setError(err.response?.data?.message || err.message || "Failed to generate invoice");
+      // First create checkout for this booking
+      const checkoutRes = await axios.post('/api/checkout/create', 
+        { bookingId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      const checkoutId = checkoutRes.data.checkout._id;
+      
+      // Navigate to invoice page with checkout ID
+      navigate('/invoice', { 
+        state: { 
+          bookingData: booking._raw,
+          checkoutId: checkoutId,
+          guestName: booking.name,
+          roomNumber: booking.roomNumber,
+          grcNo: booking.grcNo
+        } 
+      });
+    } catch (error) {
+      console.error('Error creating checkout:', error);
+      setError('Failed to generate invoice');
     }
   };
 
@@ -331,10 +432,11 @@ const BookingPage = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setBookings(prev => prev.filter(b => b.id !== bookingId));
+      showToast.success('Booking deleted successfully');
       setError(null);
     } catch (err) {
       console.error("Error deleting booking:", err);
-      setError(err.response?.data?.message || err.message || "Failed to delete booking");
+      showToast.error(err.response?.data?.message || err.message || "Failed to delete booking");
     }
   };
 
@@ -381,121 +483,200 @@ const BookingPage = () => {
     }
   };
 
+  const updateBookingStatus = async (bookingId, newStatus) => {
+    try {
+      const res = await fetch(
+        `https://backend-hazel-xi.vercel.app/api/bookings/update/${bookingId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
+      
+      const responseData = await res.json();
+
+      if (!res.ok) throw new Error(responseData.message || "Update failed");
+
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === bookingId ? { ...b, status: newStatus } : b
+        )
+      );
+      setError(null);
+    } catch (error) {
+      setError(`Error updating status: ${error.message}`);
+      console.error("Status update error:", error);
+    }
+  };
+
   return (
-    <div className="p-4 sm:p-6 bg-background min-h-screen font-sans">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">Bookings</h2>
-        <div className="flex gap-2">
-          <button
-            onClick={() => navigate("/bookingform")}
-            className="bg-[color:var(--color-primary)] text-[color:var(--color-text)] font-semibold py-2 px-4 sm:px-6 rounded-lg shadow-md hover:bg-[color:var(--color-primary)] transition duration-300 text-sm sm:text-base"
-          >
-            Add Booking
-          </button>
-        </div>
+    <div className="p-6 overflow-auto h-full bg-background">
+      <div className="flex justify-between items-center mb-8 mt-6">
+        <h1 className="text-3xl font-extrabold text-[#1f2937]">Bookings</h1>
+        <button
+          onClick={() => navigate("/bookingform")}
+          className="font-semibold py-2 px-4 sm:px-6 rounded-lg shadow-md transition duration-300 text-sm sm:text-base"
+          style={{ backgroundColor: 'hsl(45, 43%, 58%)', color: 'white' }}
+        >
+          Add Booking
+        </button>
       </div>
 
-      <div className="mb-6 flex items-center relative">
-        <input
-          type="text"
-          placeholder="Search by name, room number, or GRC No..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[color:var(--color-primary)] w-full sm:max-w-md shadow-sm transition duration-300"
-        />
-        <Search className="absolute left-3 text-gray-400" size={20} />
+      <div className="mb-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            placeholder="Search by name, room number, or GRC No..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 w-full shadow-sm transition duration-300 text-sm sm:text-base"
+            style={{ 
+              backgroundColor: 'white', 
+              border: '1px solid hsl(45, 100%, 85%)',
+              focusRingColor: 'hsl(45, 43%, 58%)'
+            }}
+          />
+          <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+        </div>
+        <button
+          onClick={() => fetchBookingByGrc(search)}
+          className="font-semibold px-4 py-3 rounded-lg shadow-md transition duration-300 text-sm sm:text-base whitespace-nowrap"
+          style={{ backgroundColor: 'hsl(45, 43%, 58%)', color: 'white' }}
+        >
+          Search GRC
+        </button>
       </div>
 
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-4 flex items-center justify-between shadow-sm">
+        <div className="px-4 py-3 rounded-lg relative mb-4 flex items-center justify-between shadow-sm" style={{ backgroundColor: 'hsl(0, 100%, 95%)', border: '1px solid hsl(0, 100%, 85%)', color: 'hsl(0, 100%, 30%)' }}>
           <span>{error}</span>
           <button
             onClick={() => setError(null)}
-            className="text-red-700 hover:text-red-900 transition duration-300"
+            className="transition duration-300"
+            style={{ color: 'hsl(0, 100%, 30%)' }}
           >
             <X size={20} />
           </button>
         </div>
       )}
 
+      {grcSearchResult && (
+        <div className="px-4 py-3 rounded-lg relative mb-4" style={{ backgroundColor: 'hsl(120, 100%, 95%)', border: '1px solid hsl(120, 100%, 85%)', color: 'hsl(120, 100%, 30%)' }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-semibold">GRC Search Result:</p>
+              <p>Name: {grcSearchResult.name}</p>
+              <p>GRC: {grcSearchResult.grcNo}</p>
+              <p>Room: {grcSearchResult.roomNumber}</p>
+            </div>
+            <button
+              onClick={() => setGrcSearchResult(null)}
+              className="transition duration-300"
+              style={{ color: 'hsl(120, 100%, 30%)' }}
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {loading ? (
-        <div className="text-center py-10 text-gray-600">
+        <div className="text-center py-10" style={{ color: 'hsl(45, 100%, 20%)' }}>
           Loading bookings...
         </div>
       ) : (
         <>
           {/* Desktop Table View */}
-          <div className="hidden lg:block bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+          <div className="hidden md:block rounded-xl shadow-lg overflow-hidden" style={{ backgroundColor: 'white', border: '1px solid hsl(45, 100%, 85%)' }}>
           <div className="overflow-x-auto">
             <table className="min-w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="border-b" style={{ backgroundColor: 'hsl(45, 100%, 90%)', borderColor: 'hsl(45, 100%, 85%)' }}>
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>
                     GRC No
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>
                     Name
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>
                     Room
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell" style={{ color: 'hsl(45, 100%, 20%)' }}>
+                    Category
+                  </th>
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell" style={{ color: 'hsl(45, 100%, 20%)' }}>
                     Check In
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell" style={{ color: 'hsl(45, 100%, 20%)' }}>
                     Check Out
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>
                     Status
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell" style={{ color: 'hsl(45, 100%, 20%)' }}>
                     Payment
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 sm:px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
-                {filteredBookings.map((booking) => (
+              <tbody className="divide-y" style={{ backgroundColor: 'white', borderColor: 'hsl(45, 100%, 90%)' }}>
+                {paginatedBookings.map((booking) => (
                   <tr
                     key={booking.id}
-                    className="hover:bg-gray-50 transition-colors duration-200"
+                    className="transition-colors duration-200"
                   >
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
+                    <td className="px-2 sm:px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'hsl(45, 100%, 20%)' }}>
                       {booking.grcNo}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
+                    <td className="px-2 sm:px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'hsl(45, 100%, 20%)' }}>
                       {booking.name}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
+                    <td className="px-2 sm:px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'hsl(45, 100%, 20%)' }}>
                       {booking.roomNumber}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
+                    <td className="px-2 sm:px-4 py-3 whitespace-nowrap text-sm hidden lg:table-cell" style={{ color: 'hsl(45, 100%, 20%)' }}>
+                      {booking.category}
+                    </td>
+                    <td className="px-2 sm:px-4 py-3 whitespace-nowrap text-sm hidden lg:table-cell" style={{ color: 'hsl(45, 100%, 20%)' }}>
                       {booking.checkIn}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
+                    <td className="px-2 sm:px-4 py-3 whitespace-nowrap text-sm hidden lg:table-cell" style={{ color: 'hsl(45, 100%, 20%)' }}>
                       {booking.checkOut}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      <select
+                        value={booking.status}
+                        onChange={(e) => updateBookingStatus(booking.id, e.target.value)}
+                        className={`px-2 py-1 rounded border text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                           booking.status === "Booked"
-                            ? "bg-green-100 text-green-800"
+                            ? "bg-green-100 text-green-800 border-green-300"
                             : booking.status === "Cancelled"
-                            ? "bg-red-100 text-red-800"
+                            ? "bg-red-100 text-red-800 border-red-300"
                             : booking.status === "Checked In"
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-yellow-100 text-yellow-800"
+                            ? "bg-blue-100 text-blue-800 border-blue-300"
+                            : "bg-yellow-100 text-yellow-800 border-yellow-300"
                         }`}
                       >
-                        {booking.status}
-                      </span>
+                        <option value="Booked">Booked</option>
+                        <option value="Checked In">Checked In</option>
+                        <option value="Checked Out">Checked Out</option>
+                        <option value="Cancelled">Cancelled</option>
+                      </select>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <select
-                        value={booking.paymentStatus}
-                        onChange={(e) => updatePaymentStatus(booking.id, e.target.value)}
+                        value={booking.status === "Checked Out" ? "Paid" : booking.paymentStatus}
+                        onChange={(e) => {
+                          updatePaymentStatus(booking.id, e.target.value);
+                          if (e.target.value === "Paid") {
+                            updateBookingStatus(booking.id, "Checked Out");
+                          }
+                        }}
                         className="px-2 py-1 rounded border border-gray-300 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 w-full"
                       >
                         <option value="Pending">Pending</option>
@@ -509,42 +690,30 @@ const BookingPage = () => {
                         <button
                           onClick={() => setEditId(booking.id)}
                           title="Edit Booking"
-                          className="p-1.5 rounded-full text-blue-600 hover:bg-blue-50 transition duration-300"
+                          className="p-1.5 rounded-full text-blue-600 transition duration-300"
                         >
                           <Edit size={16} />
                         </button>
-                        <button
-                          onClick={() => toggleBookingStatus(booking.id)}
-                          title={
-                            booking.status === "Booked"
-                              ? "Cancel Booking"
-                              : "Re-Book"
-                          }
-                          className={`p-1.5 rounded-full transition duration-300 ${
-                            booking.status === "Booked"
-                              ? "text-red-600 hover:bg-red-50"
-                              : "text-green-600 hover:bg-green-50"
-                          }`}
-                        >
-                          {booking.status === "Booked" ? (
-                            <XCircle size={16} />
-                          ) : (
-                            <CheckCircle size={16} />
-                          )}
-                        </button>
-                        {booking.paymentStatus === "Paid" && (
+
+                        {booking.status === "Checked Out" && (
                           <button
                             onClick={() => generateInvoice(booking.id)}
                             title="Generate Bill"
-                            className="p-1.5 rounded-full text-green-600 hover:bg-green-50 transition duration-300"
+                            className="p-1.5 rounded-full text-green-600 transition duration-300"
                           >
                             <FileText size={16} />
                           </button>
                         )}
                         <button
+                          onClick={() => navigate('/checkout')}
+                          className="bg-purple-600 text-white px-2 py-1 rounded text-xs transition duration-300"
+                        >
+                          Checkout
+                        </button>
+                        <button
                           onClick={() => deleteBooking(booking.id)}
                           title="Delete Booking"
-                          className="p-1.5 rounded-full text-red-600 hover:bg-red-50 transition duration-300"
+                          className="p-1.5 rounded-full text-red-600 transition duration-300"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -558,16 +727,17 @@ const BookingPage = () => {
         </div>
 
         {/* Mobile Card View */}
-        <div className="lg:hidden space-y-4">
-          {filteredBookings.map((booking) => (
+        <div className="md:hidden space-y-4">
+          {paginatedBookings.map((booking) => (
             <div
               key={booking.id}
-              className="bg-white border border-gray-200 rounded-lg shadow-md p-4"
+              className="rounded-lg shadow-md p-4"
+              style={{ backgroundColor: 'white', border: '1px solid hsl(45, 100%, 85%)' }}
             >
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <h3 className="font-semibold text-lg text-gray-800">{booking.name}</h3>
-                  <p className="text-sm text-gray-600">GRC: {booking.grcNo}</p>
+                  <h3 className="font-semibold text-lg" style={{ color: 'hsl(45, 100%, 20%)' }}>{booking.name}</h3>
+                  <p className="text-sm" style={{ color: 'hsl(45, 100%, 40%)' }}>GRC: {booking.grcNo}</p>
                 </div>
                 <span
                   className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -584,23 +754,27 @@ const BookingPage = () => {
                 </span>
               </div>
               
-              <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 text-sm">
                 <div>
-                  <span className="text-gray-500">Room:</span>
-                  <span className="ml-1 font-medium">{booking.roomNumber}</span>
+                  <span style={{ color: 'hsl(45, 100%, 40%)' }}>Room:</span>
+                  <span className="ml-1 font-medium" style={{ color: 'hsl(45, 100%, 20%)' }}>{booking.roomNumber}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Check In:</span>
-                  <span className="ml-1 font-medium">{booking.checkIn}</span>
+                  <span style={{ color: 'hsl(45, 100%, 40%)' }}>Category:</span>
+                  <span className="ml-1 font-medium" style={{ color: 'hsl(45, 100%, 20%)' }}>{booking.category}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Check Out:</span>
-                  <span className="ml-1 font-medium">{booking.checkOut}</span>
+                  <span style={{ color: 'hsl(45, 100%, 40%)' }}>Check In:</span>
+                  <span className="ml-1 font-medium" style={{ color: 'hsl(45, 100%, 20%)' }}>{booking.checkIn}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Payment:</span>
+                  <span style={{ color: 'hsl(45, 100%, 40%)' }}>Check Out:</span>
+                  <span className="ml-1 font-medium" style={{ color: 'hsl(45, 100%, 20%)' }}>{booking.checkOut}</span>
+                </div>
+                <div>
+                  <span style={{ color: 'hsl(45, 100%, 40%)' }}>Payment:</span>
                   <select
-                    value={booking.paymentStatus}
+                    value={booking.status === "Checked Out" ? "Paid" : booking.paymentStatus}
                     onChange={(e) => updatePaymentStatus(booking.id, e.target.value)}
                     className="ml-1 px-2 py-1 rounded border border-gray-300 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                   >
@@ -612,41 +786,37 @@ const BookingPage = () => {
                 </div>
               </div>
               
-              <div className="flex justify-end space-x-2 pt-3 border-t border-gray-100">
+              <div className="flex flex-col sm:flex-row justify-end gap-2 pt-3 border-t" style={{ borderColor: 'hsl(45, 100%, 90%)' }}>
                 <button
                   onClick={() => setEditId(booking.id)}
-                  className="p-2 rounded-full text-blue-600 hover:bg-blue-50 transition duration-300"
+                  className="p-2 rounded-full transition duration-300"
+                  style={{ color: 'hsl(45, 43%, 58%)' }}
                   title="Edit"
                 >
                   <Edit size={18} />
                 </button>
-                <button
-                  onClick={() => toggleBookingStatus(booking.id)}
-                  className={`p-2 rounded-full transition duration-300 ${
-                    booking.status === "Booked"
-                      ? "text-red-600 hover:bg-red-50"
-                      : "text-green-600 hover:bg-green-50"
-                  }`}
-                  title={booking.status === "Booked" ? "Cancel" : "Re-Book"}
-                >
-                  {booking.status === "Booked" ? (
-                    <XCircle size={18} />
-                  ) : (
-                    <CheckCircle size={18} />
-                  )}
-                </button>
-                {booking.paymentStatus === "Paid" && (
+
+                {booking.status === "Checked Out" && (
                   <button
                     onClick={() => generateInvoice(booking.id)}
-                    className="p-2 rounded-full text-green-600 hover:bg-green-50 transition duration-300"
+                    className="p-2 rounded-full transition duration-300"
+                    style={{ color: 'hsl(120, 60%, 40%)' }}
                     title="Invoice"
                   >
                     <FileText size={18} />
                   </button>
                 )}
                 <button
+                  onClick={() => navigate('/checkout')}
+                  className="px-3 py-1 rounded text-sm transition duration-300"
+                  style={{ backgroundColor: 'hsl(45, 71%, 69%)', color: 'hsl(45, 100%, 20%)' }}
+                >
+                  Checkout
+                </button>
+                <button
                   onClick={() => deleteBooking(booking.id)}
-                  className="p-2 rounded-full text-red-600 hover:bg-red-50 transition duration-300"
+                  className="p-2 rounded-full transition duration-300"
+                  style={{ color: 'hsl(0, 60%, 50%)' }}
                   title="Delete"
                 >
                   <Trash2 size={18} />
@@ -655,6 +825,13 @@ const BookingPage = () => {
             </div>
           ))}
           </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            itemsPerPage={itemsPerPage}
+            totalItems={filteredBookings.length}
+          />
         </>
       )}
 
@@ -672,12 +849,13 @@ const BookingPage = () => {
 
       {showInvoice && currentInvoice && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-center items-center p-4">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}>
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-2xl font-bold">Invoice</h3>
+              <h3 className="text-2xl font-bold" style={{ color: 'hsl(45, 100%, 20%)' }}>Invoice</h3>
               <button
                 onClick={() => setShowInvoice(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="transition duration-300"
+                style={{ color: 'hsl(45, 100%, 40%)' }}
               >
                 <X size={24} />
               </button>
@@ -725,13 +903,15 @@ const BookingPage = () => {
             <div className="flex justify-end gap-4 mt-6">
               <button
                 onClick={() => window.print()}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                className="px-4 py-2 rounded transition duration-300"
+                style={{ backgroundColor: 'hsl(45, 43%, 58%)', color: 'white' }}
               >
                 Print
               </button>
               <button
                 onClick={() => setShowInvoice(false)}
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+                className="px-4 py-2 rounded transition duration-300"
+                style={{ backgroundColor: 'hsl(45, 100%, 85%)', color: 'hsl(45, 100%, 20%)' }}
               >
                 Close
               </button>

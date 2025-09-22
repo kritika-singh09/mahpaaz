@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, Package, Hash, Tag, Scale, Clock, X, Save } from 'lucide-react';
+import { showToast } from '../../utils/toaster';
 
 // Main App Component for Inventory Tracking
 const InventoryForm= () => {
@@ -73,6 +74,7 @@ const InventoryForm= () => {
     const confirmDelete = window.confirm("Are you sure you want to delete this inventory item?");
     if (confirmDelete) {
       setInventory(inventory.filter(item => item.id !== id)); // Remove the item from the list
+      showToast.success('🗑️ Inventory item deleted successfully!');
     }
   };
 
@@ -82,10 +84,12 @@ const InventoryForm= () => {
     if (editingItem) {
       // If editing an existing item, update it
       setInventory(inventory.map(item => (item.id === newItem.id ? { ...newItem, lastUpdated: now } : item)));
+      showToast.success('✅ Inventory item updated successfully!');
     } else {
       // If adding a new item, generate a new ID and add it
       const newId = 'INV' + (inventory.length + 1).toString().padStart(3, '0');
       setInventory([...inventory, { ...newItem, id: newId, lastUpdated: now }]);
+      showToast.success('🎉 New inventory item added successfully!');
     }
     setShowInventoryForm(false); // Close the form
     setEditingItem(null); // Clear editing state

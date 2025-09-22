@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '../../context/AppContext';
+import { showToast } from '../../utils/toaster';
+import Pagination from '../common/Pagination';
 
 // Confirmation Modal Component
 function ConfirmationModal({ message, onConfirm, onCancel }) {
@@ -251,14 +253,8 @@ function App() {
   const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState(null);
 
-  // Confirmation Modal State
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [confirmAction, setConfirmAction] = useState(() => () => {});
-  const [confirmMessage, setConfirmMessage] = useState('');
-
-  // Success Modal State
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   // Helper function to get auth token from local storage
   const getAuthToken = () => {
@@ -347,8 +343,7 @@ function App() {
         });
       }
 
-      setSuccessMessage(`Order ${id ? 'updated' : 'placed'} successfully!`);
-      setShowSuccessModal(true);
+      showToast.success(`Order ${id ? 'updated' : 'placed'} successfully!`);
       resetOrderForm();
       fetchOrders();
     } catch (err) {
@@ -366,35 +361,30 @@ function App() {
     setIsOrderFormOpen(true);
   };
 
-  const handleOrderDelete = (id) => {
-    setConfirmMessage("Are you sure you want to delete this order?");
-    setConfirmAction(() => async () => {
-      setLoading(true);
-      setError(null);
-      const token = getAuthToken();
+  const handleOrderDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this order?")) return;
+    
+    setLoading(true);
+    setError(null);
+    const token = getAuthToken();
 
-      try {
-        if (!token) {
-          throw new Error("Authentication token not found.");
-        }
-
-        await axios.delete(`/api/pantry/orders/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setSuccessMessage('Order deleted successfully!');
-        setShowSuccessModal(true);
-        fetchOrders();
-      } catch (err) {
-        console.error("Error deleting order:", err);
-        const errorMessage = err.response?.data?.message || err.message;
-        setError(`Failed to delete order: ${errorMessage}`);
-      } finally {
-        setLoading(false);
-        setTimeout(() => setError(null), 3000);
-        setShowConfirmModal(false);
+    try {
+      if (!token) {
+        throw new Error("Authentication token not found.");
       }
-    });
-    setShowConfirmModal(true);
+
+      await axios.delete(`/api/pantry/orders/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      showToast.success('Order deleted successfully!');
+      fetchOrders();
+    } catch (err) {
+      console.error("Error deleting order:", err);
+      const errorMessage = err.response?.data?.message || err.message;
+      showToast.error(`Failed to delete order: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resetOrderForm = () => {
@@ -409,9 +399,17 @@ function App() {
     }
   };
 
+  const totalPages = Math.ceil(orders.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedOrders = orders.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
   return (
     <div className="min-h-screen p-4 sm:p-6 lg:p-8 font-sans" style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}>
-      <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6">
+      <div className="w-full bg-white rounded-xl shadow-lg p-6">
         <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">Pantry Orders Management</h1>
 
        
@@ -461,8 +459,8 @@ function App() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {orders.length > 0 ? (
-                    orders.map((order) => (
+                  {paginatedOrders.length > 0 ? (
+                    paginatedOrders.map((order) => (
                       <tr key={order._id} className="hover:bg-gray-50">
                         <td className="px-6 py-3 text-sm text-gray-500">{order.orderNumber || 'N/A'}</td>
                         <td className="px-6 py-3 text-sm font-medium text-gray-900">{order.items[0]?.name || 'Item Not Found'}</td>
@@ -503,6 +501,13 @@ function App() {
                 </tbody>
               </table>
             </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              itemsPerPage={itemsPerPage}
+              totalItems={orders.length}
+            />
           </div>
         )}
         
@@ -527,25 +532,7 @@ function App() {
           </div>
         )}
 
-        {/* Global Confirmation Modal */}
-        {showConfirmModal && (
-          <ConfirmationModal
-            message={confirmMessage}
-            onConfirm={() => {
-              confirmAction();
-              setShowConfirmModal(false);
-            }}
-            onCancel={() => setShowConfirmModal(false)}
-          />
-        )}
-        
-        {/* Global Success Modal */}
-        {showSuccessModal && (
-          <SuccessModal
-            message={successMessage}
-            onClose={() => setShowSuccessModal(false)}
-          />
-        )}
+
       </div>
     </div>
   );

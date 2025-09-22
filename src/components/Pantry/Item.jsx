@@ -167,7 +167,7 @@ function Item() {
 
   return (
     <div className="min-h-screen p-4 sm:p-6 lg:p-8 font-sans" style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}>
-      <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6">
+      <div className="w-full bg-white rounded-xl shadow-lg p-6">
         <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">Pantry Items Management</h1>
         
         {error && (
@@ -307,7 +307,7 @@ function Item() {
 
         {!loading && (
           <div className="mt-8">
-            <h2 className="text-2xl font-bold mb-4" style={{ color: 'hsl(45, 100%, 20%)' }}>All Items</h2>
+            <h2 className="text-2xl font-bold mb-4 black">All Items</h2>
             <div className="overflow-x-auto rounded-lg shadow-md border" style={{ borderColor: 'hsl(45, 100%, 85%)' }}>
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">

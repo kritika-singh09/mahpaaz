@@ -1,9 +1,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import { showToast } from '../../utils/toaster';
+import { useAppContext } from '../../context/AppContext';
 
 function App() {
-
+  const context = useAppContext();
+  const axios = context?.axios;
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -32,12 +34,21 @@ function App() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
+  const getAuthToken = () => localStorage.getItem("token");
+
   // Function to fetch all drivers from the backend
   const fetchDrivers = async () => {
+    if (!axios) {
+      setError('Axios instance not available');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('/api/driver'); // API for getting all drivers
+      const token = getAuthToken();
+      const response = await axios.get('/api/driver', {
+        headers: { Authorization: `Bearer ${token}` }
+      }); // API for getting all drivers
       let data = response.data;
 
       // Ensure data is an array, handling various API response structures
@@ -64,8 +75,10 @@ function App() {
 
   // Fetch drivers on component mount
   useEffect(() => {
-    fetchDrivers();
-  }, []);
+    if (axios) {
+      fetchDrivers();
+    }
+  }, [axios]);
 
   // Handle form input changes
   const handleChange = (e) => {
@@ -173,11 +186,16 @@ function App() {
       let response;
       let url;
 
+      const token = getAuthToken();
       if (editingDriver) {
         // Changed URL to use singular 'driver' for update
-        response = await axios.put(`/api/driver/${editingDriver._id}`, driverData);
+        response = await axios.put(`/api/driver/${editingDriver._id}`, driverData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
       } else {
-        response = await axios.post('/api/driver/add', driverData);
+        response = await axios.post('/api/driver/add', driverData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
       }
 
 
@@ -185,9 +203,11 @@ function App() {
       setMessage(`Driver ${editingDriver ? 'updated' : 'added'} successfully!`);
       resetForm();
       fetchDrivers(); // Re-fetch drivers to update the list
+      showToast.success(`✅ Driver ${editingDriver ? 'updated' : 'added'} successfully!`);
     } catch (err) {
       console.error("Error saving driver:", err);
       setError(`Failed to save driver: ${err.message}`);
+      showToast.error(`Failed to save driver: ${err.message}`);
     } finally {
       setLoading(false);
       setTimeout(() => setMessage(''), 3000); // Clear message after 3 seconds
@@ -221,14 +241,19 @@ function App() {
       setMessage('');
       setError(null);
       try {
+        const token = getAuthToken();
         // Updated: The delete API now uses /api/driver/{id} (singular)
-        await axios.delete(`/api/driver/${id}`);
+        await axios.delete(`/api/driver/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         setMessage('Driver deleted successfully!');
 
         fetchDrivers(); // Re-fetch drivers to update the list
+        showToast.success('🗑️ Driver deleted successfully!');
       } catch (err) {
         console.error("Error deleting driver:", err);
         setError(`Failed to delete driver: ${err.message}`);
+        showToast.error(`Failed to delete driver: ${err.message}`);
       } finally {
         setLoading(false);
         setTimeout(() => setMessage(''), 3000);
@@ -268,6 +293,75 @@ function App() {
     }
   };
 
+  // Get dynamic label, placeholder, and validation rules based on ID proof type
+  const getIdProofDetails = (type) => {
+    switch (type) {
+      case 'AADHAAR':
+        return { 
+          label: 'Aadhaar Number', 
+          placeholder: 'Enter 12-digit Aadhaar number',
+          maxLength: 12,
+          minLength: 12,
+          pattern: '[0-9]{12}',
+          inputMode: 'numeric'
+        };
+      case 'DL':
+        return { 
+          label: 'Driving License Number', 
+          placeholder: 'Enter driving license number',
+          maxLength: 20,
+          minLength: 10,
+          pattern: '[A-Z0-9]+',
+          inputMode: 'text'
+        };
+      case 'VOTER_ID':
+        return { 
+          label: 'Voter ID Number', 
+          placeholder: 'Enter voter ID number',
+          maxLength: 10,
+          minLength: 10,
+          pattern: '[A-Z]{3}[0-9]{7}',
+          inputMode: 'text'
+        };
+      case 'PASSPORT':
+        return { 
+          label: 'Passport Number', 
+          placeholder: 'Enter passport number',
+          maxLength: 8,
+          minLength: 8,
+          pattern: '[A-Z][0-9]{7}',
+          inputMode: 'text'
+        };
+      case 'PAN':
+        return { 
+          label: 'PAN Number', 
+          placeholder: 'Enter PAN number',
+          maxLength: 10,
+          minLength: 10,
+          pattern: '[A-Z]{5}[0-9]{4}[A-Z]{1}',
+          inputMode: 'text'
+        };
+      case 'OTHER':
+        return { 
+          label: 'ID Proof Number', 
+          placeholder: 'Enter ID proof number',
+          maxLength: 50,
+          minLength: 1,
+          pattern: null,
+          inputMode: 'text'
+        };
+      default:
+        return { 
+          label: 'ID Proof Number', 
+          placeholder: 'Enter ID proof number',
+          maxLength: 50,
+          minLength: 1,
+          pattern: null,
+          inputMode: 'text'
+        };
+    }
+  };
+
   // Filtered drivers based on search query and status (client-side filtering)
   const filteredDrivers = drivers.filter(driver => {
     const matchesSearch = searchQuery === '' ||
@@ -279,6 +373,17 @@ function App() {
 
     return matchesSearch && matchesStatus;
   });
+
+  if (!axios) {
+    return (
+      <div className="min-h-screen p-4 sm:p-6 lg:p-8 font-sans flex items-center justify-center" style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-700">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-4 sm:p-6 lg:p-8 font-sans" style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}>
@@ -537,15 +642,30 @@ function App() {
 
                 {/* ID Proof Number */}
                 <div>
-                  <label htmlFor="idProofNumber" className="block text-sm font-medium text-gray-700 mb-1">ID Proof Number</label>
+                  <label htmlFor="idProofNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                    {getIdProofDetails(formData.idProofType).label}
+                  </label>
                   <input
                     type="text"
                     id="idProofNumber"
                     name="idProofNumber"
                     value={formData.idProofNumber}
                     onChange={handleChange}
+                    placeholder={getIdProofDetails(formData.idProofType).placeholder}
+                    maxLength={getIdProofDetails(formData.idProofType).maxLength}
+                    minLength={getIdProofDetails(formData.idProofType).minLength}
+                    pattern={getIdProofDetails(formData.idProofType).pattern}
+                    inputMode={getIdProofDetails(formData.idProofType).inputMode}
                     className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    title={`Please enter a valid ${getIdProofDetails(formData.idProofType).label.toLowerCase()}`}
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.idProofType === 'AADHAAR' && 'Must be exactly 12 digits'}
+                    {formData.idProofType === 'PAN' && 'Format: ABCDE1234F (5 letters + 4 digits + 1 letter)'}
+                    {formData.idProofType === 'PASSPORT' && 'Format: A1234567 (1 letter + 7 digits)'}
+                    {formData.idProofType === 'VOTER_ID' && 'Format: ABC1234567 (3 letters + 7 digits)'}
+                    {formData.idProofType === 'DL' && 'Enter valid driving license number'}
+                  </p>
                 </div>
 
                 {/* Driver Photo URL - Replaced with Image Upload/Camera */}

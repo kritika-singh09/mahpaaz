@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useAppContext } from '../context/AppContext';
+import axios from 'axios';
+import { showToast } from '../utils/toaster';
+import Pagination from './common/Pagination';
+
+const backendAxios = axios.create({
+  baseURL: import.meta.env.VITE_BACKEND_URL,
+  withCredentials: true
+});
 
 // Confirmation Modal Component
 function ConfirmationModal({ message, onConfirm, onCancel }) {
@@ -48,17 +55,13 @@ function SuccessModal({ message, onClose }) {
 }
 
 function Customer() {
-  const { axios } = useAppContext();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [confirmAction, setConfirmAction] = useState(() => () => {});
-  const [confirmMessage, setConfirmMessage] = useState('');
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -81,7 +84,7 @@ function Customer() {
     try {
       const token = getAuthToken();
       // Use bookings API to get customer data
-      const { data } = await axios.get('/api/bookings/all', {
+      const { data } = await backendAxios.get('/api/bookings/all', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const bookings = Array.isArray(data) ? data : data.bookings || [];
@@ -147,16 +150,15 @@ function Customer() {
       };
       
       if (editingCustomer) {
-        await axios.put(`/api/bookings/update/${editingCustomer._id}`, bookingData, {
+        await backendAxios.put(`/api/bookings/update/${editingCustomer._id}`, bookingData, {
           headers: { Authorization: `Bearer ${token}` }
         });
       } else {
-        await axios.post('/api/bookings/create', bookingData, {
+        await backendAxios.post('/api/bookings/create', bookingData, {
           headers: { Authorization: `Bearer ${token}` }
         });
       }
-      setSuccessMessage(`Customer ${editingCustomer ? 'updated' : 'added'} successfully!`);
-      setShowSuccessModal(true);
+      showToast.success(`Customer ${editingCustomer ? 'updated' : 'added'} successfully!`);
       resetForm();
       fetchCustomers();
     } catch (err) {
@@ -166,24 +168,19 @@ function Customer() {
     }
   };
 
-  const handleDelete = (id) => {
-    setConfirmMessage("Are you sure you want to delete this customer?");
-    setConfirmAction(() => async () => {
-      try {
-        const token = getAuthToken();
-        await axios.delete(`/api/bookings/delete/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setSuccessMessage('Customer deleted successfully!');
-        setShowSuccessModal(true);
-        fetchCustomers();
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setShowConfirmModal(false);
-      }
-    });
-    setShowConfirmModal(true);
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this customer?")) return;
+    
+    try {
+      const token = getAuthToken();
+      await backendAxios.delete(`/api/bookings/delete/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      showToast.success('Customer deleted successfully!');
+      fetchCustomers();
+    } catch (err) {
+      showToast.error(err.message);
+    }
   };
 
   const handleEdit = (customer) => {
@@ -224,6 +221,14 @@ function Customer() {
     setShowForm(false);
   };
 
+  const totalPages = Math.ceil(customers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedCustomers = customers.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -233,9 +238,9 @@ function Customer() {
   };
 
   return (
-    <div className="min-h-screen p-4 sm:p-6 lg:p-8 font-sans" style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}>
-      <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6">
-        <h1 className="text-3xl font-bold text-center mb-6" style={{ color: 'hsl(45, 100%, 20%)' }}>Customer Management</h1>
+    <div className="min-h-screen p-4 sm:p-6 lg:p-8 font-sans bg-background">
+      <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6 border border-border">
+        <h1 className="text-3xl font-bold text-center mb-6 text-text">Customer Management</h1>
         
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
@@ -246,8 +251,7 @@ function Customer() {
         <div className="flex justify-end mb-6">
           <button 
             onClick={() => setShowForm(true)}
-            className="font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
-            style={{ backgroundColor: 'hsl(45, 43%, 58%)', color: 'hsl(45, 100%, 20%)' }}
+            className="font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 bg-primary text-text hover:bg-hover"
           >
             Add New Customer
           </button>
@@ -425,8 +429,8 @@ function Customer() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {customers.length > 0 ? (
-                    customers.map((customer) => (
+                  {paginatedCustomers.length > 0 ? (
+                    paginatedCustomers.map((customer) => (
                       <tr key={customer._id} className="hover:bg-gray-50">
                         <td className="px-6 py-3 text-sm font-medium text-gray-900">{customer.name}</td>
                         <td className="px-6 py-3 text-sm text-gray-500">{customer.email || 'N/A'}</td>
@@ -466,26 +470,17 @@ function Customer() {
                 </tbody>
               </table>
             </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              itemsPerPage={itemsPerPage}
+              totalItems={customers.length}
+            />
           </div>
         )}
 
-        {showConfirmModal && (
-          <ConfirmationModal
-            message={confirmMessage}
-            onConfirm={() => {
-              confirmAction();
-              setShowConfirmModal(false);
-            }}
-            onCancel={() => setShowConfirmModal(false)}
-          />
-        )}
-        
-        {showSuccessModal && (
-          <SuccessModal
-            message={successMessage}
-            onClose={() => setShowSuccessModal(false)}
-          />
-        )}
+
       </div>
     </div>
   );

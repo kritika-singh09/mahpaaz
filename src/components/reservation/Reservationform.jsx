@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../../context/AppContext";
+import { showToast } from "../../utils/toaster";
+import { validateEmail, validatePhone, validateRequired, validatePositiveNumber, validateDateRange, validateGST } from "../../utils/validation";
 import {
   FaUser,
   FaPhone,
@@ -78,7 +80,7 @@ const InputWithIcon = ({
       onChange={onChange}
       className={`pl-10 pr-4 py-2 w-full ${
         inputClassName ||
-        "bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        "bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
       } ${className}`}
       required={required}
       min={min}
@@ -108,9 +110,9 @@ const Button = ({
   const baseClasses =
     "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 h-9 px-4 py-2";
   const variants = {
-    default: "bg-white text-black border border-black shadow hover:bg-gray-100",
+    default: "bg-[hsl(45,43%,58%)] text-white border border-[hsl(45,43%,58%)] shadow hover:bg-[hsl(45,32%,46%)]",
     outline:
-      "border border-gray-200 bg-transparent hover:bg-gray-100 hover:text-gray-900",
+      "border border-[hsl(45,100%,85%)] bg-transparent hover:bg-[hsl(45,100%,95%)] hover:text-[hsl(45,100%,20%)]",
   };
   return (
     <button
@@ -137,7 +139,7 @@ const Input = ({
     placeholder={placeholder}
     value={value}
     onChange={onChange}
-    className={`flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+    className={`flex h-9 w-full rounded-md border border-gray-300 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50 min-w-0 ${className}`}
     {...props}
   />
 );
@@ -145,7 +147,7 @@ const Input = ({
 const Label = ({ children, htmlFor, className = "" }) => (
   <label
     htmlFor={htmlFor}
-    className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${className}`}
+    className={`block text-sm font-medium text-gray-700 ${className}`}
   >
     {children}
   </label>
@@ -163,7 +165,7 @@ const Select = ({
     value={value}
     onChange={onChange}
     name={name}
-    className={`flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 ${className}`}
+    className={`flex h-9 w-full items-center justify-between rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50 truncate ${className}`}
     {...props}
   >
     {children}
@@ -177,7 +179,7 @@ const Checkbox = ({ id, checked, onChange, className = "", name }) => (
     name={name}
     checked={checked}
     onChange={onChange}
-    className={`peer h-4 w-4 shrink-0 rounded-sm border border-black shadow focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+    className={`peer h-4 w-4 shrink-0 rounded-sm border border-[hsl(45,43%,58%)] shadow focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(45,43%,58%)] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
   />
 );
 
@@ -193,7 +195,7 @@ const CalendarIcon = () => (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
-    className="h-4 w-4 text-muted-foreground"
+    className="h-4 w-4 text-[hsl(45,100%,20%)]"
   >
     <path d="M8 2v4" />
     <path d="M16 2v4" />
@@ -244,7 +246,7 @@ const UserIcon = () => (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
-    className="h-4 w-4 text-muted-foreground"
+    className="h-4 w-4 text-[hsl(45,100%,20%)]"
   >
     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
     <circle cx="12" cy="7" r="4" />
@@ -261,7 +263,7 @@ const BedIcon = () => (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
-    className="h-4 w-4 text-muted-foreground"
+    className="h-4 w-4 text-[hsl(45,100%,20%)]"
   >
     <path d="M2 4v16" />
     <path d="M2 8h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4" />
@@ -280,7 +282,7 @@ const DollarSignIcon = () => (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
-    className="h-4 w-4 text-muted-foreground"
+    className="h-4 w-4 text-[hsl(45,100%,20%)]"
   >
     <line x1="12" x2="12" y1="2" y2="22" />
     <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
@@ -297,7 +299,7 @@ const CarIcon = () => (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
-    className="h-4 w-4 text-muted-foreground"
+    className="h-4 w-4 text-[hsl(45,100%,20%)]"
   >
     <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L14 6H4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2" />
     <circle cx="7" cy="17" r="2" />
@@ -316,7 +318,7 @@ const InfoIcon = () => (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
-    className="h-4 w-4 text-muted-foreground"
+    className="h-4 w-4 text-[hsl(45,100%,20%)]"
   >
     <circle cx="12" cy="12" r="10" />
     <path d="M12 16v-4" />
@@ -406,14 +408,14 @@ const DatePicker = ({ value, onChange, label }) => {
       <Button
         variant="outline"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full justify-start text-left font-normal"
+        className="w-full justify-start text-left font-normal border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 truncate min-w-0"
       >
-        <CalendarIcon className="mr-2" />
-        {formattedValue || `Select ${label}`}
+        <CalendarIcon className="mr-2 flex-shrink-0" />
+        <span className="truncate">{formattedValue || `Select ${label}`}</span>
       </Button>
 
       {isOpen && (
-        <div className="absolute z-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 w-full sm:w-80">
+        <div className="absolute z-10 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg p-4 w-full sm:w-80">
           <div className="flex justify-between items-center mb-4">
             <Button
               variant="outline"
@@ -868,8 +870,62 @@ const App = () => {
     fetchNewGRCNo(setFormData);
   };
 
+  const validateReservationForm = () => {
+    // Required fields
+    if (!validateRequired(formData.guestName)) {
+      showMessage('error', 'Guest name is required');
+      return false;
+    }
+    
+    if (!formData.checkInDate || !formData.checkOutDate) {
+      showMessage('error', 'Check-in and check-out dates are required');
+      return false;
+    }
+    
+    if (!validateDateRange(formData.checkInDate, formData.checkOutDate)) {
+      showMessage('error', 'Check-out date must be after check-in date');
+      return false;
+    }
+    
+    if (selectedRooms.length === 0) {
+      showMessage('error', 'Please select at least one room');
+      return false;
+    }
+    
+    // Email validation
+    if (formData.email && !validateEmail(formData.email)) {
+      showMessage('error', 'Please enter a valid email address');
+      return false;
+    }
+    
+    // Phone validation
+    if (formData.mobileNo && !validatePhone(formData.mobileNo)) {
+      showMessage('error', 'Please enter a valid 10-digit mobile number');
+      return false;
+    }
+    
+    // Rate validation
+    if (formData.rate && !validatePositiveNumber(formData.rate)) {
+      showMessage('error', 'Rate must be a positive number');
+      return false;
+    }
+    
+    // GST validation
+    if (formData.companyGSTIN && !validateGST(formData.companyGSTIN)) {
+      showMessage('error', 'Please enter a valid GST number');
+      return false;
+    }
+    
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateReservationForm()) {
+      return;
+    }
+    
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -887,7 +943,7 @@ const App = () => {
       
       await axios.post('/api/reservations', formData, config);
       
-      alert("🎉 Reservation submitted successfully! Redirecting to reservations page...");
+      showToast.success("🎉 Reservation submitted successfully! Redirecting to reservations page...");
       setTimeout(() => {
         navigate('/reservation');
       }, 1000);
@@ -912,10 +968,17 @@ const App = () => {
     new Date(formData.checkInDate) >= new Date(formData.checkOutDate);
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 rounded-2xl shadow-md border border-[color:var(--color-border)] text-[color:var(--color-text)] overflow-x-auto">
-      <h2 className="text-3xl font-extrabold text-center mb-8 text-[color:var(--color-text)] flex items-center justify-center gap-3">
-        Reservation Form
-      </h2>
+    <div className="min-h-screen" style={{backgroundColor: 'hsl(45, 100%, 95%)'}}>
+      <header className="bg-white shadow-sm">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold" style={{color: 'hsl(45, 100%, 20%)'}}>
+            Reservation Form
+          </h1>
+        </div>
+      </header>
+      <main className="container mx-auto px-4 py-6">
+        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="p-6 space-y-8">
       {message.text && (
         <div
           className={`px-4 py-3 rounded relative mb-4 mx-auto max-w-3xl ${
@@ -944,12 +1007,17 @@ const App = () => {
       )}
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* General Information Section */}
-        <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
-          <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-[color:var(--color-text)]">
-            <FaInfoCircle className="text-amber-400" /> General Information
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="space-y-2">
+        <section className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-full" style={{backgroundColor: 'hsl(45, 100%, 85%)'}}>
+              <FaInfoCircle className="text-lg" style={{color: 'hsl(45, 43%, 58%)'}} />
+            </div>
+            <h2 className="text-xl font-semibold" style={{color: 'hsl(45, 100%, 20%)'}}>
+              General Information
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-1">
               <Label htmlFor="grcNo">GRC No.</Label>
               <InputWithIcon
                 icon={<FaRegAddressCard />}
@@ -959,10 +1027,10 @@ const App = () => {
                 value={formData.grcNo || ""}
                 onChange={handleChange}
                 readOnly={true}
-                inputClassName="bg-gray-100 border border-secondary rounded-lg cursor-not-allowed"
+                inputClassName="bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="searchGRC">Search by GRC</Label>
               <InputWithIcon
                 icon={<FaRegAddressCard />}
@@ -971,14 +1039,13 @@ const App = () => {
                 placeholder="Enter GRC number to load reservation"
                 value={searchGRC}
                 onChange={(e) => setSearchGRC(e.target.value)}
-                inputClassName="bg-white border border-secondary rounded-lg"
+                inputClassName="bg-white border border-gray-300 rounded-lg"
               />
             </div>
             <div className="flex items-end gap-2">
               <Button
                 onClick={handleFetchReservation}
                 disabled={loading || !searchGRC.trim()}
-                className="flex-1"
               >
                 {loading ? "Searching..." : "Search Reservation"}
               </Button>
@@ -1011,7 +1078,7 @@ const App = () => {
               <div className="relative flex items-center">
                 <FaInfoCircle className="absolute left-3 text-gray-400 pointer-events-none" />
                 <select
-                  className="bg-white border border-secondary rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-full"
+                  className="bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
                   id="reservationType"
                   name="reservationType"
                   value={formData.reservationType}
@@ -1046,7 +1113,7 @@ const App = () => {
               <div className="relative flex items-center">
                 <FaCheckCircle className="absolute left-3 text-gray-400 pointer-events-none" />
                 <select
-                  className="bg-white border border-secondary rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-full"
+                  className="bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
                   id="status"
                   name="status"
                   value={formData.status}
@@ -1072,7 +1139,7 @@ const App = () => {
               <div className="relative flex items-center">
                 <FaRegCheckCircle className="absolute left-3 text-gray-400 pointer-events-none" />
                 <select
-                  className="bg-white border border-secondary rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-full"
+                  className="bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
                   id="roomHoldStatus"
                   name="roomHoldStatus"
                   value={formData.roomHoldStatus}
@@ -1110,7 +1177,7 @@ const App = () => {
                   value={formData.remarks}
                   onChange={handleChange}
                   placeholder="Remarks"
-                  className="bg-white border border-secondary rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-full h-20"
+                  className="bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full h-20"
                 />
               </div>
             </div>
@@ -1118,12 +1185,17 @@ const App = () => {
         </section>
 
         {/* Room & Availability Section */}
-        <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
-          <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-[color:var(--color-text)]">
-            <BedIcon className="text-amber-400" /> Room & Availability
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="space-y-2">
+        <section className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-full" style={{backgroundColor: 'hsl(45, 100%, 85%)'}}>
+              <BedIcon className="text-lg" style={{color: 'hsl(45, 43%, 58%)'}} />
+            </div>
+            <h2 className="text-xl font-semibold" style={{color: 'hsl(45, 100%, 20%)'}}>
+              Room & Availability
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-1">
               <Label htmlFor="checkInDate">Check-in Date</Label>
               <DatePicker
                 value={formData.checkInDate}
@@ -1131,7 +1203,7 @@ const App = () => {
                 label="check-in date"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="checkOutDate">Check-out Date</Label>
               <DatePicker
                 value={formData.checkOutDate}
@@ -1143,7 +1215,6 @@ const App = () => {
               <Button
                 onClick={fetchAvailableRooms}
                 disabled={isCheckAvailabilityDisabled}
-                className="w-full"
               >
                 Check Availability
               </Button>
@@ -1265,10 +1336,15 @@ const App = () => {
         </section>
 
         {/* Guest Details Section */}
-        <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
-          <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-[color:var(--color-text)]">
-            <FaUser className="text-amber-400" /> Guest Details
-          </h3>
+        <section className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-full" style={{backgroundColor: 'hsl(45, 100%, 85%)'}}>
+              <FaUser className="text-lg" style={{color: 'hsl(45, 43%, 58%)'}} />
+            </div>
+            <h2 className="text-xl font-semibold" style={{color: 'hsl(45, 100%, 20%)'}}>
+              Guest Details
+            </h2>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="salutation">Salutation</Label>
@@ -1412,11 +1488,16 @@ const App = () => {
         </section>
 
         {/* Stay Info Section */}
-        <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
-          <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-[color:var(--color-text)]">
-            <BedIcon className="text-amber-400" /> Stay Information
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <section className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-full" style={{backgroundColor: 'hsl(45, 100%, 85%)'}}>
+              <BedIcon className="text-lg" style={{color: 'hsl(45, 43%, 58%)'}} />
+            </div>
+            <h2 className="text-xl font-semibold" style={{color: 'hsl(45, 100%, 20%)'}}>
+              Stay Information
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="noOfRooms">Number of Rooms</Label>
               <Input
@@ -1495,7 +1576,7 @@ const App = () => {
                 disabled
               />
             </div>
-            <div className="space-y-2 col-span-1 sm:col-span-2 lg:col-span-2">
+            <div className="space-y-2 col-span-1 md:col-span-2">
               <Label htmlFor="arrivalFrom">Arrival From</Label>
               <Input
                 id="arrivalFrom"
@@ -1542,7 +1623,7 @@ const App = () => {
                 </option>
               </Select>
             </div>
-            <div className="space-y-2 col-span-2 flex items-center gap-2">
+            <div className="space-y-2 col-span-1 md:col-span-2 flex items-center gap-2">
               <Checkbox
                 id="roomPreferences.smoking"
                 name="roomPreferences.smoking"
@@ -1577,12 +1658,17 @@ const App = () => {
         </section>
 
         {/* Payment Info Section */}
-        <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
-          <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-[color:var(--color-text)]">
-            <FaCreditCard className="text-amber-400" /> Payment Details
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="space-y-2">
+        <section className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-full" style={{backgroundColor: 'hsl(45, 100%, 85%)'}}>
+              <FaCreditCard className="text-lg" style={{color: 'hsl(45, 43%, 58%)'}} />
+            </div>
+            <h2 className="text-xl font-semibold" style={{color: 'hsl(45, 100%, 20%)'}}>
+              Payment Details
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-1">
               <Label htmlFor="rate">Total Rate</Label>
               <Input
                 id="rate"
@@ -1761,12 +1847,17 @@ const App = () => {
         </section>
 
         {/* Vehicle Details Section */}
-        <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
-          <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-[color:var(--color-text)]">
-            <CarIcon className="text-amber-400" /> Vehicle Details
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="space-y-2">
+        <section className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-full" style={{backgroundColor: 'hsl(45, 100%, 85%)'}}>
+              <CarIcon className="text-lg" style={{color: 'hsl(45, 43%, 58%)'}} />
+            </div>
+            <h2 className="text-xl font-semibold" style={{color: 'hsl(45, 100%, 20%)'}}>
+              Vehicle Details
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-1">
               <Label htmlFor="vehicleDetails.vehicleType">Vehicle Type</Label>
               <Select
                 id="vehicleDetails.vehicleType"
@@ -1831,17 +1922,16 @@ const App = () => {
           </div>
         </section>
 
-        <div className="mt-8 flex justify-center gap-4">
+        <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
           <Button
             type="button"
             onClick={resetForm}
-            className="px-8 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            variant="outline"
           >
             Reset
           </Button>
           <Button
             type="submit"
-            className="px-8 py-3 bg-[color:var(--color-primary)] text-black font-semibold rounded-lg shadow-md hover:bg-[color:var(--color-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           >
             Submit Reservation
           </Button>
@@ -1859,6 +1949,9 @@ const App = () => {
           </div>
         )}
       </form>
+          </div>
+        </div>
+      </main>
     </div>
   );
 };

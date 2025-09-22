@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../../context/AppContext";
+import { showToast } from "../../utils/toaster";
+import { validateRequired, validateMinLength } from "../../utils/validation";
 import backgroundImage from "../../assets/9e5a6b521cd43319c86acf395f110951.jpg";
-import logoImage from "../../assets/logo.jpg";
+import logoImage from "../../assets/buddhaavenuelogo.png";
 
 const LoginPage = () => {
   const [username, setUsername] = useState("");
@@ -16,6 +18,26 @@ const LoginPage = () => {
   // In LoginPage.jsx, update the handleSubmit function:
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validation
+    if (!validateRequired(username)) {
+      setError('Username is required');
+      showToast.error('Username is required');
+      return;
+    }
+    
+    if (!validateRequired(password)) {
+      setError('Password is required');
+      showToast.error('Password is required');
+      return;
+    }
+    
+    if (!validateMinLength(password, 6)) {
+      setError('Password must be at least 6 characters');
+      showToast.error('Password must be at least 6 characters');
+      return;
+    }
+    
     setLoading(true);
     setError("");
 
@@ -41,9 +63,9 @@ const LoginPage = () => {
       // Always redirect to dashboard after login
       navigate("/dashboard");
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Login failed. Please try again."
-      );
+      const errorMessage = err.response?.data?.message || "Login failed. Please try again.";
+      setError(errorMessage);
+      showToast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -64,7 +86,7 @@ const LoginPage = () => {
       <div className="max-w-md w-full bg-white rounded-lg shadow-xl overflow-hidden relative z-10">
         <div className="bg-primary py-2 ">
           <div className="text-center">
-            <img src={logoImage} alt="Buddha Avenue" className="h-20 w-20 mx-auto rounded-full object-cover" />{" "}
+            <img src={logoImage} alt="Buddha Avenue" className="h-25 mx-auto" />{" "}
           </div>
         </div>
 

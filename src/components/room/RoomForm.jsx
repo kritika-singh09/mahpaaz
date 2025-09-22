@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X, Camera } from "lucide-react";
 import { useAppContext } from "../../context/AppContext";
+import { showToast } from "../../utils/toaster";
+import { validateRequired, validatePositiveNumber } from "../../utils/validation";
 
 const RoomForm = ({
   showModal,
@@ -69,7 +71,7 @@ const RoomForm = ({
       } catch (err) {
         setShowCamera(false);
         console.error("Error accessing camera: ", err);
-        alert(
+        showToast.error(
           "Could not access camera. Please ensure camera permissions are granted."
         );
       }
@@ -110,8 +112,8 @@ const RoomForm = ({
 
   return (
     showModal && (
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl">
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl p-4 sm:p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-bold">
               {editMode ? "Edit Room" : "Add New Room"}
@@ -156,7 +158,7 @@ const RoomForm = ({
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1 text-text/70">
                     Room Title
@@ -169,6 +171,11 @@ const RoomForm = ({
                     placeholder="Enter room title"
                     className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     required
+                    onBlur={(e) => {
+                      if (!validateRequired(e.target.value)) {
+                        showToast.error('Room title is required');
+                      }
+                    }}
                   />
                 </div>
                 <div>
@@ -187,7 +194,7 @@ const RoomForm = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1 text-text/70">
                     Category
@@ -221,11 +228,17 @@ const RoomForm = ({
                     placeholder="Enter price"
                     className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     required
+                    min="0"
+                    onBlur={(e) => {
+                      if (!validatePositiveNumber(e.target.value)) {
+                        showToast.error('Price must be a positive number');
+                      }
+                    }}
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="flex items-center">
                   <input
                     type="checkbox"
@@ -296,12 +309,12 @@ const RoomForm = ({
                 <label className="block text-sm font-medium mb-1 text-text/70">
                   Upload Image
                 </label>
-                <div className="flex gap-4 mb-2">
+                <div className="flex flex-col sm:flex-row gap-4 mb-2">
                   <div className="flex-1">
                     <button
                       type="button"
                       onClick={startCamera}
-                      className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+                      className="flex flex-col items-center justify-center w-full h-20 sm:h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
                     >
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         <svg
@@ -333,7 +346,7 @@ const RoomForm = ({
                   <div className="flex-1">
                     <label
                       htmlFor="gallery-input"
-                      className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+                      className="flex flex-col items-center justify-center w-full h-20 sm:h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
                     >
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         <svg
@@ -368,23 +381,23 @@ const RoomForm = ({
                     <img
                       src={currentRoom.images[0]}
                       alt="Preview"
-                      className="w-full h-40 rounded-md object-cover"
+                      className="w-full h-32 sm:h-40 rounded-md object-cover"
                     />
                   </div>
                 )}
               </div>
 
-              <div className="mt-6 flex justify-end space-x-3">
+              <div className="mt-6 flex flex-col sm:flex-row justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                  className="px-4 py-2 border rounded-lg hover:bg-gray-50 w-full sm:w-auto"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-primary text-white px-4 py-2 rounded-lg"
+                  className="bg-primary text-white px-4 py-2 rounded-lg w-full sm:w-auto"
                 >
                   {editMode ? "Update" : "Create"}
                 </button>

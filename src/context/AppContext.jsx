@@ -1,8 +1,20 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 
-axios.defaults.withCredentials = true;
-axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
+// Main axios instance
+const mainAxios = axios.create({
+  baseURL: import.meta.env.VITE_BACKEND_URL,
+  withCredentials: true
+});
+
+// Use single axios instance for all requests
+const customAxios = {
+  get: (url, config) => mainAxios.get(url, config),
+  post: (url, data, config) => mainAxios.post(url, data, config),
+  put: (url, data, config) => mainAxios.put(url, data, config),
+  delete: (url, config) => mainAxios.delete(url, config),
+  patch: (url, data, config) => mainAxios.patch(url, data, config)
+};
 
 export const AppContext = createContext();
 
@@ -17,6 +29,10 @@ const AppContextProvider = ({ children }) => {
 
   const closeSidebar = () => {
     setIsSidebarOpen(false);
+  };
+
+  const openSidebar = () => {
+    setIsSidebarOpen(true);
   };
 
   // Close sidebar when clicking outside on mobile
@@ -57,7 +73,8 @@ const AppContextProvider = ({ children }) => {
     isSidebarOpen,
     toggleSidebar,
     closeSidebar,
-    axios,
+    openSidebar,
+    axios: customAxios,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

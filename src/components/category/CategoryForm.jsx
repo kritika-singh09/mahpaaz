@@ -1,5 +1,7 @@
 import React from "react";
 import { X } from "lucide-react";
+import { showToast } from "../../utils/toaster";
+import { validateRequired, validateMinLength } from "../../utils/validation";
 
 const CategoryForm = ({
   showModal,
@@ -46,6 +48,13 @@ const CategoryForm = ({
                 placeholder="Enter category name"
                 className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                 required
+                onBlur={(e) => {
+                  if (!validateRequired(e.target.value)) {
+                    showToast.error('Category name is required');
+                  } else if (!validateMinLength(e.target.value, 2)) {
+                    showToast.error('Category name must be at least 2 characters');
+                  }
+                }}
               />
             </div>
             <div>
@@ -59,6 +68,11 @@ const CategoryForm = ({
                 placeholder="Enter category description"
                 className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary h-24"
                 required
+                onBlur={(e) => {
+                  if (!validateRequired(e.target.value)) {
+                    showToast.error('Category description is required');
+                  }
+                }}
               />
             </div>
 

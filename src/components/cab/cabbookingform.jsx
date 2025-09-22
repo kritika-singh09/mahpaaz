@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useAppContext } from "../../context/AppContext";
+import { showToast } from "../../utils/toaster";
 
 // Main App component that renders either CabBookingForm or CabList
 export default function App() {
@@ -328,6 +329,7 @@ function CabBookingForm({ onSubmissionSuccess }) {
       );
       setMessageType("success");
       console.log("Success:", result.data);
+      showToast.success(`🎉 Cab booking successfully ${isUpdate ? "updated" : "created"}!`);
       // Call the callback to switch view on success
       if (onSubmissionSuccess) {
         onSubmissionSuccess();
@@ -337,6 +339,7 @@ function CabBookingForm({ onSubmissionSuccess }) {
       setMessage(`Network error or invalid JSON response: ${error.message}`);
       setMessageType("error");
       console.error("Network error:", error);
+      showToast.error(`Network error or invalid JSON response: ${error.message}`);
     }
   };
 

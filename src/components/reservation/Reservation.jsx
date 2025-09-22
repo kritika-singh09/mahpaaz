@@ -2,14 +2,20 @@ import React, { useState, useEffect } from "react";
 import { Edit, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../../context/AppContext";
+import { showToast } from "../../utils/toaster";
+import Pagination from "../common/Pagination";
 
 // Inline ReservationEdit for simplicity
 const ReservationEdit = ({ reservation, onSave, onCancel }) => {
   const [current, setCurrent] = useState({
     guestName: reservation.guestName || "",
     grcNo: reservation.grcNo || "",
+    status: reservation.status || "",
     checkInDate: reservation.checkInDate || "",
     checkOutDate: reservation.checkOutDate || "",
+    mobileNo: reservation.mobileNo || reservation.phoneNo || "",
+    noOfRooms: reservation.noOfRooms || 1,
+    rate: reservation.rate || 0,
   });
 
   const handleChange = (field, value) => {
@@ -26,55 +32,109 @@ const ReservationEdit = ({ reservation, onSave, onCancel }) => {
   return (
     <form
       onSubmit={handleSubmit}
-      className="max-w-lg mx-auto bg-white p-6 rounded shadow"
+      className="max-w-lg mx-auto p-6 rounded shadow"
+      style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}
     >
       <div className="mb-4">
-        <label className="block text-sm font-medium mb-1">GRC No</label>
+        <label className="block text-sm font-medium mb-1" style={{ color: 'hsl(45, 100%, 20%)' }}>GRC No</label>
         <input
           type="text"
           value={current.grcNo}
           onChange={(e) => handleChange("grcNo", e.target.value)}
-          className="w-full px-3 py-2 border rounded-md"
+          className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2"
+          style={{ border: '1px solid hsl(45, 100%, 85%)', backgroundColor: 'white', color: 'hsl(45, 100%, 20%)' }}
         />
       </div>
       <div className="mb-4">
-        <label className="block text-sm font-medium mb-1">Guest Name</label>
+        <label className="block text-sm font-medium mb-1" style={{ color: 'hsl(45, 100%, 20%)' }}>Guest Name</label>
         <input
           type="text"
           value={current.guestName}
           onChange={(e) => handleChange("guestName", e.target.value)}
-          className="w-full px-3 py-2 border rounded-md"
+          className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2"
+          style={{ border: '1px solid hsl(45, 100%, 85%)', backgroundColor: 'white', color: 'hsl(45, 100%, 20%)' }}
         />
       </div>
       <div className="mb-4">
-        <label className="block text-sm font-medium mb-1">Check In</label>
+        <label className="block text-sm font-medium mb-1" style={{ color: 'hsl(45, 100%, 20%)' }}>Check In</label>
         <input
           type="date"
           value={current.checkInDate ? current.checkInDate.slice(0, 10) : ""}
           onChange={(e) => handleChange("checkInDate", e.target.value)}
-          className="w-full px-3 py-2 border rounded-md"
+          className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2"
+          style={{ border: '1px solid hsl(45, 100%, 85%)', backgroundColor: 'white', color: 'hsl(45, 100%, 20%)' }}
         />
       </div>
       <div className="mb-4">
-        <label className="block text-sm font-medium mb-1">Check Out</label>
+        <label className="block text-sm font-medium mb-1" style={{ color: 'hsl(45, 100%, 20%)' }}>Check Out</label>
         <input
           type="date"
           value={current.checkOutDate ? current.checkOutDate.slice(0, 10) : ""}
           onChange={(e) => handleChange("checkOutDate", e.target.value)}
-          className="w-full px-3 py-2 border rounded-md"
+          className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2"
+          style={{ border: '1px solid hsl(45, 100%, 85%)', backgroundColor: 'white', color: 'hsl(45, 100%, 20%)' }}
+        />
+      </div>
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-1" style={{ color: 'hsl(45, 100%, 20%)' }}>Status</label>
+        <select
+          value={current.status}
+          onChange={(e) => handleChange("status", e.target.value)}
+          className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2"
+          style={{ border: '1px solid hsl(45, 100%, 85%)', backgroundColor: 'white', color: 'hsl(45, 100%, 20%)' }}
+        >
+          <option value="">Select Status</option>
+          <option value="Confirmed">Confirmed</option>
+          <option value="Tentative">Tentative</option>
+          <option value="Waiting">Waiting</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      </div>
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-1" style={{ color: 'hsl(45, 100%, 20%)' }}>Mobile No</label>
+        <input
+          type="tel"
+          value={current.mobileNo}
+          onChange={(e) => handleChange("mobileNo", e.target.value)}
+          className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2"
+          style={{ border: '1px solid hsl(45, 100%, 85%)', backgroundColor: 'white', color: 'hsl(45, 100%, 20%)' }}
+        />
+      </div>
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-1" style={{ color: 'hsl(45, 100%, 20%)' }}>Number of Rooms</label>
+        <input
+          type="number"
+          min="1"
+          value={current.noOfRooms}
+          onChange={(e) => handleChange("noOfRooms", e.target.value)}
+          className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2"
+          style={{ border: '1px solid hsl(45, 100%, 85%)', backgroundColor: 'white', color: 'hsl(45, 100%, 20%)' }}
+        />
+      </div>
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-1" style={{ color: 'hsl(45, 100%, 20%)' }}>Rate</label>
+        <input
+          type="number"
+          min="0"
+          value={current.rate}
+          onChange={(e) => handleChange("rate", e.target.value)}
+          className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2"
+          style={{ border: '1px solid hsl(45, 100%, 85%)', backgroundColor: 'white', color: 'hsl(45, 100%, 20%)' }}
         />
       </div>
       <div className="flex justify-end space-x-2">
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 border rounded-md"
+          className="px-4 py-2 rounded-md transition-colors"
+          style={{ backgroundColor: 'hsl(45, 100%, 85%)', color: 'hsl(45, 100%, 20%)', border: '1px solid hsl(45, 100%, 85%)' }}
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="px-4 py-2 bg-primary text-white rounded-md"
+          className="px-4 py-2 rounded-md transition-colors"
+          style={{ backgroundColor: 'hsl(45, 43%, 58%)', color: 'white' }}
         >
           Update
         </button>
@@ -93,6 +153,9 @@ const ReservationPage = () => {
 
   // Modal state for edit overlays
   const [editId, setEditId] = useState(null);
+  const [bookingData, setBookingData] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   // Fetch reservations from the API
   const fetchReservations = async () => {
@@ -122,6 +185,21 @@ const ReservationPage = () => {
       setIsLoading(false);
     }
   };
+
+  // Fetch booking data by GRC number
+  const fetchBookingByGrc = async (grcNo) => {
+    try {
+      const token = localStorage.getItem("token");
+      const { data } = await axios.get(`/api/bookings/fetch-by-grc/${grcNo}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setBookingData(data);
+    } catch (err) {
+      setError(`Failed to fetch booking data for GRC: ${grcNo}`);
+    }
+  };
   // useeffect
   useEffect(() => {
     fetchReservations();
@@ -134,15 +212,19 @@ const ReservationPage = () => {
   const updateReservation = async (reservationId, updatedData) => {
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("Authentication required. Please log in.");
+      showToast.error("Authentication required. Please log in.");
       return;
     }
-    // Only send the fields shown in the table
+    // Send all the fields shown in the table
     const payload = {
       guestName: updatedData.guestName,
       grcNo: updatedData.grcNo,
+      status: updatedData.status,
       checkInDate: updatedData.checkInDate,
       checkOutDate: updatedData.checkOutDate,
+      mobileNo: updatedData.mobileNo,
+      noOfRooms: updatedData.noOfRooms,
+      rate: updatedData.rate,
     };
     try {
       await axios.put(`/api/reservations/${reservationId}`, payload, {
@@ -153,7 +235,7 @@ const ReservationPage = () => {
       fetchReservations();
       setEditId(null);
     } catch (error) {
-      alert(`Update failed: ${error.response?.data?.error || error.message}`);
+      showToast.error(`Update failed: ${error.response?.data?.error || error.message}`);
     }
   };
 
@@ -184,18 +266,27 @@ const ReservationPage = () => {
       )
     : [];
 
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedReservations = filtered.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
   const inputStyle =
-    "bg-white border border-secondary rounded-lg pl-4 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary";
+    "rounded-lg pl-4 pr-4 py-2 focus:outline-none focus:ring-2";
 
   return (
-    <div className="w-full p-4 sm:p-6 text-[color:var(--color-text)]" style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-[color:var(--color-text)]">
-          Reservation Page
+    <div className="p-6 overflow-auto h-full bg-background">
+      <div className="flex justify-between items-center mb-8 mt-6">
+        <h1 className="text-3xl font-extrabold text-[#1f2937]">
+          Reservations
         </h1>
         <button
           onClick={() => navigate("/reservationform")}
-          className="bg-[color:var(--color-primary)] text-[color:var(--color-text)] px-4 py-2 rounded text-sm sm:text-base"
+          className="px-4 py-2 rounded text-sm sm:text-base transition-colors"
+          style={{ backgroundColor: 'hsl(45, 43%, 58%)', color: 'white' }}
         >
           Add Reservation
         </button>
@@ -208,12 +299,14 @@ const ReservationPage = () => {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className={`${inputStyle} w-full sm:max-w-md pl-10`}
+          style={{ backgroundColor: 'white', border: '1px solid hsl(45, 100%, 85%)', color: 'hsl(45, 100%, 20%)' }}
         />
       </div>
 
       {error && (
         <div
-          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
+          className="px-4 py-3 rounded relative mb-4"
+          style={{ backgroundColor: 'hsl(0, 100%, 95%)', border: '1px solid hsl(0, 100%, 85%)', color: 'hsl(0, 100%, 30%)' }}
           role="alert"
         >
           <strong className="font-bold">Error!</strong>
@@ -225,53 +318,61 @@ const ReservationPage = () => {
       )}
 
       {isLoading ? (
-        <div className="text-center py-4">Loading reservations...</div>
+        <div className="text-center py-4" style={{ color: 'hsl(45, 100%, 20%)' }}>Loading reservations...</div>
       ) : (
         <>
           {/* Desktop Table View */}
-          <div className="hidden lg:block overflow-x-auto rounded-xl border border-[color:var(--color-border)] shadow-sm">
-            <table className="min-w-full text-sm text-[color:var(--color-text)] border border-[color:var(--color-border)]">
-              <thead className="bg-gray-50">
+          <div className="hidden lg:block overflow-x-auto rounded-xl shadow-sm" style={{ backgroundColor: 'white', border: '1px solid hsl(45, 100%, 85%)' }}>
+            <table className="min-w-full text-sm" style={{ color: 'hsl(45, 100%, 20%)' }}>
+              <thead className="border-b" style={{ backgroundColor: 'hsl(45, 100%, 90%)', borderColor: 'hsl(45, 100%, 85%)' }}>
                 <tr>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>
                     Guest Name
                   </th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>
                     GRC No
                   </th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>
                     Status
                   </th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>
                     Check In
                   </th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>
                     Check Out
                   </th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>
                     Mobile
                   </th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>
                     Rooms
                   </th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>
                     Rate
                   </th>
-                  <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-center text-xs font-medium uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filtered.length > 0 ? (
-                  filtered.map((b) => (
+              <tbody className="divide-y" style={{ backgroundColor: 'white', borderColor: 'hsl(45, 100%, 90%)' }}>
+                {paginatedReservations.length > 0 ? (
+                  paginatedReservations.map((b) => (
                     <tr key={b._id}>
-                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-3 py-3 whitespace-nowrap text-sm" style={{ color: 'hsl(45, 100%, 20%)' }}>
                         {b.guestName}
-                        {b.vip && <span className="ml-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">VIP</span>}
+                        {b.vip && <span className="ml-2 px-2 py-1 text-xs rounded-full" style={{ backgroundColor: 'hsl(45, 71%, 69%)', color: 'hsl(45, 100%, 20%)' }}>VIP</span>}
                       </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">
-                        {b.grcNo || "N/A"}
+                      <td className="px-3 py-3 whitespace-nowrap text-sm" style={{ color: 'hsl(45, 100%, 20%)' }}>
+                        {b.grcNo ? (
+                          <button
+                            onClick={() => fetchBookingByGrc(b.grcNo)}
+                            className="underline transition-colors"
+                            style={{ color: 'hsl(45, 43%, 58%)' }}
+                          >
+                            {b.grcNo}
+                          </button>
+                        ) : "N/A"}
                       </td>
                       <td className="px-3 py-3 whitespace-nowrap text-sm">
                         <span className={`px-2 py-1 text-xs rounded-full ${
@@ -284,33 +385,35 @@ const ReservationPage = () => {
                           {b.status || 'N/A'}
                         </span>
                       </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-3 py-3 whitespace-nowrap text-sm" style={{ color: 'hsl(45, 100%, 20%)' }}>
                         {b.checkInDate ? new Date(b.checkInDate).toLocaleDateString() : 'N/A'}
                       </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-3 py-3 whitespace-nowrap text-sm" style={{ color: 'hsl(45, 100%, 20%)' }}>
                         {b.checkOutDate ? new Date(b.checkOutDate).toLocaleDateString() : 'N/A'}
                       </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-3 py-3 whitespace-nowrap text-sm" style={{ color: 'hsl(45, 100%, 20%)' }}>
                         {b.mobileNo || b.phoneNo || 'N/A'}
                       </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-3 py-3 whitespace-nowrap text-sm" style={{ color: 'hsl(45, 100%, 20%)' }}>
                         {b.noOfRooms || 1}
                       </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-3 py-3 whitespace-nowrap text-sm" style={{ color: 'hsl(45, 100%, 20%)' }}>
                         ₹{b.rate || 0}
                       </td>
                       <td className="px-3 py-3 text-center">
                         <div className="flex space-x-1 justify-center">
                           <button
                             onClick={() => handleEditModal(b)}
-                            className="p-1.5 rounded-full text-blue-600 hover:bg-blue-50"
+                            className="p-1.5 rounded-full transition-colors"
+                            style={{ color: 'hsl(45, 43%, 58%)' }}
                             title="Edit"
                           >
                             <Edit size={16} />
                           </button>
                           <button
                             onClick={() => handleDelete(b)}
-                            className="p-1.5 rounded-full text-red-600 hover:bg-red-50"
+                            className="p-1.5 rounded-full transition-colors"
+                            style={{ color: 'hsl(0, 60%, 50%)' }}
                             title="Delete"
                           >
                             <Trash2 size={16} />
@@ -323,7 +426,8 @@ const ReservationPage = () => {
                   <tr>
                     <td
                       colSpan="9"
-                      className="px-6 py-4 text-center text-gray-500"
+                      className="px-6 py-4 text-center"
+                      style={{ color: 'hsl(45, 100%, 40%)' }}
                     >
                       No reservations found.
                     </td>
@@ -335,17 +439,28 @@ const ReservationPage = () => {
 
           {/* Mobile Card View */}
           <div className="lg:hidden space-y-4">
-            {filtered.length > 0 ? (
-              filtered.map((b) => (
+            {paginatedReservations.length > 0 ? (
+              paginatedReservations.map((b) => (
                 <div
                   key={b._id}
-                  className="bg-white border border-[color:var(--color-border)] rounded-lg shadow-sm p-4"
+                  className="rounded-lg shadow-sm p-4"
+                  style={{ backgroundColor: 'white', border: '1px solid hsl(45, 100%, 85%)' }}
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h3 className="font-semibold text-lg text-gray-800">{b.guestName}</h3>
-                      <p className="text-sm text-gray-600">GRC: {b.grcNo || "N/A"}</p>
-                      {b.vip && <span className="inline-block mt-1 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">VIP</span>}
+                      <h3 className="font-semibold text-lg" style={{ color: 'hsl(45, 100%, 20%)' }}>{b.guestName}</h3>
+                      <p className="text-sm" style={{ color: 'hsl(45, 100%, 40%)' }}>GRC: 
+                        {b.grcNo ? (
+                          <button
+                            onClick={() => fetchBookingByGrc(b.grcNo)}
+                            className="underline ml-1 transition-colors"
+                            style={{ color: 'hsl(45, 43%, 58%)' }}
+                          >
+                            {b.grcNo}
+                          </button>
+                        ) : "N/A"}
+                      </p>
+                      {b.vip && <span className="inline-block mt-1 px-2 py-1 text-xs rounded-full" style={{ backgroundColor: 'hsl(45, 71%, 69%)', color: 'hsl(45, 100%, 20%)' }}>VIP</span>}
                     </div>
                     <span className={`px-2 py-1 text-xs rounded-full ${
                       b.status === 'Confirmed' ? 'bg-green-100 text-green-800' :
@@ -360,38 +475,40 @@ const ReservationPage = () => {
                   
                   <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
                     <div>
-                      <span className="text-gray-500">Check In:</span>
-                      <span className="ml-1 font-medium">{b.checkInDate ? new Date(b.checkInDate).toLocaleDateString() : 'N/A'}</span>
+                      <span style={{ color: 'hsl(45, 100%, 40%)' }}>Check In:</span>
+                      <span className="ml-1 font-medium" style={{ color: 'hsl(45, 100%, 20%)' }}>{b.checkInDate ? new Date(b.checkInDate).toLocaleDateString() : 'N/A'}</span>
                     </div>
                     <div>
-                      <span className="text-gray-500">Check Out:</span>
-                      <span className="ml-1 font-medium">{b.checkOutDate ? new Date(b.checkOutDate).toLocaleDateString() : 'N/A'}</span>
+                      <span style={{ color: 'hsl(45, 100%, 40%)' }}>Check Out:</span>
+                      <span className="ml-1 font-medium" style={{ color: 'hsl(45, 100%, 20%)' }}>{b.checkOutDate ? new Date(b.checkOutDate).toLocaleDateString() : 'N/A'}</span>
                     </div>
                     <div>
-                      <span className="text-gray-500">Mobile:</span>
-                      <span className="ml-1 font-medium">{b.mobileNo || b.phoneNo || 'N/A'}</span>
+                      <span style={{ color: 'hsl(45, 100%, 40%)' }}>Mobile:</span>
+                      <span className="ml-1 font-medium" style={{ color: 'hsl(45, 100%, 20%)' }}>{b.mobileNo || b.phoneNo || 'N/A'}</span>
                     </div>
                     <div>
-                      <span className="text-gray-500">Rooms:</span>
-                      <span className="ml-1 font-medium">{b.noOfRooms || 1}</span>
+                      <span style={{ color: 'hsl(45, 100%, 40%)' }}>Rooms:</span>
+                      <span className="ml-1 font-medium" style={{ color: 'hsl(45, 100%, 20%)' }}>{b.noOfRooms || 1}</span>
                     </div>
                     <div className="col-span-2">
-                      <span className="text-gray-500">Rate:</span>
-                      <span className="ml-1 font-medium text-lg">₹{b.rate || 0}</span>
+                      <span style={{ color: 'hsl(45, 100%, 40%)' }}>Rate:</span>
+                      <span className="ml-1 font-medium text-lg" style={{ color: 'hsl(45, 100%, 20%)' }}>₹{b.rate || 0}</span>
                     </div>
                   </div>
                   
-                  <div className="flex justify-end space-x-2 pt-3 border-t border-gray-100">
+                  <div className="flex justify-end space-x-2 pt-3 border-t" style={{ borderColor: 'hsl(45, 100%, 90%)' }}>
                     <button
                       onClick={() => handleEditModal(b)}
-                      className="p-2 rounded-full text-blue-600 hover:bg-blue-50 transition duration-300"
+                      className="p-2 rounded-full transition duration-300"
+                      style={{ color: 'hsl(45, 43%, 58%)' }}
                       title="Edit"
                     >
                       <Edit size={18} />
                     </button>
                     <button
                       onClick={() => handleDelete(b)}
-                      className="p-2 rounded-full text-red-600 hover:bg-red-50 transition duration-300"
+                      className="p-2 rounded-full transition duration-300"
+                      style={{ color: 'hsl(0, 60%, 50%)' }}
                       title="Delete"
                     >
                       <Trash2 size={18} />
@@ -400,18 +517,25 @@ const ReservationPage = () => {
                 </div>
               ))
             ) : (
-              <div className="bg-white border border-[color:var(--color-border)] rounded-lg shadow-sm p-8 text-center text-gray-500">
+              <div className="rounded-lg shadow-sm p-8 text-center" style={{ backgroundColor: 'white', border: '1px solid hsl(45, 100%, 85%)', color: 'hsl(45, 100%, 40%)' }}>
                 No reservations found.
               </div>
             )}
           </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            itemsPerPage={itemsPerPage}
+            totalItems={filtered.length}
+          />
         </>
       )}
 
       {/* Overlay for edit */}
       {editId && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-center items-center p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}>
             <ReservationEdit
               reservation={reservations.find((r) => r._id === editId)}
               onSave={async (updated) => {

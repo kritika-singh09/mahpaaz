@@ -1,265 +1,295 @@
-import React, { useState, useEffect } from "react";
-import { useAppContext } from "../../context/AppContext";
+import React, { useState, useEffect } from 'react';
+import { useAppContext } from '../../context/AppContext';
+import AvailableTable from './Availabletable';
+import Pagination from '../common/Pagination';
 
-const Table = () => {
+// The main application component
+const App = () => {
   const { axios } = useAppContext();
   const [tables, setTables] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [editingTable, setEditingTable] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    tableNumber: '',
-    capacity: '',
-    location: 'restaurant',
-    status: 'available',
-    isActive: true
-  });
-
-  const fetchTables = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/restaurant/tables', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      // Handle different response structures
-      const tablesData = Array.isArray(response.data) ? response.data : 
-                        (response.data.tables ? response.data.tables : []);
-      setTables(tablesData);
-    } catch (error) {
-      console.error('Error fetching tables:', error);
-      setTables([]); // Set empty array on error
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [activeTab, setActiveTab] = useState('manage');
 
   useEffect(() => {
     fetchTables();
   }, []);
 
-  const handleSubmit = async (e) => {
+  const fetchTables = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/restaurant/tables', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const tablesData = Array.isArray(response.data) ? response.data : (response.data.tables || []);
+      setTables(tablesData);
+    } catch (error) {
+      console.error('Error fetching tables:', error);
+    }
+  };
+
+  const getAllTableNumbers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/restaurant/tables', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const tablesData = Array.isArray(response.data) ? response.data : (response.data.tables || []);
+      const tableNumbers = tablesData.map(table => table.tableNumber);
+      console.log('All table numbers:', tableNumbers);
+      return tableNumbers;
+    } catch (error) {
+      console.error('Error fetching table numbers:', error);
+      return [];
+    }
+  };
+
+  // Use useState to manage the form input for a new table.
+  const [newTable, setNewTable] = useState({
+    tableNumber: '',
+    capacity: 1,
+    location: 'restaurant',
+    status: 'available',
+    isActive: true,
+  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(8);
+
+  // Function to handle changes in the new table form inputs.
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setNewTable(prevState => ({
+      ...prevState,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
+  // Function to handle adding a new table to the list.
+  const handleAddTable = async (e) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      if (editingTable) {
-        await axios.put(`/api/restaurant/tables/${editingTable._id}`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      } else {
-        await axios.post('/api/restaurant/tables', formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      }
+      await axios.post('/api/restaurant/tables', newTable, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert('Table created successfully!');
+      setNewTable({
+        tableNumber: '',
+        capacity: 1,
+        location: 'restaurant',
+        status: 'available',
+        isActive: true,
+      });
       fetchTables();
-      setShowForm(false);
-      setEditingTable(null);
-      setFormData({ tableNumber: '', capacity: '', location: 'restaurant', status: 'available', isActive: true });
     } catch (error) {
-      console.error('Error saving table:', error);
+      console.error('Error creating table:', error);
+      alert('Failed to create table!');
     }
   };
 
-  const handleEdit = (table) => {
-    setEditingTable(table);
-    setFormData({
-      tableNumber: table.tableNumber,
-      capacity: table.capacity,
-      location: table.location,
-      status: table.status,
-      isActive: table.isActive
-    });
-    setShowForm(true);
-  };
-
-  const updateTableStatus = async (tableId, status) => {
+  // Function to update the status of an existing table.
+  const handleStatusUpdate = async (id, newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      // Try PATCH first, then PUT for status endpoint
-      try {
-        await axios.patch(`/api/restaurant/tables/${tableId}/status`, { status }, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      } catch (patchError) {
-        try {
-          await axios.put(`/api/restaurant/tables/${tableId}/status`, { status }, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-        } catch (putError) {
-          // If both status endpoints fail, try updating the entire table
-          const table = tables.find(t => t._id === tableId);
-          if (table) {
-            await axios.put(`/api/restaurant/tables/${tableId}`, { ...table, status }, {
-              headers: { Authorization: `Bearer ${token}` }
-            });
-          }
-        }
-      }
+      await axios.patch(`/api/restaurant/tables/${id}/status`, {
+        status: newStatus
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       fetchTables();
     } catch (error) {
       console.error('Error updating table status:', error);
-      alert('Failed to update table status. Please try again.');
+      alert('Failed to update table status!');
     }
   };
 
-  const deleteTable = async (tableId) => {
-    if (window.confirm('Are you sure you want to delete this table?')) {
-      try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`/api/restaurant/tables/${tableId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        fetchTables();
-      } catch (error) {
-        console.error('Error deleting table:', error);
-      }
+  // Helper function to determine the color based on table status.
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'available':
+        return 'bg-green-100 text-green-800 border-green-400';
+      case 'occupied':
+        return 'bg-red-100 text-red-800 border-red-400';
+      case 'reserved':
+        return 'bg-blue-100 text-blue-800 border-blue-400';
+      case 'maintenance':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-400';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-400';
     }
   };
-
-  if (loading) return <div className="text-center py-4">Loading tables...</div>;
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-semibold">Tables</h2>
-        <button
-          onClick={() => setShowForm(true)}
-          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-        >
-          Add Table
-        </button>
-      </div>
+    <div className="min-h-screen bg-background font-inter p-2 sm:p-4 md:p-8">
+      <div className="container mx-auto">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-text mb-6 text-center">Restaurant Table Dashboard</h1>
 
-      {showForm && (
-        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-          <h3 className="text-lg font-semibold mb-4">{editingTable ? 'Edit' : 'Add'} Table</h3>
-          <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="Table Number"
-              value={formData.tableNumber}
-              onChange={(e) => setFormData({...formData, tableNumber: e.target.value})}
-              className="border rounded-lg px-3 py-2"
-              required
-            />
-            <input
-              type="number"
-              placeholder="Capacity"
-              value={formData.capacity}
-              onChange={(e) => setFormData({...formData, capacity: parseInt(e.target.value)})}
-              className="border rounded-lg px-3 py-2"
-              min="1"
-              required
-            />
-            <select
-              value={formData.location}
-              onChange={(e) => setFormData({...formData, location: e.target.value})}
-              className="border rounded-lg px-3 py-2"
-              required
+        {/* Tab Navigation */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-white rounded-lg p-1 shadow-lg w-full sm:w-auto">
+            <button
+              onClick={() => setActiveTab('manage')}
+              className={`px-3 sm:px-6 py-3 rounded-md font-medium transition-all duration-200 w-full sm:w-auto ${
+                activeTab === 'manage'
+                  ? 'bg-primary text-text shadow-md'
+                  : 'text-gray-600 hover:text-text hover:bg-gray-100'
+              }`}
             >
-              <option value="restaurant">Restaurant</option>
-              <option value="bar">Bar</option>
-              <option value="terrace">Terrace</option>
-              <option value="private_dining">Private Dining</option>
-            </select>
-            <select
-              value={formData.status}
-              onChange={(e) => setFormData({...formData, status: e.target.value})}
-              className="border rounded-lg px-3 py-2"
+              Manage Tables
+            </button>
+            <button
+              onClick={() => setActiveTab('available')}
+              className={`px-3 sm:px-6 py-3 rounded-md font-medium transition-all duration-200 w-full sm:w-auto ${
+                activeTab === 'available'
+                  ? 'bg-primary text-text shadow-md'
+                  : 'text-gray-600 hover:text-text hover:bg-gray-100'
+              }`}
             >
-              <option value="available">Available</option>
-              <option value="occupied">Occupied</option>
-              <option value="reserved">Reserved</option>
-              <option value="maintenance">Maintenance</option>
-            </select>
-            <div className="col-span-2 flex items-center">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
-                  className="mr-2"
-                />
-                Active
-              </label>
-            </div>
-            <div className="col-span-2 flex space-x-2">
-              <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg">
-                {editingTable ? 'Update' : 'Add'} Table
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowForm(false);
-                  setEditingTable(null);
-                  setFormData({ tableNumber: '', capacity: '', location: 'restaurant', status: 'available', isActive: true });
-                }}
-                className="bg-gray-500 text-white px-4 py-2 rounded-lg"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+              Available Tables
+            </button>
+          </div>
         </div>
-      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {Array.isArray(tables) && tables.length > 0 ? tables.map((table) => (
-          <div key={table._id} className={`bg-white p-4 rounded-lg shadow-md border-l-4 ${
-            table.status === 'available' ? 'border-green-500' :
-            table.status === 'occupied' ? 'border-red-500' :
-            table.status === 'reserved' ? 'border-yellow-500' :
-            'border-gray-500'
-          } ${!table.isActive ? 'opacity-50' : ''}`}>
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="font-semibold text-lg">Table {table.tableNumber}</h3>
-              <span className={`px-2 py-1 rounded text-xs ${
-                table.status === 'available' ? 'bg-green-100 text-green-800' :
-                table.status === 'occupied' ? 'bg-red-100 text-red-800' :
-                table.status === 'reserved' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-gray-100 text-gray-800'
-              }`}>
-                {table.status}
-              </span>
+        {/* Tab Content */}
+        {activeTab === 'manage' && (
+          <>
+            {/* Form to add a new table */}
+        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg mb-8">
+          <h2 className="text-xl sm:text-2xl font-bold text-text mb-4">Add a New Table</h2>
+          <form onSubmit={handleAddTable} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Table Number Input */}
+            <div>
+              <label htmlFor="tableNumber" className="block text-sm font-medium text-text">Table Number</label>
+              <input
+                type="text"
+                name="tableNumber"
+                id="tableNumber"
+                value={newTable.tableNumber}
+                onChange={handleInputChange}
+                required
+                className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 transition duration-200 ease-in-out hover:border-hover"
+              />
             </div>
-            <p className="text-gray-600 text-sm mb-1">Capacity: {table.capacity}</p>
-            <p className="text-gray-600 text-sm mb-3 capitalize">Location: {table.location.replace('_', ' ')}</p>
-            <div className="space-y-2">
+            {/* Capacity Input */}
+            <div>
+              <label htmlFor="capacity" className="block text-sm font-medium text-text">Capacity</label>
+              <input
+                type="number"
+                name="capacity"
+                id="capacity"
+                value={newTable.capacity}
+                onChange={handleInputChange}
+                required
+                min="1"
+                className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 transition duration-200 ease-in-out hover:border-hover"
+              />
+            </div>
+            {/* Location Dropdown */}
+            <div>
+              <label htmlFor="location" className="block text-sm font-medium text-text">Location</label>
               <select
-                value={table.status}
-                onChange={(e) => updateTableStatus(table._id, e.target.value)}
-                className="border rounded px-2 py-1 text-sm w-full"
-                disabled={!table.isActive}
+                name="location"
+                id="location"
+                value={newTable.location}
+                onChange={handleInputChange}
+                required
+                className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 transition duration-200 ease-in-out hover:border-hover"
+              >
+                <option value="restaurant">Restaurant</option>
+                <option value="bar">Bar</option>
+                <option value="terrace">Terrace</option>
+                <option value="private_dining">Private Dining</option>
+              </select>
+            </div>
+            {/* Status Dropdown */}
+            <div>
+              <label htmlFor="status" className="block text-sm font-medium text-text">Initial Status</label>
+              <select
+                name="status"
+                id="status"
+                value={newTable.status}
+                onChange={handleInputChange}
+                required
+                className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 transition duration-200 ease-in-out hover:border-hover"
               >
                 <option value="available">Available</option>
                 <option value="occupied">Occupied</option>
                 <option value="reserved">Reserved</option>
                 <option value="maintenance">Maintenance</option>
               </select>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => handleEdit(table)}
-                  className="bg-blue-500 text-white px-2 py-1 rounded text-sm flex-1"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => deleteTable(table._id)}
-                  className="bg-red-500 text-white px-2 py-1 rounded text-sm flex-1"
-                >
-                  Delete
-                </button>
-              </div>
             </div>
-          </div>
-        )) : (
-          <div className="col-span-full text-center py-8 text-gray-500">
-            No tables found. Click "Add Table" to create your first table.
-          </div>
+            {/* Is Active Checkbox */}
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                name="isActive"
+                id="isActive"
+                checked={newTable.isActive}
+                onChange={handleInputChange}
+                className="h-4 w-4 text-primary rounded-md border-border focus:ring-primary"
+              />
+              <label htmlFor="isActive" className="ml-2 block text-sm font-medium text-text">Is Active</label>
+            </div>
+            {/* Submit Button */}
+            <div className="col-span-1 sm:col-span-2 md:col-span-3 flex justify-end">
+              <button
+                type="submit"
+                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-text bg-primary hover:bg-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition duration-200 ease-in-out"
+              >
+                Add Table
+              </button>
+            </div>
+          </form>
+        </div>
+
+            {/* Grid to display tables */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+              {tables.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(table => (
+                <div key={table._id || table.id} className={`bg-white p-4 sm:p-6 rounded-2xl shadow-lg border-b-4 ${getStatusColor(table.status)} transition duration-300 ease-in-out hover:shadow-xl transform hover:-translate-y-1`}>
+                  <h3 className="text-xl font-bold mb-2">{`Table ${table.tableNumber}`}</h3>
+                  <p className="text-sm text-gray-600">Capacity: <span className="font-semibold">{table.capacity}</span></p>
+                  <p className="text-sm text-gray-600">Location: <span className="font-semibold capitalize">{table.location.replace('_', ' ')}</span></p>
+                  <p className="text-sm text-gray-600">Status: <span className="font-semibold capitalize">{table.status}</span></p>
+                  <p className="text-sm text-gray-600">Active: <span className="font-semibold">{table.isActive ? 'Yes' : 'No'}</span></p>
+
+                  {/* Status Update Buttons */}
+                  <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-2">
+                    {['available', 'occupied', 'reserved', 'maintenance'].map(statusOption => (
+                      <button
+                        key={statusOption}
+                        onClick={() => handleStatusUpdate(table._id || table.id, statusOption)}
+                        disabled={table.status === statusOption}
+                        className={`
+                          px-3 py-1 text-xs font-medium rounded-full
+                          ${table.status === statusOption
+                            ? 'bg-gray-400 text-white cursor-not-allowed'
+                            : 'bg-primary text-text hover:bg-hover transition duration-150'
+                          }
+                        `}
+                      >
+                        Set to {statusOption.charAt(0).toUpperCase() + statusOption.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.ceil(tables.length / itemsPerPage)}
+              onPageChange={setCurrentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={tables.length}
+            />
+          </>
+        )}
+
+        {/* Available Tables Tab */}
+        {activeTab === 'available' && (
+          <AvailableTable />
         )}
       </div>
     </div>
   );
 };
 
-export default Table;
+export default App;

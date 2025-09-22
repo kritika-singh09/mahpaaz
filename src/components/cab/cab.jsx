@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../../context/AppContext";
+import { showToast } from "../../utils/toaster";
 
 // Utility function to get the authentication token
 const getAuthToken = () => {
@@ -357,6 +358,7 @@ const CabBookingListPage = forwardRef(({ onBookingActionSuccess }, ref) => {
       setError("Authentication token not found. Please log in.");
       setLoading(false);
       setBookings([]);
+      showToast.error('Authentication token not found. Please log in.');
       return;
     }
 
@@ -417,6 +419,7 @@ const CabBookingListPage = forwardRef(({ onBookingActionSuccess }, ref) => {
         text: "Authentication token not found. Please log in.",
         type: "error",
       });
+      showToast.error('Authentication token not found. Please log in.');
       return;
     }
 
@@ -435,6 +438,7 @@ const CabBookingListPage = forwardRef(({ onBookingActionSuccess }, ref) => {
       });
       fetchBookings(); // Refresh the list
       if (onBookingActionSuccess) onBookingActionSuccess();
+      showToast.success('✅ Booking successfully updated!');
       // Optionally close modal after a short delay or user interaction
       setTimeout(() => handleCloseEditModal(), 1500);
     } catch (e) {
@@ -462,6 +466,7 @@ const CabBookingListPage = forwardRef(({ onBookingActionSuccess }, ref) => {
     if (!token) {
       setMessage("Authentication token not found. Please log in.");
       setMessageType("error");
+      showToast.error('Authentication token not found. Please log in.');
       return;
     }
 
@@ -475,6 +480,7 @@ const CabBookingListPage = forwardRef(({ onBookingActionSuccess }, ref) => {
       setMessageType("success");
       fetchBookings(); // Refresh the list after deletion
       if (onBookingActionSuccess) onBookingActionSuccess();
+      showToast.success('🗑️ Booking successfully deleted!');
     } catch (e) {
       setMessage(`Network error during delete: ${e.message}`);
       setMessageType("error");

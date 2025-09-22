@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAppContext } from "../../context/AppContext";
+import { showToast } from "../../utils/toaster";
 
 const Category = () => {
   const { axios } = useAppContext();
@@ -37,8 +38,10 @@ const Category = () => {
       setShowForm(false);
       setEditingCategory(null);
       setFormData({ name: '', description: '', status: 'active' });
+      showToast.success(`✅ Category ${editingCategory ? 'updated' : 'added'} successfully!`);
     } catch (error) {
       console.error('Error saving category:', error);
+      showToast.error(`Failed to ${editingCategory ? 'update' : 'add'} category`);
     }
   };
 
@@ -52,25 +55,27 @@ const Category = () => {
     try {
       await axios.delete(`/api/restaurant-categories/delete/${id}`);
       fetchCategories();
+      showToast.success('🗑️ Category deleted successfully!');
     } catch (error) {
       console.error('Error deleting category:', error);
+      showToast.error('Failed to delete category');
     }
   };
 
   return (
-    <div className="p-6" style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold">Restaurant Categories</h2>
+    <div className="p-4 sm:p-6" style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <h2 className="text-xl sm:text-2xl font-semibold">Restaurant Categories</h2>
         <button
           onClick={() => setShowForm(true)}
-          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 w-full sm:w-auto"
         >
           Add Category
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-6">
           <h3 className="text-lg font-semibold mb-4">{editingCategory ? 'Edit' : 'Add'} Category</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
@@ -116,7 +121,7 @@ const Category = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {categories.map((category) => (
           <div key={category._id} className="bg-white p-4 rounded-lg shadow-md">
             <div className="flex justify-between items-start mb-2">

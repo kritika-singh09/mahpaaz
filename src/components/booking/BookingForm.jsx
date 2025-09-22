@@ -1,6 +1,28 @@
-
 import React, { useState, useEffect, useRef, createContext, useContext, useMemo } from 'react';
 import axios from 'axios';
+import { showToast } from '../../utils/toaster';
+import { validateEmail, validatePhone, validateRequired, validatePositiveNumber, validateDateRange, validateGST, validatePAN, validateAadhaar } from '../../utils/validation';
+
+// Apply golden theme
+const themeStyles = `
+  :root {
+    --color-primary: hsl(45, 70%, 50%);
+    --color-secondary: hsl(45, 71%, 69%);
+    --color-accent: hsl(45, 100%, 80%);
+    --color-background: hsl(45, 100%, 95%);
+    --color-text: hsl(45, 100%, 20%);
+    --color-border: hsl(45, 100%, 85%);
+    --color-hover: hsl(45, 80%, 40%);
+  }
+`;
+
+// Inject theme styles
+if (typeof document !== 'undefined') {
+  const styleElement = document.createElement('style');
+  styleElement.textContent = themeStyles;
+  document.head.appendChild(styleElement);
+}
+
 import { useNavigate } from 'react-router-dom';
 import {
   FaUser,
@@ -61,9 +83,9 @@ const Button = ({
   const baseClasses =
     "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 h-9 px-4 py-2";
   const variants = {
-    default: "bg-white text-black border border-black shadow hover:bg-gray-100",
+    default: "bg-[hsl(45,43%,58%)] text-white border border-[hsl(45,43%,58%)] shadow hover:bg-[hsl(45,32%,46%)]",
     outline:
-      "border border-gray-200 bg-transparent hover:bg-gray-100 hover:text-gray-900",
+      "border border-[hsl(45,100%,85%)] bg-transparent hover:bg-[hsl(45,100%,95%)] hover:text-[hsl(45,100%,20%)]",
   };
   return (
     <button
@@ -90,7 +112,7 @@ const Input = ({
     placeholder={placeholder}
     value={value}
     onChange={onChange}
-    className={`flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+    className={`flex h-9 w-full rounded-md border border-gray-300 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50 min-w-0 ${className}`}
     {...props}
   />
 );
@@ -98,7 +120,7 @@ const Input = ({
 const Label = ({ children, htmlFor, className = "" }) => (
   <label
     htmlFor={htmlFor}
-    className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${className}`}
+    className={`block text-sm font-medium text-gray-700 ${className}`}
   >
     {children}
   </label>
@@ -116,7 +138,7 @@ const Select = ({
     value={value}
     onChange={onChange}
     name={name}
-    className={`flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 ${className}`}
+    className={`flex h-9 w-full items-center justify-between rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50 truncate ${className}`}
     {...props}
   >
     {children}
@@ -232,7 +254,9 @@ export const AppProvider = ({ children }) => {
   const [message, setMessage] = useState(null);
   const [messageType, setMessageType] = useState('info');
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [capturedPhoto, setCapturedPhoto] = useState(null);
+  const [capturedPhotos, setCapturedPhotos] = useState([]);
+  const [facingMode, setFacingMode] = useState('user'); // 'user' for front, 'environment' for back
+  const [stream, setStream] = useState(null);
   const [searchGRC, setSearchGRC] = useState('');
   const [allCategories, setAllCategories] = useState([]);
   const [allRooms, setAllRooms] = useState([]);
@@ -332,11 +356,15 @@ export const AppProvider = ({ children }) => {
 
   // --- Message Handling Logic ---
   const showMessage = (msg, msgType = 'info') => {
-    setMessage(msg);
-    setMessageType(msgType);
-    setTimeout(() => {
-      setMessage(null);
-    }, 5000);
+    if (msgType === 'success') {
+      showToast.success(msg);
+    } else if (msgType === 'error') {
+      showToast.error(msg);
+    } else if (msgType === 'warning') {
+      showToast.warning(msg);
+    } else {
+      showToast.info(msg);
+    }
   };
 
   // --- Data Fetching Functions ---
@@ -375,7 +403,7 @@ export const AppProvider = ({ children }) => {
 
     } catch (error) {
       console.error('Error fetching data:', error);
-      showMessage(`Failed to fetch initial data: ${error.message}. Ensure your server is running.`, 'error');
+      showToast.error(`Failed to fetch initial data: ${error.message}. Ensure your server is running.`);
     }
   };
 
@@ -400,7 +428,7 @@ export const AppProvider = ({ children }) => {
     setSearchGRC('');
     setAllCategories(prev => prev.map(cat => ({ ...cat, availableRoomsCount: 0 })));
     setHasCheckedAvailability(false);
-    setCapturedPhoto(null);
+    setCapturedPhotos([]);
     setIsCameraOpen(false);
     fetchNewGRCNo();
     fetchAllData();
@@ -416,8 +444,12 @@ export const AppProvider = ({ children }) => {
     showMessage,
     isCameraOpen,
     setIsCameraOpen,
-    capturedPhoto,
-    setCapturedPhoto,
+    capturedPhotos,
+    setCapturedPhotos,
+    facingMode,
+    setFacingMode,
+    stream,
+    setStream,
     searchGRC,
     setSearchGRC,
     allCategories,
@@ -455,10 +487,14 @@ const App = () => {
   // Use the custom hook to access all state and functions
   const {
     BASE_URL, loading, setLoading, message, messageType, showMessage,
-    isCameraOpen, setIsCameraOpen, capturedPhoto, setCapturedPhoto, searchGRC, setSearchGRC, allCategories, setAllCategories, allRooms, setAllRooms,
+    isCameraOpen, setIsCameraOpen, facingMode, setFacingMode, stream, setStream,
+    searchGRC, setSearchGRC, allCategories, setAllCategories, allRooms, setAllRooms,
     selectedRooms, setSelectedRooms, hasCheckedAvailability, setHasCheckedAvailability,
     formData, setFormData, roomsForSelectedCategory, resetForm, showCompanyDetails, setShowCompanyDetails,
   } = useAppContext();
+
+  // Local state for photos
+  const [capturedPhotos, setCapturedPhotos] = useState([]);
 
   // Navigation hook
   const navigate = useNavigate();
@@ -468,33 +504,52 @@ const App = () => {
   const canvasRef = useRef(null);
 
   // --- CAMERA LOGIC ---
-  useEffect(() => {
-    const startCamera = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      } catch (err) {
-        showMessage('Error accessing camera. Please allow camera permissions.', 'error');
+  const startCamera = async () => {
+    try {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
       }
-    };
-    
-    if (isCameraOpen) {
-        startCamera();
-    } else {
-        if (videoRef.current && videoRef.current.srcObject) {
-            videoRef.current.srcObject.getTracks().forEach(track => track.stop());
-            videoRef.current.srcObject = null;
+      
+      const constraints = {
+        video: {
+          facingMode: facingMode,
+          width: { ideal: window.innerWidth < 768 ? 480 : 1280 },
+          height: { ideal: window.innerWidth < 768 ? 640 : 720 }
         }
+      };
+      
+      const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+      setStream(newStream);
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = newStream;
+        await videoRef.current.play();
+      }
+    } catch (err) {
+      console.error('Camera error:', err);
+      showToast.error('Camera access denied or not available');
+      setIsCameraOpen(false);
     }
+  };
 
-    return () => {
-      if (videoRef.current && videoRef.current.srcObject) {
-        videoRef.current.srcObject.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, [isCameraOpen, showMessage, videoRef]);
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  useEffect(() => {
+    if (isCameraOpen) {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+    return () => stopCamera();
+  }, [isCameraOpen, facingMode]);
 
   useEffect(() => {
     const checkIn = new Date(formData.checkInDate);
@@ -517,27 +572,72 @@ const App = () => {
         roomNumber: selectedRooms.map(r => r.room_number).join(','),
         numberOfRooms: selectedRooms.length > 0 ? selectedRooms.length : 1,
       }));
+      
+      // Show selected rooms info
+      if (selectedRooms.length > 1) {
+        showToast.info(`${selectedRooms.length} rooms selected: ${selectedRooms.map(r => r.room_number).join(', ')}`);
+      }
     }
   }, [selectedRooms, setFormData]);
 
-  const handleCapturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
+  const handleCapturePhoto = async () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    
+    if (!video || !canvas || !stream) {
+      showToast.error('Camera not ready');
+      return;
+    }
+    
+    try {
       const context = canvas.getContext('2d');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-      const imageDataUrl = canvas.toDataURL('image/png');
-      setCapturedPhoto(imageDataUrl);
-      setFormData(prev => ({ ...prev, photoUrl: imageDataUrl }));
-      showMessage("Photo captured successfully.", 'success');
+      const width = video.videoWidth || 640;
+      const height = video.videoHeight || 480;
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      context.drawImage(video, 0, 0, width, height);
+      const imageDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      
+      if (imageDataUrl && imageDataUrl !== 'data:,') {
+        const newPhoto = {
+          id: Date.now(),
+          data: imageDataUrl,
+          timestamp: new Date().toLocaleTimeString()
+        };
+        setCapturedPhotos(prev => {
+          const updatedPhotos = [...prev, newPhoto];
+          showToast.success(`📸 Photo ${updatedPhotos.length} captured!`);
+          return updatedPhotos;
+        });
+        setFormData(prev => ({ ...prev, photoUrl: imageDataUrl }));
+      } else {
+        showToast.error('Failed to capture photo - please try again');
+      }
+    } catch (error) {
+      console.error('Capture error:', error);
+      showToast.error('Failed to capture photo');
     }
   };
 
-  const handleRemovePhoto = () => {
-    setCapturedPhoto(null);
+  const handleRemovePhoto = (photoId) => {
+    setCapturedPhotos(prev => {
+      const remainingPhotos = prev.filter(photo => photo.id !== photoId);
+      const lastPhoto = remainingPhotos[remainingPhotos.length - 1];
+      setFormData(prevForm => ({ ...prevForm, photoUrl: lastPhoto?.data || '' }));
+      return remainingPhotos;
+    });
+  };
+
+  const handleClearAllPhotos = () => {
+    setCapturedPhotos([]);
     setFormData(prev => ({ ...prev, photoUrl: '' }));
+  };
+
+  const switchCamera = async () => {
+    const newMode = facingMode === 'user' ? 'environment' : 'user';
+    setFacingMode(newMode);
   };
 
   // --- Form Handlers ---
@@ -572,7 +672,7 @@ const App = () => {
 
   const handleFetchBooking = async () => {
     if (!searchGRC.trim()) {
-      showMessage("Please enter a GRC number to search.", 'error');
+      showToast.error("Please enter a GRC number to search.");
       return;
     }
     setLoading(true);
@@ -630,7 +730,12 @@ const App = () => {
 
         // Set photo if available
         if (fetchedData.photoUrl) {
-          setCapturedPhoto(fetchedData.photoUrl);
+          const photo = {
+            id: Date.now(),
+            data: fetchedData.photoUrl,
+            timestamp: 'Loaded'
+          };
+          setCapturedPhotos([photo]);
         }
 
         // Set category if available and trigger availability check
@@ -642,9 +747,9 @@ const App = () => {
           }, 500);
         }
 
-        showMessage("Booking found and form populated successfully!", 'success');
+        showToast.success("Booking found and form populated successfully!");
       } else {
-        showMessage("No booking found with that GRC number.", 'error');
+        showToast.error("No booking found with that GRC number.");
       }
     } catch (error) {
       console.error("Error fetching booking:", error);
@@ -653,16 +758,16 @@ const App = () => {
         const status = error.response.status;
         const message = error.response.data?.message || error.response.data?.error || 'Unknown server error';
         if (status === 404) {
-          showMessage("No booking found with that GRC number.", 'error');
+          showToast.error("No booking found with that GRC number.");
         } else {
-          showMessage(`Server error (${status}): ${message}`, 'error');
+          showToast.error(`Server error (${status}): ${message}`);
         }
       } else if (error.request) {
         // Network error
-        showMessage("Network error. Please check your internet connection and try again.", 'error');
+        showToast.error("Network error. Please check your internet connection and try again.");
       } else {
         // Other error
-        showMessage(`Error: ${error.message}`, 'error');
+        showToast.error(`Error: ${error.message}`);
       }
     } finally {
       setLoading(false);
@@ -671,7 +776,7 @@ const App = () => {
   
   const handleCheckAvailability = async () => {
     if (!formData.checkInDate || !formData.checkOutDate) {
-      showMessage("Please select both check-in and check-out dates.", 'error');
+      showToast.error("Please select both check-in and check-out dates.");
       return;
     }
     setLoading(true);
@@ -730,14 +835,14 @@ const App = () => {
       console.log('Truly available rooms:', roomsWithCategoryInfo);
 
       if (roomsWithCategoryInfo.length === 0) {
-        showMessage("No rooms available for the selected dates.", 'error');
+        showToast.error("No rooms available for the selected dates.");
       } else {
-        showMessage(`Found ${roomsWithCategoryInfo.length} available rooms.`, 'info');
+        showToast.info(`Found ${roomsWithCategoryInfo.length} available rooms.`);
       }
 
     } catch (error) {
       console.error('Availability check error:', error);
-      showMessage(`Failed to check availability: ${error.message}`, 'error');
+      showToast.error(`Failed to check availability: ${error.message}`);
       setAllRooms([]);
       const resetCategories = allCategories.map(cat => ({ ...cat, availableRoomsCount: 0 }));
       setAllCategories(resetCategories);
@@ -762,27 +867,76 @@ const App = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Basic form validation
-    if (!formData.name.trim()) {
-      showMessage('Guest name is required', 'error');
-      return;
+  const validateForm = () => {
+    // Required fields
+    if (!validateRequired(formData.name)) {
+      showToast.error('Guest name is required');
+      return false;
     }
     
     if (!formData.checkInDate || !formData.checkOutDate) {
-      showMessage('Check-in and check-out dates are required', 'error');
-      return;
+      showToast.error('Check-in and check-out dates are required');
+      return false;
+    }
+    
+    if (!validateDateRange(formData.checkInDate, formData.checkOutDate)) {
+      showToast.error('Check-out date must be after check-in date');
+      return false;
     }
     
     if (selectedRooms.length === 0) {
-      showMessage('Please select at least one room', 'error');
-      return;
+      showToast.error('Please select at least one room');
+      return false;
     }
     
     if (!formData.categoryId) {
-      showMessage('Please select a room category', 'error');
+      showToast.error('Please select a room category');
+      return false;
+    }
+    
+    // Email validation
+    if (formData.email && !validateEmail(formData.email)) {
+      showToast.error('Please enter a valid email address');
+      return false;
+    }
+    
+    // Phone validation
+    if (formData.mobileNo && !validatePhone(formData.mobileNo)) {
+      showToast.error('Please enter a valid 10-digit mobile number');
+      return false;
+    }
+    
+    // Rate validation
+    if (formData.rate && !validatePositiveNumber(formData.rate)) {
+      showToast.error('Rate must be a positive number');
+      return false;
+    }
+    
+    // GST validation
+    if (formData.companyGSTIN && !validateGST(formData.companyGSTIN)) {
+      showToast.error('Please enter a valid GST number');
+      return false;
+    }
+    
+    // ID proof validation
+    if (formData.idProofType && formData.idProofNumber) {
+      if (formData.idProofType === 'PAN' && !validatePAN(formData.idProofNumber)) {
+        showToast.error('Please enter a valid PAN number');
+        return false;
+      }
+      if (formData.idProofType === 'Aadhaar' && !validateAadhaar(formData.idProofNumber)) {
+        showToast.error('Please enter a valid 12-digit Aadhaar number');
+        return false;
+      }
+    }
+    
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
       return;
     }
     
@@ -791,7 +945,7 @@ const App = () => {
     // Clean the form data to remove any invalid fields
     const cleanFormData = {
       ...formData,
-      photoUrl: capturedPhoto || '',
+      photoUrl: formData.photoUrl || '',
       roomNumber: selectedRooms.map(r => r.room_number).join(','),
       numberOfRooms: selectedRooms.length,
     };
@@ -819,7 +973,7 @@ const App = () => {
         }
       });
       console.log('Booking response:', response.data);
-      showMessage("Booking submitted successfully!", 'success');
+      showToast.success("Booking submitted successfully!");
       alert("🎉 Booking submitted successfully! You will be redirected to the booking page.");
       resetForm();
       // Navigate to booking page after successful submission
@@ -834,17 +988,17 @@ const App = () => {
         
         // Handle specific room availability error
         if (errorMsg.includes('Not enough available rooms') || errorMsg.includes('available rooms')) {
-          showMessage(`${errorMsg}. Please check room availability again and select different rooms.`, 'error');
+          showToast.error(`${errorMsg}. Please check room availability again and select different rooms.`);
           // Clear selected rooms and suggest re-checking availability
           setSelectedRooms([]);
           setHasCheckedAvailability(false);
         } else {
-          showMessage(`Failed to submit booking: ${errorMsg}`, 'error');
+          showToast.error(`Failed to submit booking: ${errorMsg}`);
         }
       } else if (error.request) {
-        showMessage('Network error. Please check your connection and try again.', 'error');
+        showToast.error('Network error. Please check your connection and try again.');
       } else {
-        showMessage(`An unexpected error occurred: ${error.message}`, 'error');
+        showToast.error(`An unexpected error occurred: ${error.message}`);
       }
     } finally {
       setLoading(false);
@@ -872,10 +1026,17 @@ const App = () => {
 
   // Component rendering
   return (
-    <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 rounded-2xl shadow-md border border-[color:var(--color-border)] text-[color:var(--color-text)] overflow-x-hidden">
-      <h2 className="text-2xl sm:text-3xl font-extrabold text-center mb-6 sm:mb-8 text-[color:var(--color-text)] flex items-center justify-center gap-3">
-        Booking Form
-      </h2>
+    <div className="min-h-screen" style={{backgroundColor: 'hsl(45, 100%, 95%)'}}>
+      <header className="bg-white shadow-sm">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold" style={{color: 'hsl(45, 100%, 20%)'}}>
+            Booking Form
+          </h1>
+        </div>
+      </header>
+      <main className="container mx-auto px-4 py-6">
+        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="p-6 space-y-8">
       {message && (
         <div
           className={`px-4 py-3 rounded relative mb-4 mx-auto max-w-3xl ${
@@ -904,22 +1065,27 @@ const App = () => {
       )}
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Guest Search and GRC Number */}
-        <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
-          <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-[color:var(--color-text)]">
-            <FaInfoCircle className="text-amber-400" /> Guest Registration Card (GRC) Details
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="space-y-2">
+        <section className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-full" style={{backgroundColor: 'hsl(45, 100%, 85%)'}}>
+              <FaInfoCircle className="text-lg" style={{color: 'hsl(45, 43%, 58%)'}} />
+            </div>
+            <h2 className="text-xl font-semibold" style={{color: 'hsl(45, 100%, 20%)'}}>
+              Guest Registration Card (GRC) Details
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-1">
               <Label htmlFor="grcNo">GRC No.</Label>
               <Input
                 id="grcNo"
                 name="grcNo"
                 value={formData.grcNo}
                 readOnly
-                className="bg-gray-100 border border-secondary rounded-lg cursor-not-allowed"
+                className="bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="searchGRC">Search by GRC</Label>
               <Input
                 id="searchGRC"
@@ -939,7 +1105,6 @@ const App = () => {
               <Button
                 onClick={handleFetchBooking}
                 disabled={loading || !searchGRC.trim()}
-                className="flex-1"
               >
                 {loading ? "Searching..." : "Search Booking"}
               </Button>
@@ -959,11 +1124,16 @@ const App = () => {
         </section>
 
         {/* Room & Availability Section */}
-        <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
-          <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-[color:var(--color-text)]">
-            <BedIcon className="text-amber-400" /> Room & Availability
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <section className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-full" style={{backgroundColor: 'hsl(45, 100%, 85%)'}}>
+              <BedIcon className="text-lg" style={{color: 'hsl(45, 43%, 58%)'}} />
+            </div>
+            <h2 className="text-xl font-semibold" style={{color: 'hsl(45, 100%, 20%)'}}>
+              Room & Availability
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="checkInDate">Check-in Date</Label>
               <Input
@@ -986,11 +1156,10 @@ const App = () => {
                 required
               />
             </div>
-            <div className="flex items-end">
+            <div className="flex items-end md:col-span-2">
               <Button
                 onClick={handleCheckAvailability}
                 disabled={isCheckAvailabilityDisabled}
-                className="w-full"
               >
                 Check Availability
               </Button>
@@ -1002,39 +1171,34 @@ const App = () => {
               <h3 className="text-lg font-medium mb-2 text-gray-700">Room Categories</h3>
               {allCategories.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full bg-white border border-gray-200 rounded-xl shadow-sm">
-                    <thead className="bg-gray-100">
+                  <table className="min-w-full rounded-xl shadow-sm" style={{ backgroundColor: 'hsl(45, 100%, 95%)', border: '1px solid hsl(45, 100%, 85%)' }}>
+                    <thead style={{ backgroundColor: 'hsl(45, 100%, 90%)' }}>
                       <tr>
-                        <th className="py-3 px-6 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Category Name</th>
-                        <th className="py-3 px-6 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Availability</th>
-                        <th className="py-3 px-6 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Action</th>
+                        <th className="py-3 px-6 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>Category Name</th>
+                        <th className="py-3 px-6 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>Availability</th>
+                        <th className="py-3 px-6 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="divide-y" style={{ borderColor: 'hsl(45, 100%, 90%)' }}>
                       {allCategories.map(cat => (
                         <tr key={cat._id} className={`${formData.categoryId === cat._id ? 'bg-blue-50' : 'hover:bg-gray-50'} ${cat.availableRoomsCount === 0 ? 'opacity-50' : ''}`}>
-                          <td className="py-4 px-6 text-sm font-medium text-gray-900">
+                          <td className="py-4 px-6 text-sm font-medium" style={{ color: 'hsl(45, 100%, 20%)' }}>
                             {cat.name || 'Unknown'}
                             {cat.availableRoomsCount === 0 && <span className="text-red-500 text-xs ml-2">(No available rooms)</span>}
                           </td>
-                          <td className="py-4 px-6 text-sm text-gray-500">
+                          <td className="py-4 px-6 text-sm" style={{ color: 'hsl(45, 100%, 40%)' }}>
                             {`${cat.availableRoomsCount || 0} of ${cat.totalRooms || 0} available`}
                           </td>
                           <td className="py-4 px-6 text-sm">
-                            <button
+                            <Button
                               type="button"
                               onClick={() => handleCategoryCardClick(cat._id)}
                               disabled={cat.availableRoomsCount === 0}
-                              className={`px-3 py-1 rounded-md text-white transition-colors ${
-                                cat.availableRoomsCount === 0 
-                                  ? 'bg-gray-400 cursor-not-allowed' 
-                                  : formData.categoryId === cat._id 
-                                    ? 'bg-blue-600 hover:bg-blue-700' 
-                                    : 'bg-blue-500 hover:bg-blue-600'
-                              }`}
+                              className="px-3 py-1 rounded-md transition-colors"
+                              variant={formData.categoryId === cat._id ? "default" : "outline"}
                             >
                               {cat.availableRoomsCount === 0 ? 'Unavailable' : formData.categoryId === cat._id ? 'Selected' : 'Select'}
-                            </button>
+                            </Button>
                           </td>
                         </tr>
                       ))}
@@ -1053,34 +1217,43 @@ const App = () => {
               <p className="text-sm text-gray-500 mb-2">Available rooms: {roomsForSelectedCategory.length}</p>
               {roomsForSelectedCategory.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full bg-white border border-gray-200 rounded-xl shadow-sm">
-                    <thead className="bg-gray-100">
+                  <table className="min-w-full rounded-xl shadow-sm" style={{ backgroundColor: 'hsl(45, 100%, 95%)', border: '1px solid hsl(45, 100%, 85%)' }}>
+                    <thead style={{ backgroundColor: 'hsl(45, 100%, 90%)' }}>
                       <tr>
-                        <th className="py-3 px-6 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Action</th>
-                        <th className="py-3 px-6 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Room Number</th>
-                        <th className="py-3 px-6 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Room Name</th>
-                        <th className="py-3 px-6 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Capacity</th>
+                        <th className="py-3 px-6 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>Action</th>
+                        <th className="py-3 px-6 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>Room Number</th>
+                        <th className="py-3 px-6 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>Room Name</th>
+                        <th className="py-3 px-6 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>Capacity</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="divide-y" style={{ borderColor: 'hsl(45, 100%, 90%)' }}>
                       {roomsForSelectedCategory.map(room => (
-                        <tr key={room._id} className={`${selectedRooms.some(r => r._id === room._id) ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
+                        <tr 
+                          key={room._id} 
+                          className={`cursor-pointer ${selectedRooms.some(r => r._id === room._id) ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                          onClick={() => handleRoomSelection(room)}
+                        >
                           <td className="py-4 px-6 text-sm">
-                            <button
+                            <Button
                               type="button"
-                              onClick={() => handleRoomSelection(room)}
-                              className={`px-3 py-1 rounded-md text-white transition-colors ${
-                                selectedRooms.some(r => r._id === room._id)
-                                  ? 'bg-green-500 hover:bg-green-600'
-                                  : 'bg-red-500 hover:bg-red-600'
-                              }`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRoomSelection(room);
+                              }}
+                              className="px-3 py-1 rounded-md transition-colors"
+                              style={{
+                                backgroundColor: selectedRooms.some(r => r._id === room._id)
+                                  ? 'hsl(120, 60%, 50%)'
+                                  : 'hsl(0, 60%, 50%)',
+                                color: 'white'
+                              }}
                             >
                               {selectedRooms.some(r => r._id === room._id) ? 'Unselect' : 'Select'}
-                            </button>
+                            </Button>
                           </td>
-                          <td className="py-4 px-6 text-sm font-medium text-gray-900">{room.room_number || 'N/A'}</td>
-                          <td className="py-4 px-6 text-sm text-gray-500">{room.title || 'N/A'}</td>
-                          <td className="py-4 px-6 text-sm text-gray-500">{room.capacity || 'N/A'}</td>
+                          <td className="py-4 px-6 text-sm font-medium" style={{ color: 'hsl(45, 100%, 20%)' }}>{room.room_number || 'N/A'}</td>
+                          <td className="py-4 px-6 text-sm" style={{ color: 'hsl(45, 100%, 40%)' }}>{room.title || 'N/A'}</td>
+                          <td className="py-4 px-6 text-sm" style={{ color: 'hsl(45, 100%, 40%)' }}>{room.capacity || 'N/A'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1094,11 +1267,16 @@ const App = () => {
         </section>
 
         {/* Guest Details Section */}
-        <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
-          <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-[color:var(--color-text)]">
-            <FaUser className="text-amber-400" /> Guest Details
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <section className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-full" style={{backgroundColor: 'hsl(45, 100%, 85%)'}}>
+              <FaUser className="text-lg" style={{color: 'hsl(45, 43%, 58%)'}} />
+            </div>
+            <h2 className="text-xl font-semibold" style={{color: 'hsl(45, 100%, 20%)'}}>
+              Guest Details
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="salutation">Salutation</Label>
               <Select
@@ -1114,7 +1292,7 @@ const App = () => {
                 <option value="other">Other</option>
               </Select>
             </div>
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="name">
                 Guest Name <span className="text-red-500">*</span>
               </Label>
@@ -1180,7 +1358,7 @@ const App = () => {
                 onChange={handleChange}
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="address">Address</Label>
               <Input
                 id="address"
@@ -1228,7 +1406,7 @@ const App = () => {
                     onChange={handleDateChange}
                 />
             </div>
-            <div className="space-y-2 flex items-center gap-2 md:col-span-3">
+            <div className="space-y-2 flex items-center gap-2 sm:col-span-2 lg:col-span-3">
               <Checkbox
                 id="showCompanyDetails"
                 checked={showCompanyDetails}
@@ -1238,7 +1416,7 @@ const App = () => {
             </div>
             {showCompanyDetails && (
               <>
-                <div className="space-y-2 md:col-span-3">
+                <div className="space-y-2 sm:col-span-2 lg:col-span-3">
                   <Label htmlFor="companyName">Company Name</Label>
                   <Input
                     id="companyName"
@@ -1247,7 +1425,7 @@ const App = () => {
                     onChange={handleChange}
                   />
                 </div>
-                <div className="space-y-2 md:col-span-2">
+                <div className="space-y-2 sm:col-span-2">
                     <Label htmlFor="companyGSTIN">Company GSTIN</Label>
                     <Input
                       id="companyGSTIN"
@@ -1321,76 +1499,151 @@ const App = () => {
           <hr className="my-6 border-gray-200" />
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-700">Guest Photo Capture</h3>
-            <div className="flex flex-col sm:flex-row gap-4 mb-4 justify-center">
-                <Button
-                    onClick={() => setIsCameraOpen(true)}
-                    disabled={isCameraOpen}
-                    className="w-full sm:w-auto bg-indigo-500 text-black hover:bg-indigo-600 disabled:bg-indigo-300"
-                >
-                    Open Camera
-                </Button>
-                <Button
-                    type="button"
-                    onClick={() => {
-                        if (videoRef.current && videoRef.current.srcObject) {
-                            videoRef.current.srcObject.getTracks().forEach(track => track.stop());
-                            videoRef.current.srcObject = null;
-                        }
-                        setIsCameraOpen(false);
-                    }}
-                    disabled={!isCameraOpen}
-                    className="w-full sm:w-auto bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300"
-                >
-                    Close Camera
-                </Button>
+            
+            {/* Photo Upload Options */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div className="space-y-2">
+                    <Label htmlFor="photoUpload">Upload Photo from Device</Label>
+                    <Input 
+                        id="photoUpload" 
+                        type="file" 
+                        accept="image/*"
+                        onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => {
+                                    const newPhoto = {
+                                        id: Date.now(),
+                                        data: reader.result,
+                                        timestamp: 'Uploaded'
+                                    };
+                                    setCapturedPhotos(prev => [...prev, newPhoto]);
+                                    setFormData(prev => ({ ...prev, photoUrl: reader.result }));
+                                    showToast.success("Photo uploaded successfully.");
+                                };
+                                reader.readAsDataURL(file);
+                            }
+                        }}
+                        className="w-full"
+                    />
+                </div>
+                <div className="flex flex-col gap-2">
+                    <Label>Camera Options</Label>
+                    <Button
+                        type="button"
+                        onClick={() => setIsCameraOpen(!isCameraOpen)}
+                        className="w-fit"
+                    >
+                        📷 {isCameraOpen ? 'Close Camera' : 'Open Camera'}
+                    </Button>
+                </div>
             </div>
+            
             {isCameraOpen && (
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <div className="flex-grow max-w-lg">
-                        <div className="relative w-full aspect-video bg-gray-200 rounded-md overflow-hidden">
-                            <video ref={videoRef} autoPlay playsInline className="absolute inset-0 w-full h-full object-cover"></video>
-                            <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
+                <div className="mt-4 bg-black rounded-lg overflow-hidden shadow-lg max-w-md mx-auto">
+                    <div className="relative w-full h-64 sm:h-80">
+                        <video 
+                            ref={videoRef} 
+                            autoPlay 
+                            playsInline 
+                            muted
+                            className="w-full h-full object-cover"
+                        />
+                        <canvas ref={canvasRef} className="hidden" />
+                        
+                        {/* Top Controls */}
+                        <div className="absolute top-2 left-2 right-2 flex justify-between items-center">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (videoRef.current && videoRef.current.srcObject) {
+                                        const tracks = videoRef.current.srcObject.getTracks();
+                                        tracks.forEach(track => track.stop());
+                                        videoRef.current.srcObject = null;
+                                    }
+                                    setIsCameraOpen(false);
+                                }}
+                                className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm font-medium"
+                            >
+                                Close
+                            </button>
+                            <span className="bg-black bg-opacity-70 text-white px-2 py-1 rounded-full text-xs">
+                                {facingMode === 'user' ? 'Front' : 'Back'}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={switchCamera}
+                                className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm font-medium"
+                            >
+                                Switch
+                            </button>
                         </div>
-                        <button
-                            type="button"
-                            onClick={handleCapturePhoto}
-                            className="mt-4 w-full px-4 py-2 bg-indigo-500 text-white rounded-md shadow-md hover:bg-indigo-600 disabled:bg-indigo-300 transition-colors"
-                            disabled={!isCameraOpen}
-                        >
-                            Capture Photo
-                        </button>
+                        
+                        {/* Bottom Controls */}
+                        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2">
+                            <button
+                                type="button"
+                                onClick={handleCapturePhoto}
+                                className="bg-white text-black px-4 py-2 rounded flex items-center justify-center text-sm font-medium hover:bg-gray-200 shadow-lg"
+                            >
+                                Capture
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
             <div className="space-y-2 mt-4">
-                <p className="text-gray-600">Captured Photo</p>
-                {capturedPhoto ? (
-                    <div className="relative group max-w-lg mx-auto">
-                        <img src={capturedPhoto} alt="Captured Guest Photo" className="rounded-md object-cover w-full h-auto" />
+                <div className="flex justify-between items-center">
+                    <p className="text-gray-600 font-medium">📷 Guest Photos ({capturedPhotos.length})</p>
+                    {capturedPhotos.length > 0 && (
                         <button
                             type="button"
-                            onClick={handleRemovePhoto}
-                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                            aria-label="Remove photo"
+                            onClick={handleClearAllPhotos}
+                            className="text-red-500 hover:text-red-700 text-sm font-medium"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
+                            Clear All
                         </button>
+                    )}
+                </div>
+                {capturedPhotos.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {capturedPhotos.map((photo) => (
+                            <div key={photo.id} className="relative bg-white rounded-lg shadow-md overflow-hidden border">
+                                <img 
+                                    src={photo.data} 
+                                    alt={`Guest Photo ${photo.id}`} 
+                                    className="w-full h-32 object-cover"
+                                />
+                                <div className="p-1 bg-gray-50 flex justify-between items-center">
+                                    <span className="text-xs text-gray-500">{photo.timestamp}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemovePhoto(photo.id)}
+                                        className="text-red-500 hover:text-red-700 text-xs"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                ) : (
-                    <div className="p-4 bg-gray-50 rounded-md text-center text-gray-500">No photo captured yet.</div>
                 )}
             </div>
           </div>
         </section>
 
         {/* Stay Info Section */}
-        <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
-          <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-[color:var(--color-text)]">
-            <BedIcon className="text-amber-400" /> Stay Information
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <section className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-full" style={{backgroundColor: 'hsl(45, 100%, 85%)'}}>
+              <BedIcon className="text-lg" style={{color: 'hsl(45, 43%, 58%)'}} />
+            </div>
+            <h2 className="text-xl font-semibold" style={{color: 'hsl(45, 100%, 20%)'}}>
+              Stay Information
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="numberOfRooms">Number of Rooms</Label>
               <Input
@@ -1403,6 +1656,11 @@ const App = () => {
                 readOnly
                 className="bg-gray-200"
               />
+              {selectedRooms.length > 0 && (
+                <p className="text-sm text-gray-600">
+                  Selected: {selectedRooms.map(r => r.room_number).join(', ')}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="noOfAdults">Adults</Label>
@@ -1456,7 +1714,7 @@ const App = () => {
                 disabled
               />
             </div>
-            <div className="space-y-2 col-span-1 sm:col-span-2 lg:col-span-2">
+            <div className="space-y-2 col-span-1 md:col-span-2">
               <Label htmlFor="arrivedFrom">Arrival From</Label>
               <Input
                 id="arrivedFrom"
@@ -1465,7 +1723,7 @@ const App = () => {
                 onChange={handleChange}
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 col-span-1 md:col-span-2">
               <Label htmlFor="purposeOfVisit">Purpose of Visit</Label>
               <Input
                 id="purposeOfVisit"
@@ -1481,7 +1739,8 @@ const App = () => {
                 name="remark"
                 value={formData.remark}
                 onChange={handleChange}
-                className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex w-full rounded-md bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50"
+                style={{ border: '1px solid hsl(45, 100%, 85%)', color: 'hsl(45, 100%, 20%)' }}
                 rows="3"
               />
             </div>
@@ -1489,11 +1748,16 @@ const App = () => {
         </section>
 
         {/* Payment Info Section */}
-        <section className="rounded-xl p-6 border border-[color:var(--color-border)] shadow-sm">
-          <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-[color:var(--color-text)]">
-            <FaCreditCard className="text-amber-400" /> Payment Details
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <section className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-full" style={{backgroundColor: 'hsl(45, 100%, 85%)'}}>
+              <FaCreditCard className="text-lg" style={{color: 'hsl(45, 43%, 58%)'}} />
+            </div>
+            <h2 className="text-xl font-semibold" style={{color: 'hsl(45, 100%, 20%)'}}>
+              Payment Details
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="space-y-2">
               <Label htmlFor="rate">Total Rate</Label>
               <Input
@@ -1659,29 +1923,34 @@ const App = () => {
                 name="billingInstruction"
                 value={formData.billingInstruction}
                 onChange={handleChange}
-                className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex w-full rounded-md bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50"
+                style={{ border: '1px solid hsl(45, 100%, 85%)', color: 'hsl(45, 100%, 20%)' }}
                 rows="3"
               />
             </div>
           </div>
         </section>
 
-        <div className="mt-8 flex justify-center gap-4">
+        <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
           <Button
             type="button"
             onClick={resetForm}
-            className="px-8 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            variant="outline"
+            className="px-8 py-3 font-semibold rounded-lg shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 w-full sm:w-auto"
           >
             Reset
           </Button>
           <Button
             type="submit"
-            className="px-8 py-3 bg-[color:var(--color-primary)] text-black font-semibold rounded-lg shadow-md hover:bg-[color:var(--color-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            className="px-8 py-3 font-semibold rounded-lg shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 w-full sm:w-auto"
           >
             Submit Booking
           </Button>
         </div>
       </form>
+          </div>
+        </div>
+      </main>
     </div>
   );
 };

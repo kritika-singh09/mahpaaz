@@ -15,12 +15,47 @@ const TaskList = () => {
   const [taskToEdit, setTaskToEdit] = useState(null);
   const [newStatus, setNewStatus] = useState("");
   const [staffMembers, setStaffMembers] = useState([]);
+  const [bookings, setBookings] = useState([]);
   const { axios } = useAppContext();
 
-  useEffect(() => {
-    fetchTasks();
-    fetchStaffMembers();
-  }, []);
+  const fetchTasks = async (bookingsData = bookings) => {
+    try {
+      const token = localStorage.getItem("token");
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      const response = await axios.get("/api/housekeeping/tasks", config);
+
+      const tasksArray = Array.isArray(response.data)
+        ? response.data
+        : response.data.tasks || [];
+
+      const formattedTasks = tasksArray.map((task) => {
+        const booking = bookingsData.find(b => b._id === task.bookingId);
+        return {
+          id: task._id,
+          roomId: task.roomId,
+          bookingId: task.bookingId,
+          grcNo: task.grcNo || booking?.grcNo || booking?.guestRegistrationCardNo || 'No GRC',
+          roomNumber: task.roomNumber || booking?.roomNumber || booking?.room_number || "Unknown",
+          cleaningType: task.cleaningType || "standard",
+          department: task.department || "Housekeeping",
+          notes: task.notes || "",
+          priority: task.priority || "medium",
+          staff: task.assignedTo?.username || "Unassigned",
+          status: task.status || "pending",
+        };
+      });
+
+      setTasks(formattedTasks);
+    } catch (err) {
+      console.error("Error fetching tasks:", err);
+      throw err;
+    }
+  };
 
   const fetchStaffMembers = async () => {
     try {
@@ -39,43 +74,39 @@ const TaskList = () => {
     }
   };
 
-  const fetchTasks = async () => {
-    setLoading(true);
+  const fetchBookings = async () => {
     try {
       const token = localStorage.getItem("token");
-      const config = {
+      const response = await axios.get("/api/bookings/all", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      };
-
-      const response = await axios.get("/api/housekeeping/tasks", config);
-
-      const tasksArray = Array.isArray(response.data)
-        ? response.data
-        : response.data.tasks || [];
-
-      const formattedTasks = tasksArray.map((task) => ({
-        id: task._id,
-        roomId: task.roomId,
-        roomNumber: task.roomNumber || "Unknown",
-        cleaningType: task.cleaningType || "standard",
-        department: task.department || "Housekeeping",
-        notes: task.notes || "",
-        priority: task.priority || "medium",
-        staff: task.assignedTo?.username || "Unassigned",
-        status: task.status || "pending",
-      }));
-
-      setTasks(formattedTasks);
-      setError(null);
-    } catch (err) {
-      console.error("Error fetching tasks:", err);
-      setError(`Failed to load tasks: ${err.message}`);
-    } finally {
-      setLoading(false);
+      });
+      setBookings(response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+      return [];
     }
   };
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        await fetchStaffMembers();
+        const bookingsData = await fetchBookings();
+        setBookings(bookingsData);
+        await fetchTasks(bookingsData);
+      } catch (error) {
+        console.error('Error loading data:', error);
+        setError('Failed to load data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   const handleUpdateStatus = async () => {
     try {
@@ -197,6 +228,9 @@ const TaskList = () => {
                   Room Number
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  GRC Number
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Cleaning Type
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -223,7 +257,10 @@ const TaskList = () => {
               {filteredTasks.map((task) => (
                 <tr key={task.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    Room {task.roomId.room_number}
+                    Room {task.roomNumber}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {task.grcNo || 'No GRC'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap capitalize">
                     {task.cleaningType || "Standard"}
@@ -292,7 +329,7 @@ const TaskList = () => {
               {filteredTasks.length === 0 && (
                 <tr>
                   <td
-                    colSpan="8"
+                    colSpan="9"
                     className="px-6 py-4 text-center text-gray-500"
                   >
                     No tasks found.
@@ -312,7 +349,10 @@ const TaskList = () => {
 
             <div className="mb-4">
               <p className="text-sm text-gray-600 mb-2">
-                Room: {taskToEdit.roomId.room_number || "Unknown"}
+                Room: {taskToEdit.roomNumber || "Unknown"}
+              </p>
+              <p className="text-sm text-gray-600 mb-2">
+                GRC: {taskToEdit.grcNo || 'No GRC'}
               </p>
               <p className="text-sm text-gray-600 mb-4">
                 Notes: {taskToEdit.notes || "No notes"}

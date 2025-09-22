@@ -10,6 +10,7 @@ const HousekeepingForm = ({
   const { axios } = useAppContext();
   const [housekeepingTask, setHousekeepingTask] = useState({
     roomId: "",
+    grcNo: "",
     cleaningType: "daily",
     notes: "",
     priority: "medium",
@@ -18,6 +19,7 @@ const HousekeepingForm = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [rooms, setRooms] = useState([]);
+  const [bookings, setBookings] = useState([]);
   const [staff, setStaff] = useState([]);
 
   useEffect(() => {
@@ -50,6 +52,12 @@ const HousekeepingForm = ({
           config
         );
         setRooms(roomsData);
+
+        const { data: bookingsData } = await axios.get(
+          "/api/bookings/all",
+          config
+        );
+        setBookings(bookingsData);
 
         const { data: staffData } = await axios.get(
           "/api/housekeeping/available-staff",
@@ -111,9 +119,10 @@ const HousekeepingForm = ({
 
   useEffect(() => {
     console.log("Rooms loaded:", rooms);
+    console.log("Bookings loaded:", bookings);
     console.log("Staff loaded:", staff);
     console.log("Current housekeepingTask state:", housekeepingTask);
-  }, [rooms, staff, housekeepingTask]);
+  }, [rooms, bookings, staff, housekeepingTask]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -124,10 +133,15 @@ const HousekeepingForm = ({
       const selectedRoom = rooms.find(
         (room) => room._id === housekeepingTask.roomId
       );
+      const booking = bookings.find(b => 
+        (b.grcNo || b.guestRegistrationCardNo) === housekeepingTask.grcNo
+      );
 
       const taskData = {
         roomId: housekeepingTask.roomId,
-        roomNumber: selectedRoom?.room_number,
+        bookingId: booking?._id,
+        roomNumber: selectedRoom?.room_number || booking?.roomNumber || booking?.room_number,
+        grcNo: housekeepingTask.grcNo,
         cleaningType: housekeepingTask.cleaningType,
         priority: housekeepingTask.priority,
         notes: housekeepingTask.notes,
@@ -195,6 +209,25 @@ const HousekeepingForm = ({
               {rooms.map((room) => (
                 <option key={room._id} value={room._id}>
                   Room {room.room_number}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              GRC Number
+            </label>
+            <select
+              name="grcNo"
+              value={housekeepingTask.grcNo || ''}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">Select GRC</option>
+              {bookings.map((booking) => (
+                <option key={booking._id} value={booking.grcNo || booking.guestRegistrationCardNo}>
+                  {booking.grcNo || booking.guestRegistrationCardNo} - Room {booking.roomNumber || booking.room_number}
                 </option>
               ))}
             </select>
